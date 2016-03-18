@@ -1,0 +1,967 @@
+package com.android.pplusaudit2._Store;
+
+import android.app.ProgressDialog;
+import android.app.VoiceInteractor;
+import android.content.DialogInterface;
+import android.database.Cursor;
+import android.graphics.*;
+import android.os.AsyncTask;
+import android.os.Bundle;
+import android.os.PowerManager;
+import android.support.v7.app.AlertDialog;
+import android.support.v7.app.AppCompatActivity;
+import android.util.Log;
+import android.view.LayoutInflater;
+import android.view.MenuItem;
+import android.view.View;
+import android.widget.Button;
+import android.widget.LinearLayout;
+import android.widget.ListView;
+import android.widget.TableLayout;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.android.pplusaudit2.Database.SQLLibrary;
+import com.android.pplusaudit2.Database.SQLiteDB;
+import com.android.pplusaudit2.Debug.DebugLog;
+import com.android.pplusaudit2.General;
+import com.android.pplusaudit2.MyMessageBox;
+import com.android.pplusaudit2.R;
+import com.android.pplusaudit2.Settings;
+import com.android.pplusaudit2.TCRLib;
+import com.android.pplusaudit2._Category.Pplus_Activity;
+import com.android.pplusaudit2._Category.Pplus_ActivityClass;
+import com.android.pplusaudit2._Group.Pplus_GroupClass;
+
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedInputStream;
+import java.io.BufferedReader;
+import java.io.DataOutputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.MalformedURLException;
+import java.net.ProtocolException;
+import java.net.URL;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Locale;
+
+/**
+ * Created by ULTRABOOK on 10/28/2015.
+ */
+public class Pplus_main_preview extends AppCompatActivity {
+
+    SQLLibrary sqlLibrary;
+    TCRLib tcrLib;
+
+    Typeface fontIcon;
+
+    String storename;
+    String previewStoreID;
+    String storeTemplate;
+    String storeCode;
+    String startDate;
+    String endDate;
+    int storeFinalValue;
+
+    ProgressDialog progressDL;
+    File filepathToSend;
+    String strFilenameToSend;
+
+    AlertDialog postDialog;
+    ProgressDialog pDialog;
+
+    LinearLayout layoutPreviewRow = null;
+    ListView lvwPreview;
+    MyMessageBox messageBox;
+
+    Cursor cursStore;
+
+    String strDetailsBody;
+    String strSummaryBody;
+
+    String strImageFolder;
+
+    PowerManager powerman;
+    PowerManager.WakeLock wlStayAwake;
+
+    boolean toggleAudit;
+
+    ArrayList<Pplus_ActivityClass> arrCategories;
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        setContentView(R.layout.pplus_layout_store_preview);
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+
+        overridePendingTransition(R.anim.slide_up, R.anim.hold);
+
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        getSupportActionBar().setHomeButtonEnabled(true);
+
+        getSupportActionBar().setTitle("AUDIT SUMMARY");
+
+        fontIcon = Typeface.createFromAsset(getAssets(), General.typefacename);
+        powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
+
+        sqlLibrary = new SQLLibrary(this);
+        tcrLib = new TCRLib(this);
+        messageBox = new MyMessageBox(this);
+        toggleAudit = false;
+
+        arrCategories = new ArrayList<>();
+        lvwPreview = (ListView) findViewById(R.id.lvwPreview);
+
+        Bundle eData = getIntent().getExtras();
+
+        if (eData != null) {
+            previewStoreID = eData.getString("STORE_ID");
+
+            cursStore = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
+            cursStore.moveToFirst();
+
+            storename = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim();
+            storeTemplate = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim();
+            storeCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode)).trim();
+            startDate = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_startdate)).trim();
+            endDate = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_enddate)).trim();
+            storeFinalValue = cursStore.getInt(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
+
+            //LoadAuditSummary();
+            new LoadAuditSummary().execute();
+        }
+
+        TextView tvwStoreTemplate = (TextView) findViewById(R.id.tvwStoreTemplate);
+        tvwStoreTemplate.setText(storename + " - " + storeTemplate);
+
+        strFilenameToSend = General.usercode + "_" + storeCode + ".csv";
+        filepathToSend = new File(Settings.postingFolder, strFilenameToSend);
+
+        Button btnBack = (Button) findViewById(R.id.btnBackPreview);
+        Button btnPost = (Button) findViewById(R.id.btnPostAudit);
+        btnPost.setText("\uf1d8" + " POST AUDIT");
+        btnBack.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                onBackPressed();
+            }
+        });
+
+        //btnPost.setEnabled(CheckDateValidation(startDate, endDate));
+
+        btnPost.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                postDialog = new AlertDialog.Builder(Pplus_main_preview.this).create();
+                postDialog.setTitle("Post survey");
+                postDialog.setMessage("Do you want to post this survey result?");
+                postDialog.setButton(DialogInterface.BUTTON_POSITIVE, "Post", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        postDialog.dismiss();
+                        wlStayAwake.acquire();
+                        new AsyncGenerateTextFile().execute();
+                    }
+                });
+                postDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) { postDialog.dismiss(); }
+                });
+                postDialog.show();
+            }
+        });
+    }
+
+    public boolean CheckDateValidation(String dtFrom, String dtTo) {
+        boolean result = false;
+        try {
+            SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
+            Date dateToday = new Date();
+            //String sDateToday = dateFormat.format(datetoday).toString();
+            Date dateFrom = dateFormat.parse(dtFrom);
+            Date dateTo = dateFormat.parse(dtTo);
+
+            if((dateToday.after(dateFrom) || dateToday.equals(dateFrom)) && (dateToday.before(dateTo) || dateToday.equals(dateTo))) {
+                result = true;
+            }
+        }
+        catch (ParseException pex) {
+            pex.printStackTrace();
+            DebugLog.log("ParseException: " + pex.getMessage());
+        }
+
+        return result;
+    }
+
+    public boolean CheckIfPosted(String storeid) {
+        boolean res = false;
+
+        Cursor cursCheck = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = '" + storeid + "' AND " + SQLiteDB.COLUMN_STORE_posted + " = '1'");
+        cursCheck.moveToFirst();
+        if(cursCheck.getCount() > 0) res = true;
+
+        return res;
+    }
+
+    public class LoadAuditSummary extends AsyncTask<Void, Void, Boolean> {
+
+        private String errmsg;
+
+        @Override
+        protected void onPreExecute() {
+            pDialog = ProgressDialog.show(Pplus_main_preview.this, "", "Loading audit summary.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean ret = true;
+
+            strDetailsBody = "";
+            strSummaryBody = "";
+
+            // STORE CATEGORY
+            Cursor cursStoreCategory = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + "," + SQLiteDB.COLUMN_CATEGORY_categoryorder
+                    + "," + SQLiteDB.COLUMN_CATEGORY_categorydesc + "," + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
+                    + "," + SQLiteDB.COLUMN_STORECATEGORY_final + "," + SQLiteDB.COLUMN_STORECATEGORY_status
+                    + " FROM " + SQLiteDB.TABLE_STORECATEGORY
+                    + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
+                    + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = " + previewStoreID
+                    + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder);
+            cursStoreCategory.moveToFirst();
+
+            while (!cursStoreCategory.isAfterLast()) {
+
+                int storecategoryID = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
+                String categoryName = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categorydesc));
+                int categOrder = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryorder));
+                int categoryid = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryid));
+                String categoryFinal = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_final));
+                String categStatusno = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_status));
+
+                String strCategStatus = tcrLib.GetStatus(categStatusno);
+                General.SCORE_STATUS categoryScore = tcrLib.GetScoreStatus(categoryFinal);
+
+                arrCategories.add(new Pplus_ActivityClass(categOrder, categoryid, categoryName, String.valueOf(storecategoryID), strCategStatus, categoryScore));
+
+                // STORE CATEGORY GROUP
+                Cursor cursStoreCategoryGroups = sqlLibrary.RawQuerySelect("SELECT tblstorecateggroup.id, tblgroup.groupdesc, " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                        + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status  + "," + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt
+                        + "," + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_initial
+                        + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
+                        + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
+                        + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storecategoryID
+                        + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
+                cursStoreCategoryGroups.moveToFirst();
+
+                while (!cursStoreCategoryGroups.isAfterLast()) {
+
+                    String groupDesc = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupdesc));
+                    int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+                    String groupExempt = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt));
+                    String groupInitial = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_initial));
+                    String groupFinal = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_final));
+
+                    if(!sqlLibrary.HasQuestionsByGroup(storeCategroupID)) {
+                        cursStoreCategoryGroups.moveToNext();
+                        continue;
+                    }
+
+                    // STORE QUESTION
+                    Cursor cursStoreQuestion = sqlLibrary.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STOREQUESTION
+                            + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
+                            + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategroupID
+                            + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
+                    cursStoreQuestion.moveToFirst();
+
+                    String answer = "";
+                    String fullAnswer = "";
+                    String formtypedesc = "";
+                    int finalValue = 0;
+                    int exemptValue = 0;
+                    int initialValue = 0;
+
+                    while (!cursStoreQuestion.isAfterLast()) {
+                        String prompt = cursStoreQuestion.getString(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt)).trim();
+                        int storeqid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_id));
+                        int questionid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_questionid));
+                        int formtypeid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_formtypeid));
+                        int formid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_formid));
+                        fullAnswer = "";
+                        try {
+                            answer = cursStoreQuestion.getString(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
+                            if(!answer.equals("")) fullAnswer = sqlLibrary.GetAnswer(answer, formtypeid, formid);
+                            finalValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_final));
+                            exemptValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_exempt));
+                            initialValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_initial));
+                        }
+                        catch (NullPointerException nex) { }
+
+                        formtypedesc = sqlLibrary.GetFormTypeDesc(formtypeid);
+
+                        strDetailsBody += categoryName + "|";
+                        strDetailsBody += groupDesc + "|";
+                        strDetailsBody += prompt + "|";
+                        strDetailsBody += formtypedesc + "|";
+                        strDetailsBody += fullAnswer + "|";
+                        strDetailsBody += finalValue + "|";
+                        strDetailsBody += exemptValue + "|";
+                        strDetailsBody += initialValue;
+                        strDetailsBody += "\n";
+
+                        // FOR CONDITIONAL
+                        if(formtypeid == 12) {
+                            Cursor cursConditional = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL, SQLiteDB.COLUMN_CONDITIONAL_formid + " = '" + formid + "' AND " + SQLiteDB.COLUMN_CONDITIONAL_condition + " = '" + fullAnswer.trim().toUpperCase() + "'");
+                            cursConditional.moveToFirst();
+
+                            if(cursConditional.getCount() == 0) {
+                                cursConditional.close();
+                                cursStoreQuestion.moveToNext();
+                                continue;
+                            }
+
+                            String[] aCondformids = null;
+
+                            try {
+                                aCondformids = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_conditionformsid)).trim().split("\\^");
+                            }
+                            catch (NullPointerException nex) {
+                                nex.printStackTrace();
+                                cursConditional.close();
+                                cursStoreQuestion.moveToNext();
+                                continue;
+                            }
+
+                            if(aCondformids.length > 0) {
+                                for (String conformid : aCondformids) {
+
+                                    if(conformid.equals("")) continue;
+
+                                    Cursor cursforms = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + conformid + "'");
+                                    cursforms.moveToFirst();
+
+                                    String condPrompt = cursforms.getString(cursforms.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
+                                    int condtypeid = cursforms.getInt(cursforms.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
+                                    formtypedesc = sqlLibrary.GetFormTypeDesc(condtypeid);
+
+                                    // GET CHILD ANSWERS OF CONDITIONAL
+                                    Cursor cursCondAns = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid + " = '" + conformid + "' AND " + SQLiteDB.COLUMN_CONDANS_conditionalformtypeid + " = '" + condtypeid + "'");
+                                    cursCondAns.moveToFirst();
+                                    String childAnswer = "";
+                                    if (cursCondAns.getCount() > 0) {
+                                        childAnswer = cursCondAns.getString(cursCondAns.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalanswer)).trim();
+                                    }
+
+                                    cursCondAns.close();
+
+                                    fullAnswer = childAnswer;
+
+                                    // SINGLE ITEM
+                                    if (condtypeid == 10 && !childAnswer.equals("")) { // set full answer for single item
+                                        int nSingleselectId = Integer.valueOf(childAnswer);
+                                        // Get option id by formid and singleselect id
+                                        Cursor cursCondSingle = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SINGLESELECT, SQLiteDB.COLUMN_SINGLESELECT_formid + " = '" + conformid + "' AND " + SQLiteDB.COLUMN_SINGLESELECT_id + " = '" + nSingleselectId + "'");
+                                        cursCondSingle.moveToFirst();
+                                        String condOptionid = cursCondSingle.getString(cursCondSingle.getColumnIndex(SQLiteDB.COLUMN_SINGLESELECT_optionid)).trim();
+                                        fullAnswer = sqlLibrary.GetAnswer(condOptionid, condtypeid, Integer.valueOf(conformid));
+                                        cursCondSingle.close();
+                                    }
+
+                                    // MULTI ITEM
+                                    if (condtypeid == 9 && !childAnswer.equals("")) { // set full answer for multi item
+                                        String[] arrAns = childAnswer.split(",");
+                                        String ans = "";
+                                        for (String cboxAns : arrAns) {
+                                            Cursor cursMulti = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_MULTISELECT, SQLiteDB.COLUMN_MULTISELECT_optionid + " = '" + cboxAns + "'");
+                                            cursMulti.moveToNext();
+                                            ans += cursMulti.getString(cursMulti.getColumnIndex(SQLiteDB.COLUMN_MULTISELECT_option)).trim() + "-";
+                                            cursMulti.close();
+                                        }
+                                        fullAnswer = ans;
+                                    }
+
+                                    // LABEL
+                                    if (condtypeid == 1) {
+                                        fullAnswer = "";
+                                        finalValue = 0;
+                                        exemptValue = 0;
+                                        initialValue = 0;
+                                    }
+
+                                    strDetailsBody += categoryName + "|";
+                                    strDetailsBody += groupDesc + "|";
+                                    strDetailsBody += condPrompt + "|";
+                                    strDetailsBody += formtypedesc + "|";
+                                    strDetailsBody += fullAnswer + "|";
+                                    strDetailsBody += finalValue + "|";
+                                    strDetailsBody += exemptValue + "|";
+                                    strDetailsBody += initialValue;
+                                    strDetailsBody += "\n";
+
+                                    cursforms.close();
+                                }
+                            }
+
+                            cursConditional.close();
+                        }
+
+                        cursStoreQuestion.moveToNext();
+                    }
+
+                    if(!toggleAudit) {
+                        strSummaryBody += "audit_summary\n";
+                        toggleAudit = true;
+                    }
+                    strSummaryBody += categoryName + "|" + groupDesc + "|" + groupFinal + "|" + groupExempt + "|" + groupInitial;
+                    strSummaryBody += "\n";
+
+                    cursStoreQuestion.close();
+                    cursStoreCategoryGroups.moveToNext();
+                }
+                cursStoreCategoryGroups.close();
+                cursStoreCategory.moveToNext();
+            }
+
+            strDetailsBody += strSummaryBody;
+            cursStoreCategory.close();
+
+            return ret;
+        }
+
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            pDialog.dismiss();
+            if(!aBoolean) {
+                Toast.makeText(Pplus_main_preview.this, errmsg, Toast.LENGTH_LONG).show();
+                return;
+            }
+            lvwPreview.setAdapter(new PreviewCategoryAdapter(Pplus_main_preview.this, arrCategories));
+        }
+    }
+
+    public class AsyncGenerateTextFile extends AsyncTask<Void, Void, Boolean> {
+
+        private String exError;
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(Pplus_main_preview.this, "", "Creating textfile....", true);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+
+            if(filepathToSend.exists()) filepathToSend.delete();
+
+            try
+            {
+                FileWriter writer = new FileWriter(filepathToSend);
+
+                String sBody = "";
+
+                cursStore.moveToFirst();
+
+                if(cursStore.getCount() > 0) {
+
+                    String account = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_account));
+                    String customerCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_customercode));
+                    String customer = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_customer));
+                    String regionCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_regioncode));
+                    String region = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_region));
+                    String distributorCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
+                    String distributor = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
+                    String templateCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatecode));
+
+                    sBody += General.usercode + "|"
+                            + General.username + "|"
+                            + account + "|"
+                            + customerCode + "|"
+                            + customer + "|"
+                            + regionCode + "|"
+                            + region + "|"
+                            + distributorCode + "|"
+                            + distributor + "|"
+                            + storeCode + "|"
+                            + storename + "|"
+                            + startDate + "|"
+                            + endDate + "|"
+                            + templateCode + "|"
+                            + storeTemplate + "|"
+                            + storeFinalValue;
+                    sBody += "\n";
+                    sBody += strDetailsBody;
+                }
+
+                writer.append(sBody);
+                writer.flush();
+                writer.close();
+                return true;
+            }
+            catch(IOException e)
+            {
+                progressDL.dismiss();
+                e.printStackTrace();
+                Log.e("IOException", e.getMessage());
+                exError = e.getMessage();
+                return false;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean s) {
+            if(!s) {
+                wlStayAwake.release();
+                progressDL.dismiss();
+                Toast.makeText(Pplus_main_preview.this, exError, Toast.LENGTH_LONG).show();
+                return;
+            }
+            progressDL.dismiss();
+            new AsyncPostFiles(filepathToSend, strFilenameToSend, General.POSTING_URL).execute();
+        }
+    }
+
+    public class AsyncPostImages extends AsyncTask<Integer, Integer, Boolean> {
+
+        private Integer maxnum = 0;
+        private String response;
+        private ArrayList<String> aStrFilename;
+        private ArrayList<File> aFileImage;
+
+        public AsyncPostImages(Integer nMax, ArrayList<String> arrStrFilename, ArrayList<File> arrfilePic) {
+            this.maxnum = nMax;
+            this.aStrFilename = arrStrFilename;
+            this.aFileImage = arrfilePic;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(Pplus_main_preview.this, "", "Posting images.");
+            progressDL.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDL.setMax(this.maxnum);
+        }
+
+        @Override
+        protected Boolean doInBackground(Integer... params) {
+
+            Boolean bReturn = false;
+
+            String attachmentName = "data";
+            String attachmentFileName;
+            String crlf = "\r\n";
+            String twoHyphens = "--";
+            String boundary =  "*****";
+
+            response = "";
+
+            int bytesRead, bytesAvailable, bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1*1024*1024;
+
+            try {
+
+                for (int i = 0; i < aFileImage.size(); i++) {
+
+                    attachmentFileName = aStrFilename.get(i);
+                    FileInputStream fileInputStream = new FileInputStream(aFileImage.get(i)); // text file to upload
+
+                    HttpURLConnection httpUrlConnection = null;
+                    URL url = new URL(General.POSTING_IMAGE + "/" + strImageFolder); // url to post
+                    httpUrlConnection = (HttpURLConnection) url.openConnection();
+                    httpUrlConnection.setUseCaches(false);
+                    httpUrlConnection.setDoOutput(true);
+
+                    httpUrlConnection.setRequestMethod("POST");
+                    httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+                    httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
+                    httpUrlConnection.setRequestProperty(
+                            "Content-Type", "multipart/form-data;boundary=" + boundary);
+
+                    DataOutputStream request = new DataOutputStream(
+                            httpUrlConnection.getOutputStream());
+
+                    request.writeBytes(twoHyphens + boundary + crlf);
+                    request.writeBytes("Content-Disposition: form-data; name=\"" +
+                            attachmentName + "\";filename=\"" + attachmentFileName + "\"" + crlf);
+                    request.writeBytes(crlf);
+
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    buffer = new byte[bufferSize];
+
+                    // Read file
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                    while (bytesRead > 0) {
+                        request.write(buffer, 0, bufferSize);
+                        bytesAvailable = fileInputStream.available();
+                        bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                        bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                    }
+
+                    //I want to send only 8 bit black & white bitmaps
+/*                byte[] pixels = new byte[bitmap.getWidth() * bitmap.getHeight()];
+                for (int i = 0; i < bitmap.getWidth(); ++i) {
+                    for (int j = 0; j < bitmap.getHeight(); ++j) {
+                        //we're interested only in the MSB of the first byte,
+                        //since the other 3 bytes are identical for B&W images
+                        pixels[i + j] = (byte) ((bitmap.getPixel(i, j) & 0x80) >> 7);
+                    }
+                }
+
+                request.write(pixels);*/
+
+                    request.writeBytes(crlf);
+                    request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
+                    request.flush();
+                    request.close();
+
+                    InputStream responseStream = new
+                            BufferedInputStream(httpUrlConnection.getInputStream());
+
+                    BufferedReader responseStreamReader =
+                            new BufferedReader(new InputStreamReader(responseStream));
+
+                    String line = "";
+                    StringBuilder stringBuilder = new StringBuilder();
+
+                    while ((line = responseStreamReader.readLine()) != null) {
+                        stringBuilder.append(line).append("\n");
+                    }
+                    responseStreamReader.close();
+
+                    response = stringBuilder.toString();
+
+                    responseStream.close();
+                    httpUrlConnection.disconnect();
+                }
+                bReturn =  true;
+            }
+            catch (final MalformedURLException ex) {
+                Log.e("MalformedURLException", ex.getMessage());
+                ex.printStackTrace();
+                response = "MalformedURLException" + ex.getMessage();
+            }
+            catch (final ProtocolException pex) {
+                Log.e("ProtocolException", pex.getMessage());
+                pex.printStackTrace();
+                response = "ProtocolException" + pex.getMessage();
+            }
+            catch (final IOException ioex) {
+                Log.e("IOException", ioex.getMessage());
+                ioex.printStackTrace();
+                response = "IOException" + ioex.getMessage();
+            }
+
+            return bReturn;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            progressDL.dismiss();
+            if(!aBoolean) {
+                Toast.makeText(Pplus_main_preview.this, response, Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            postDialog = new AlertDialog.Builder(Pplus_main_preview.this).create();
+            postDialog.setTitle("Success");
+            postDialog.setMessage("Survey is successfully posted!\n\nMessage: " + response);
+            postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(DialogInterface dialog, int which) {
+                    postDialog.dismiss();
+                    finish();
+                }
+            });
+            postDialog.show();
+        }
+    }
+
+    // send file
+    public class AsyncPostFiles extends AsyncTask<Void, Void, String> {
+
+        private final File fileToSend;
+        private final String postingURL;
+        private final String strFilename;
+
+        public AsyncPostFiles(File filepath, String strFilename, String url) {
+            this.fileToSend = filepath;
+            this.postingURL = url.trim();
+            this.strFilename = strFilename;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(Pplus_main_preview.this, "", "Posting audit summary result.", true);
+        }
+
+        @Override
+        protected String doInBackground(Void... params) {
+
+            String attachmentName = "data";
+            String attachmentFileName = strFilename;
+            String crlf = "\r\n";
+            String twoHyphens = "--";
+            String boundary =  "*****";
+
+            String response = "";
+
+            int bytesRead, bytesAvailable, bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1*1024*1024;
+
+            try {
+
+                FileInputStream fileInputStream = new FileInputStream(fileToSend); // text file to upload
+                HttpURLConnection httpUrlConnection = null;
+                URL url = new URL(postingURL); // url to post
+                httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setUseCaches(false);
+                httpUrlConnection.setDoOutput(true);
+
+                httpUrlConnection.setRequestMethod("POST");
+                httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+                httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
+                httpUrlConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+
+                DataOutputStream request = new DataOutputStream(
+                        httpUrlConnection.getOutputStream());
+
+                request.writeBytes(twoHyphens + boundary + crlf);
+                request.writeBytes("Content-Disposition: form-data; name=\"" +
+                        attachmentName + "\";filename=\"" + attachmentFileName + "\"" + crlf);
+                request.writeBytes(crlf);
+
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                // Read file
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0)
+                {
+                    request.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                }
+
+                //I want to send only 8 bit black & white bitmaps
+/*                byte[] pixels = new byte[bitmap.getWidth() * bitmap.getHeight()];
+                for (int i = 0; i < bitmap.getWidth(); ++i) {
+                    for (int j = 0; j < bitmap.getHeight(); ++j) {
+                        //we're interested only in the MSB of the first byte,
+                        //since the other 3 bytes are identical for B&W images
+                        pixels[i + j] = (byte) ((bitmap.getPixel(i, j) & 0x80) >> 7);
+                    }
+                }
+
+                request.write(pixels);*/
+
+                request.writeBytes(crlf);
+                request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
+                request.flush();
+                request.close();
+
+                InputStream responseStream = new
+                        BufferedInputStream(httpUrlConnection.getInputStream());
+
+                BufferedReader responseStreamReader =
+                        new BufferedReader(new InputStreamReader(responseStream));
+
+                String line = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ((line = responseStreamReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
+                }
+                responseStreamReader.close();
+
+                response = stringBuilder.toString();
+                responseStream.close();
+                httpUrlConnection.disconnect();
+
+                return response;
+            }
+            catch (final MalformedURLException ex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        messageBox.ShowMessage("MalformedURLException", ex.getMessage());
+                        ex.printStackTrace();
+                    }
+                });
+            }
+            catch (final ProtocolException pex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        messageBox.ShowMessage("ProtocolException", pex.getMessage());
+                        pex.printStackTrace();
+                    }
+                });
+            }
+            catch (final IOException ioex) {
+                runOnUiThread(new Runnable() {
+                    @Override
+                    public void run() {
+                        messageBox.ShowMessage("IOException", ioex.getMessage());
+                        ioex.printStackTrace();
+                    }
+                });
+            }
+            finally {
+                return response;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(String s) {
+            progressDL.dismiss();
+            wlStayAwake.release();
+            if(s == null) {
+                Toast.makeText(Pplus_main_preview.this, "Something went wrong, posting of survey is cancelled", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            try {
+                JSONObject data = new JSONObject(s);
+
+                if (!data.isNull("msg")) {
+                    String status = data.getString("status");
+                    String msg = data.getString("msg");
+
+                    if(status.equals("1")) {
+                        postDialog = new AlertDialog.Builder(Pplus_main_preview.this).create();
+                        postDialog.setTitle("Unsuccessful");
+                        postDialog.setMessage("Survey not posted. There's a problem in posting data to web server: \n" + msg);
+                        postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                postDialog.dismiss();
+                            }
+                        });
+                        postDialog.show();
+                        return;
+                    }
+
+                    sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STORE
+                            + " SET " + SQLiteDB.COLUMN_STORE_posted + " = '1', "
+                            + SQLiteDB.COLUMN_STORE_postingdate + " = '" + General.getDateToday() + "', " + SQLiteDB.COLUMN_STORE_postingtime + " = '" + General.getTimeToday() + "'  WHERE " + SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
+
+                    // posting successful
+                    strImageFolder = data.getString("audit_id");
+
+
+                    // STORE CATEGORY
+                    Cursor cursStoreCategory = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + previewStoreID + "' AND " + SQLiteDB.COLUMN_STORECATEGORY_status + " > '0'");
+                    cursStoreCategory.moveToFirst();
+
+                    int totalImages = 0;
+                    ArrayList<String> aStrFilenames = new ArrayList<>();
+                    ArrayList<File> aFileImages = new ArrayList<>();
+
+                    while (!cursStoreCategory.isAfterLast()) {
+
+                        int storecategoryID = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
+
+                        // STORE CATEGORY GROUP
+                        Cursor cursStoreCategoryGroups = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = '" + storecategoryID + "' AND " + SQLiteDB.COLUMN_STORECATEGORYGROUP_status + " > '0'");
+                        cursStoreCategoryGroups.moveToFirst();
+
+                        while (!cursStoreCategoryGroups.isAfterLast()) {
+
+                            int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+
+                            if(!sqlLibrary.HasQuestionsByGroup(storeCategroupID)) {
+                                cursStoreCategoryGroups.moveToNext();
+                                continue;
+                            }
+
+                            // STORE QUESTION IMAGES
+                            Cursor cursImages = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + "," + SQLiteDB.COLUMN_STOREQUESTION_answer + "," + SQLiteDB.COLUMN_STOREQUESTION_isAnswered
+                                    + " FROM " + SQLiteDB.TABLE_STOREQUESTION
+                                    + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
+                                    + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " = '2' AND " + SQLiteDB.COLUMN_STOREQUESTION_isAnswered + " = '1' AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategroupID
+                                    + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
+                            cursImages.moveToFirst();
+                            totalImages += cursImages.getCount();
+
+                            while (!cursImages.isAfterLast()) {
+                                String strFilename = cursImages.getString(cursImages.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
+                                File file = new File(Settings.captureFolder, strFilename);
+                                aStrFilenames.add(strFilename);
+                                aFileImages.add(file);
+                                cursImages.moveToNext();
+                            }
+                            cursImages.close();
+
+                            cursStoreCategoryGroups.moveToNext();
+                        }
+
+                        cursStoreCategoryGroups.close();
+                        cursStoreCategory.moveToNext();
+                    }
+
+                    cursStoreCategory.close();
+
+                    new AsyncPostImages(totalImages, aStrFilenames, aFileImages).execute();
+                }
+                else {
+                    postDialog = new AlertDialog.Builder(Pplus_main_preview.this).create();
+                    postDialog.setTitle("Unsuccessful");
+                    postDialog.setMessage("Error in posting survey");
+                    postDialog.setCancelable(false);
+                    postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            postDialog.dismiss();
+                        }
+                    });
+                }
+            }
+            catch (JSONException jex) {
+                jex.printStackTrace();
+                Log.e("JSONException", jex.getMessage());
+            }
+        }
+    }
+
+    @Override
+    public void onBackPressed() {
+        finish();
+        overridePendingTransition( R.anim.hold, R.anim.slide_down );
+    }
+
+    @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        // Handle action bar item clicks here. The action bar will
+        // automatically handle clicks on the Home/Up button, so long
+        // as you specify a parent activity in AndroidManifest.xml.
+        int id = item.getItemId();
+
+        //noinspection SimplifiableIfStatement
+        if (id == R.id.action_settings) {
+            return true;
+        }
+
+        if(id == android.R.id.home) {
+            onBackPressed();
+            return true;
+        }
+
+        return super.onOptionsItemSelected(item);
+    }
+}
