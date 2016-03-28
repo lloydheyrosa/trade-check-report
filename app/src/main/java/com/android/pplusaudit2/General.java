@@ -46,6 +46,11 @@ public class General {
     public static String ICON_PASSED = "\uf00c";
     public static String ICON_FAILED = "\uf00d";
 
+    public static final String[] aReports = new String[] {
+            "USER AUDIT SUMMARY REPORT",
+            "STORE REPORT"
+    };
+
     public enum SCORE_STATUS {
         PASSED,
         FAILED,

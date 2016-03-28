@@ -22,6 +22,8 @@ import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MainActivity;
 import com.android.pplusaudit2.MyMessageBox;
+import com.android.pplusaudit2.Report.ReportAuditActivity;
+import com.android.pplusaudit2.Report.ReportStoreActivity;
 import com.android.pplusaudit2._Store.Pplus_main;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Settings;
@@ -159,6 +161,37 @@ public class Field_main extends AppCompatActivity {
 
                         break;
                     case 1: // REPORTS
+
+                        final Intent intentAudit = new Intent(Field_main.this, ReportAuditActivity.class);
+                        final Intent intentStore = new Intent(Field_main.this, ReportStoreActivity.class);
+
+                        final android.support.v7.app.AlertDialog.Builder mModuleDialog = new android.support.v7.app.AlertDialog.Builder(Field_main.this);
+                        mModuleDialog.setTitle("Select a  report");
+                        mModuleDialog.setCancelable(true);
+
+                        mModuleDialog.setItems(General.aReports, new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+
+                                switch (which) {
+                                    case 0: // AUDIT REPORT
+                                        startActivity(intentAudit);
+                                        break;
+                                    case 1: // STORE REPORT
+                                        startActivity(intentStore);
+                                        break;
+                                    default:
+                                        break;
+                                }
+
+                                dialog.dismiss();
+
+                            }
+                        });
+
+                        if(General.username.toUpperCase().equals("PAUEY SILVA") || General.username.toUpperCase().equals("JEFF LIM")) {
+                            mModuleDialog.show();
+                        }
                         break;
                     case 2: // LOGOUT
 

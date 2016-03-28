@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="@color/white"
+    tools:context=".Report.ReportAuditActivity">
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:layout_width="fill_parent"
+        android:layout_height="wrap_content"
+        android:background="@drawable/style_question_row"
+        android:padding="20dp">
+
+        <TextView
+            android:id="@+id/tvwHeader"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="30sp"
+            android:padding="5dp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:text="AUDIT SUMMARY"/>
+
+<!--        <TextView
+            android:id="@+id/tvwStoreTemplate"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:textSize="25sp"
+            android:padding="3dp"
+            android:gravity="center"/>-->
+
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <ScrollView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:background="@color/white">
+
+            <TableLayout
+                android:id="@+id/tblAuditReport"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:background="@color/white"
+                android:padding="16dp">
+
+                <include layout="@layout/report_audit_activity_row"/>
+
+            </TableLayout>
+
+        </ScrollView>
+
+    </LinearLayout>
+
+</LinearLayout>
