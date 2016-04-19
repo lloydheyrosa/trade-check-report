@@ -66,9 +66,10 @@ public class General {
 
     public static String extFolder = Environment.getExternalStorageDirectory().getAbsolutePath().trim()+"/PPLUS";
 
-    public static String mainURL = "http://tcr.chasetech.com";
-    public static String POSTING_URL = "http://tcr.chasetech.com/api/storeaudit";
-    public static String POSTING_IMAGE = "http://tcr.chasetech.com/api/uploadimage";
+    public static String mainURL = "http://tcr2.chasetech.com";
+    public static String POSTING_URL = "http://tcr2.chasetech.com/api/storeaudit";
+    public static String POSTING_DETAILS_URL = "http://tcr2.chasetech.com/api/uploaddetails";
+    public static String POSTING_IMAGE = "http://tcr2.chasetech.com/api/uploadimage";
 
     public static String QUESTION_IMAGE_CAPTURE = "Pplus2 Image";
 

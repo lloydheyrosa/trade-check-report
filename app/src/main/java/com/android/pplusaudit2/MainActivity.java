@@ -705,19 +705,39 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            final android.os.Handler updateHandler;
-            updateHandler = new android.os.Handler();
+            new SaveDownloadedData().execute();
+        }
+    }
 
-            LineNumberReader lnReader;
-            int nMaxprogress;
 
-            final ProgressDialog pbar = new ProgressDialog(MainActivity.this);
-            pbar.setTitle("Loading");
-            pbar.setMessage("Storing downloaded data.. Please wait.");
-            pbar.setProgressStyle(pbar.STYLE_HORIZONTAL);
-            pbar.setCancelable(false);
+    public class SaveDownloadedData extends AsyncTask<Void, String, Boolean> {
 
-            nMaxprogress = 0;
+        int nMaxprogress = 0;
+        LineNumberReader lnReader;
+        SQLiteDatabase dbase;
+        String errmsg = "";
+        String presentFile = "";
+
+        @Override
+        protected void onPreExecute() {
+            dbase = sqLiteDB.getWritableDatabase();
+            progressDL = new ProgressDialog(MainActivity.this);
+            progressDL.setTitle("Loading");
+            progressDL.setMessage("Storing downloaded data.. Please wait.");
+            progressDL.setProgressStyle(progressDL.STYLE_HORIZONTAL);
+            progressDL.setCancelable(false);
+            progressDL.show();
+        }
+
+        @Override
+        protected void onProgressUpdate(String... values) {
+            progressDL.incrementProgressBy(1);
+            progressDL.setMessage(values[0]);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
 
             if(storeDIR.exists()) {
                 try{
@@ -856,805 +876,749 @@ public class MainActivity extends AppCompatActivity {
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
 
-            pbar.setMax(nMaxprogress);
-            pbar.show();
-
-                Thread threadLoad = new Thread(new Runnable() {
-                    @Override
-                    public void run() {
-
-                        try {
-
-                            final SQLiteDatabase dbase = sqLiteDB.getWritableDatabase();
-
-                            // STORES
-                            if(storeDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_STORE);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_STORE_storeid,
-                                        SQLiteDB.COLUMN_STORE_name,
-                                        SQLiteDB.COLUMN_STORE_gradematrixid,
-                                        SQLiteDB.COLUMN_STORE_audittempid,
-                                        SQLiteDB.COLUMN_STORE_templatename,
-                                        SQLiteDB.COLUMN_STORE_status,
-                                        SQLiteDB.COLUMN_STORE_initial,
-                                        SQLiteDB.COLUMN_STORE_exempt,
-                                        SQLiteDB.COLUMN_STORE_final,
-                                        SQLiteDB.COLUMN_STORE_startdate,
-                                        SQLiteDB.COLUMN_STORE_enddate,
-                                        SQLiteDB.COLUMN_STORE_storecode,
-                                        SQLiteDB.COLUMN_STORE_account,
-                                        SQLiteDB.COLUMN_STORE_customercode,
-                                        SQLiteDB.COLUMN_STORE_customer,
-                                        SQLiteDB.COLUMN_STORE_regioncode,
-                                        SQLiteDB.COLUMN_STORE_region,
-                                        SQLiteDB.COLUMN_STORE_distributorcode,
-                                        SQLiteDB.COLUMN_STORE_distributor,
-                                        SQLiteDB.COLUMN_STORE_templatecode
-                                };
-
-                                String sqlinsertStore = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORE, afields);
-
-                                SQLiteStatement sqlstatementStore = dbase.compileStatement(sqlinsertStore); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(storeDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementStore.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementStore.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementStore.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving Store data.." + values[1].trim());
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // CATEGORY
-                            if(categoryDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_CATEGORY);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_CATEGORY_id,
-                                        SQLiteDB.COLUMN_CATEGORY_audittempid,
-                                        SQLiteDB.COLUMN_CATEGORY_categoryorder,
-                                        SQLiteDB.COLUMN_CATEGORY_categoryid,
-                                        SQLiteDB.COLUMN_CATEGORY_categorydesc
-                                };
-
-                                String sqlinsertCategory = sql.createInsertBulkQuery(SQLiteDB.TABLE_CATEGORY, afields);
-
-                                SQLiteStatement sqlstatementCategory = dbase.compileStatement(sqlinsertCategory); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(categoryDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementCategory.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementCategory.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementCategory.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving Category data.." + values[1].trim());
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // GROUP
-                            if(groupDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_GROUP);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_GROUP_id,
-                                        SQLiteDB.COLUMN_GROUP_audittempid,
-                                        SQLiteDB.COLUMN_GROUP_categoryid,
-                                        SQLiteDB.COLUMN_GROUP_grouporder,
-                                        SQLiteDB.COLUMN_GROUP_groupid,
-                                        SQLiteDB.COLUMN_GROUP_groupdesc
-                                };
-
-                                String sqlinsertGroup = sql.createInsertBulkQuery(SQLiteDB.TABLE_GROUP, afields);
-
-                                SQLiteStatement sqlstatementGroup = dbase.compileStatement(sqlinsertGroup); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(groupDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementGroup.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementGroup.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementGroup.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving Group data.." + values[1].trim());
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // QUESTIONS
-                            if(questionDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_QUESTION);
-
-                               String[] afields = {
-                                        SQLiteDB.COLUMN_QUESTION_questionid,
-                                        SQLiteDB.COLUMN_QUESTION_order,
-                                        SQLiteDB.COLUMN_QUESTION_groupid,
-                                        SQLiteDB.COLUMN_QUESTION_audittempid,
-                                        SQLiteDB.COLUMN_QUESTION_formid,
-                                        SQLiteDB.COLUMN_QUESTION_formtypeid,
-                                        SQLiteDB.COLUMN_QUESTION_prompt,
-                                        SQLiteDB.COLUMN_QUESTION_required,
-                                        SQLiteDB.COLUMN_QUESTION_expectedans,
-                                        SQLiteDB.COLUMN_QUESTION_exempt,
-                                        SQLiteDB.COLUMN_QUESTION_brandpic,
-                                        SQLiteDB.COLUMN_QUESTION_defaultans
-                                };
-
-                                String sqlinsertQuestions = sql.createInsertBulkQuery(SQLiteDB.TABLE_QUESTION, afields);
-                                SQLiteStatement sqlstatementQuestions = dbase.compileStatement(sqlinsertQuestions);
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(questionDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] valuesquestion = line.trim().split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1); // split with comma delimeter, not including inside the ""
-
-                                    sqlstatementQuestions.clearBindings();
-                                    for (int i = 0; i < valuesquestion.length; i++) {
-                                        sqlstatementQuestions.bindString((i + 1), valuesquestion[i].trim().replace("\"", ""));
-                                    }
-                                    sqlstatementQuestions.execute();
-
-                                    //sql.AddRecord(SQLiteDB.TABLE_QUESTION, afields, avalues);
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving questions data.. " + valuesquestion[4]);
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // FORMS
-                            if(formsDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_FORMS);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_FORMS_formid,
-                                        SQLiteDB.COLUMN_FORMS_audittempid,
-                                        SQLiteDB.COLUMN_FORMS_typeid,
-                                        SQLiteDB.COLUMN_FORMS_prompt,
-                                        SQLiteDB.COLUMN_FORMS_required,
-                                        SQLiteDB.COLUMN_FORMS_expected,
-                                        SQLiteDB.COLUMN_FORMS_exempt,
-                                        SQLiteDB.COLUMN_FORMS_picture,
-                                        SQLiteDB.COLUMN_FORMS_defaultans
-                                };
-
-                                String sqlinsertForms = sql.createInsertBulkQuery(SQLiteDB.TABLE_FORMS, afields);
-                                SQLiteStatement sqlstatementForms = dbase.compileStatement(sqlinsertForms);
-                                dbase.beginTransaction();
-
-                                BufferedReader brForms = new BufferedReader(new FileReader(formsDIR));
-
-                                String line;
-
-                                line = brForms.readLine();
-
-                                while ((line = brForms.readLine()) != null) {
-                                    String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementForms.clearBindings();
-                                    for (int i = 0; i < values.length; i++) {
-                                        sqlstatementForms.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementForms.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving forms data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // FORM TYPES
-                            if(formtypesDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_FORMTYPE);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_FORMTYPE_code,
-                                        SQLiteDB.COLUMN_FORMTYPE_desc
-                                };
-
-                                String sqlinsertFormtypes = sql.createInsertBulkQuery(SQLiteDB.TABLE_FORMTYPE, afields);
-                                SQLiteStatement sqlstatementFormtypes = dbase.compileStatement(sqlinsertFormtypes);
-                                dbase.beginTransaction();
-
-                                BufferedReader brFormtypes = new BufferedReader(new FileReader(formtypesDIR));
-
-                                String line;
-
-                                line = brFormtypes.readLine();
-
-                                while ((line = brFormtypes.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementFormtypes.clearBindings();
-                                    for (int i = 0; i < values.length; i++) {
-                                        sqlstatementFormtypes.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementFormtypes.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving form types..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // SINGLE SELECT
-                            if(singleselectDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_SINGLESELECT);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_SINGLESELECT_formid,
-                                        SQLiteDB.COLUMN_SINGLESELECT_optionid,
-                                        SQLiteDB.COLUMN_SINGLESELECT_option
-                                };
-
-                                String sqlinsertSingle = sql.createInsertBulkQuery(SQLiteDB.TABLE_SINGLESELECT, afields);
-                                SQLiteStatement sqlstatementSingle = dbase.compileStatement(sqlinsertSingle);
-                                dbase.beginTransaction();
-
-                                BufferedReader bSingleselect = new BufferedReader(new FileReader(singleselectDIR));
-                                String line;
-
-                                line = bSingleselect.readLine();
-
-                                while ((line = bSingleselect.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementSingle.clearBindings();
-                                    for (int i = 0; i < values.length; i++)
-                                    {
-                                        sqlstatementSingle.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementSingle.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving single select data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // MULTI SELECT
-                            if(multiselectDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_MULTISELECT);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_MULTISELECT_formid,
-                                        SQLiteDB.COLUMN_MULTISELECT_optionid,
-                                        SQLiteDB.COLUMN_MULTISELECT_option
-                                };
-
-                                String sqlinsertMulti = sql.createInsertBulkQuery(SQLiteDB.TABLE_MULTISELECT, afields);
-                                SQLiteStatement sqlstatementMulti = dbase.compileStatement(sqlinsertMulti);
-                                dbase.beginTransaction();
-
-                                BufferedReader brMultiSelect = new BufferedReader(new FileReader(multiselectDIR));
-                                String line;
-                                line = brMultiSelect.readLine();
-
-                                while ((line = brMultiSelect.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementMulti.clearBindings();
-                                    for (int i = 0; i < values.length; i++) {
-                                        sqlstatementMulti.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementMulti.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving multi select data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // COMPUTATIONAL
-                            if(computationalDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_COMPUTATIONAL);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_COMPUTATIONAL_formid,
-                                        SQLiteDB.COLUMN_COMPUTATIONAL_formula
-                                };
-
-                                String sqlinsertComp = sql.createInsertBulkQuery(SQLiteDB.TABLE_COMPUTATIONAL, afields);
-                                SQLiteStatement sqlstatementComp = dbase.compileStatement(sqlinsertComp);
-                                dbase.beginTransaction();
-
-                                BufferedReader brComputational = new BufferedReader(new FileReader(computationalDIR));
-                                String line;
-                                line = brComputational.readLine();
-
-                                while ((line = brComputational.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementComp.clearBindings();
-                                    for (int i = 0; i < values.length; i++) {
-                                        sqlstatementComp.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementComp.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving computational data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // CONDITIONAL
-                            if(conditionalDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_CONDITIONAL);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_CONDITIONAL_formid,
-                                        SQLiteDB.COLUMN_CONDITIONAL_condition,
-                                        SQLiteDB.COLUMN_CONDITIONAL_conditionformsid,
-                                        SQLiteDB.COLUMN_CONDITIONAL_optionid
-                                };
-
-                                String sqlinsertCond = sql.createInsertBulkQuery(SQLiteDB.TABLE_CONDITIONAL, afields);
-                                SQLiteStatement sqlstatementCond = dbase.compileStatement(sqlinsertCond);
-                                dbase.beginTransaction();
-
-                                BufferedReader brConditional = new BufferedReader(new FileReader(conditionalDIR));
-                                String line;
-                                line = brConditional.readLine();
-
-                                while ((line = brConditional.readLine()) != null) {
-                                    final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
-
-                                    sqlstatementCond.clearBindings();
-                                    for (int i = 0; i < values.length; i++) {
-                                        sqlstatementCond.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementCond.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving conditional data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // SECONDARY KEY LIST
-                            if(secondarylistDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_SECONDARYKEYLIST);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid
-                                };
-
-                                String sqlinsertKeyList = sql.createInsertBulkQuery(SQLiteDB.TABLE_SECONDARYKEYLIST, afields);
-                                SQLiteStatement sqlstatementKeyList = dbase.compileStatement(sqlinsertKeyList); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(secondarylistDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-
-                                    sqlstatementKeyList.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementKeyList.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementKeyList.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving Secondary Keylist data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // SECONDARY DISPLAY
-                            if(secondarylookupDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_SECONDARYDISP);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_SECONDARYDISP_storeid,
-                                        SQLiteDB.COLUMN_SECONDARYDISP_categoryid,
-                                        SQLiteDB.COLUMN_SECONDARYDISP_brand
-                                };
-
-                                String sqlinsertSecDisp = sql.createInsertBulkQuery(SQLiteDB.TABLE_SECONDARYDISP, afields);
-                                SQLiteStatement sqlstatementSecDisp = dbase.compileStatement(sqlinsertSecDisp); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(secondarylookupDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-
-                                    sqlstatementSecDisp.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementSecDisp.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementSecDisp.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving Secondary display data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // OSA LIST
-                            if(osalistDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_OSALIST);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_OSALIST_osakeygroupid
-                                };
-
-                                String sqlinsertOsalist = sql.createInsertBulkQuery(SQLiteDB.TABLE_OSALIST, afields);
-                                SQLiteStatement sqlstatementOsalist = dbase.compileStatement(sqlinsertOsalist); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(osalistDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-                                    sqlstatementOsalist.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementOsalist.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementOsalist.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving OSA Lists data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // OSA LOOKUP
-                            if(osalookupDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_OSALOOKUP);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_OSALOOKUP_storeid,
-                                        SQLiteDB.COLUMN_OSALOOKUP_categoryid,
-                                        SQLiteDB.COLUMN_OSALOOKUP_target,
-                                        SQLiteDB.COLUMN_OSALOOKUP_total,
-                                        SQLiteDB.COLUMN_OSALOOKUP_lookupid
-                                };
-
-                                String sqlinsertOsalookup = sql.createInsertBulkQuery(SQLiteDB.TABLE_OSALOOKUP, afields);
-                                SQLiteStatement sqlstatementOsalookup = dbase.compileStatement(sqlinsertOsalookup); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(osalookupDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-
-                                    sqlstatementOsalookup.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementOsalookup.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementOsalookup.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving OSA lookup data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // SOS LIST
-                            if(soslistDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_SOSLIST);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_SOSLIST_soskeygroupid
-                                };
-
-                                String sqlinsertSoslist = sql.createInsertBulkQuery(SQLiteDB.TABLE_SOSLIST, afields);
-                                SQLiteStatement sqlstatementSoslist = dbase.compileStatement(sqlinsertSoslist); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(soslistDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-                                    sqlstatementSoslist.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementSoslist.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementSoslist.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving SOS Lists data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-
-                            // SOS LOOKUP
-                            if(soslookupDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_SOSLOOKUP);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_SOSLOOKUP_storeid,
-                                        SQLiteDB.COLUMN_SOSLOOKUP_categoryid,
-                                        SQLiteDB.COLUMN_SOSLOOKUP_sosid,
-                                        SQLiteDB.COLUMN_SOSLOOKUP_less,
-                                        SQLiteDB.COLUMN_SOSLOOKUP_value,
-                                        SQLiteDB.COLUMN_SOSLOOKUP_lookupid
-                                };
-
-                                String sqlinsertSoslookup = sql.createInsertBulkQuery(SQLiteDB.TABLE_SOSLOOKUP, afields);
-                                SQLiteStatement sqlstatementSoslookup = dbase.compileStatement(sqlinsertSoslookup); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(soslookupDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-
-                                    sqlstatementSoslookup.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementSoslookup.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementSoslookup.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving SOS lookup data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // IMAGE LISTS
-                            if(imageListDIR.exists()) {
-                                sql.TruncateTable(SQLiteDB.TABLE_PICTURES);
-
-                                String[] afields = {
-                                        SQLiteDB.COLUMN_PICTURES_name
-                                };
-
-                                String sqlinsertPictures = sql.createInsertBulkQuery(SQLiteDB.TABLE_PICTURES, afields);
-                                SQLiteStatement sqlstatementPictures = dbase.compileStatement(sqlinsertPictures); // insert into tblsample (fields1,fields2)
-                                dbase.beginTransaction();
-
-                                BufferedReader bReader = new BufferedReader(new FileReader(imageListDIR));
-
-                                String line;
-
-                                line = bReader.readLine();
-
-                                while ((line = bReader.readLine()) != null) {
-                                    final String[] values = line.split(",");
-
-                                    sqlstatementPictures.clearBindings();
-                                    for (int i = 0; i < afields.length; i++) {
-                                        sqlstatementPictures.bindString((i+1), values[i].trim().replace("\"",""));
-                                    }
-                                    sqlstatementPictures.execute();
-
-                                    updateHandler.post(new Runnable() {
-                                        @Override
-                                        public void run() {
-                                            pbar.setMessage("Saving brand images data..");
-                                            pbar.incrementProgressBy(1);
-                                        }
-                                    });
-                                }
-                                dbase.setTransactionSuccessful();
-                                dbase.endTransaction();
-                            }
-
-                            // CLOSE DATABASE CONN
-                            if(dbase.isOpen()) dbase.close();
-
-                            pbar.dismiss();
-
-/*                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    new AsyncDownloadImage().execute();
-                                }
-                            });*/
-
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
-                                    alertDialog.setTitle("Done");
-                                    alertDialog.setMessage("Saving Downloaded data done.");
-                                    alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
-                                            new DialogInterface.OnClickListener() {
-                                                public void onClick(DialogInterface dialog, int which) {
-                                                    wlStayAwake.release();
-                                                    Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
-                                                    startActivity(mainIntent);
-                                                    finish();
-/*                                                    Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
-                                                    startActivity(mainIntent);*/
-                                                }
-                                            });
-                                    alertDialog.show();
-                                }
-                            });
+            progressDL.setMax(nMaxprogress);
+
+            try {
+
+                // STORES
+                if(storeDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_STORE);
+
+                    presentFile = storeDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_STORE_storeid,
+                            SQLiteDB.COLUMN_STORE_name,
+                            SQLiteDB.COLUMN_STORE_gradematrixid,
+                            SQLiteDB.COLUMN_STORE_audittempid,
+                            SQLiteDB.COLUMN_STORE_templatename,
+                            SQLiteDB.COLUMN_STORE_status,
+                            SQLiteDB.COLUMN_STORE_initial,
+                            SQLiteDB.COLUMN_STORE_exempt,
+                            SQLiteDB.COLUMN_STORE_final,
+                            SQLiteDB.COLUMN_STORE_startdate,
+                            SQLiteDB.COLUMN_STORE_enddate,
+                            SQLiteDB.COLUMN_STORE_storecode,
+                            SQLiteDB.COLUMN_STORE_account,
+                            SQLiteDB.COLUMN_STORE_customercode,
+                            SQLiteDB.COLUMN_STORE_customer,
+                            SQLiteDB.COLUMN_STORE_regioncode,
+                            SQLiteDB.COLUMN_STORE_region,
+                            SQLiteDB.COLUMN_STORE_distributorcode,
+                            SQLiteDB.COLUMN_STORE_distributor,
+                            SQLiteDB.COLUMN_STORE_templatecode,
+                            SQLiteDB.COLUMN_STORE_auditid
+                    };
+
+                    String sqlinsertStore = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORE, afields);
+
+                    SQLiteStatement sqlstatementStore = dbase.compileStatement(sqlinsertStore); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(storeDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementStore.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementStore.bindString((i+1), values[i].trim().replace("\"",""));
                         }
-                        catch (final  Exception ex)
+                        sqlstatementStore.execute();
+
+                        publishProgress("Saving Store data.." + values[1].trim());
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // CATEGORY
+                if(categoryDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_CATEGORY);
+
+                    presentFile = categoryDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_CATEGORY_id,
+                            SQLiteDB.COLUMN_CATEGORY_audittempid,
+                            SQLiteDB.COLUMN_CATEGORY_categoryorder,
+                            SQLiteDB.COLUMN_CATEGORY_categoryid,
+                            SQLiteDB.COLUMN_CATEGORY_categorydesc
+                    };
+
+                    String sqlinsertCategory = sql.createInsertBulkQuery(SQLiteDB.TABLE_CATEGORY, afields);
+
+                    SQLiteStatement sqlstatementCategory = dbase.compileStatement(sqlinsertCategory); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(categoryDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementCategory.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementCategory.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementCategory.execute();
+
+                        publishProgress("Saving Category data.." + values[1].trim());
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // GROUP
+                if(groupDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_GROUP);
+
+                    presentFile = groupDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_GROUP_id,
+                            SQLiteDB.COLUMN_GROUP_audittempid,
+                            SQLiteDB.COLUMN_GROUP_categoryid,
+                            SQLiteDB.COLUMN_GROUP_grouporder,
+                            SQLiteDB.COLUMN_GROUP_groupid,
+                            SQLiteDB.COLUMN_GROUP_groupdesc
+                    };
+
+                    String sqlinsertGroup = sql.createInsertBulkQuery(SQLiteDB.TABLE_GROUP, afields);
+
+                    SQLiteStatement sqlstatementGroup = dbase.compileStatement(sqlinsertGroup); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(groupDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementGroup.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementGroup.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementGroup.execute();
+
+                        publishProgress("Saving Group data.." + values[1].trim());
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // QUESTIONS
+                if(questionDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_QUESTION);
+
+                    presentFile = questionDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_QUESTION_questionid,
+                            SQLiteDB.COLUMN_QUESTION_order,
+                            SQLiteDB.COLUMN_QUESTION_groupid,
+                            SQLiteDB.COLUMN_QUESTION_audittempid,
+                            SQLiteDB.COLUMN_QUESTION_formid,
+                            SQLiteDB.COLUMN_QUESTION_formtypeid,
+                            SQLiteDB.COLUMN_QUESTION_prompt,
+                            SQLiteDB.COLUMN_QUESTION_required,
+                            SQLiteDB.COLUMN_QUESTION_expectedans,
+                            SQLiteDB.COLUMN_QUESTION_exempt,
+                            SQLiteDB.COLUMN_QUESTION_brandpic,
+                            SQLiteDB.COLUMN_QUESTION_defaultans
+                    };
+
+                    String sqlinsertQuestions = sql.createInsertBulkQuery(SQLiteDB.TABLE_QUESTION, afields);
+                    SQLiteStatement sqlstatementQuestions = dbase.compileStatement(sqlinsertQuestions);
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(questionDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] valuesquestion = line.trim().split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1); // split with comma delimeter, not including inside the ""
+
+                        sqlstatementQuestions.clearBindings();
+                        for (int i = 0; i < valuesquestion.length; i++) {
+                            sqlstatementQuestions.bindString((i + 1), valuesquestion[i].trim().replace("\"", ""));
+                        }
+                        sqlstatementQuestions.execute();
+
+                        //sql.AddRecord(SQLiteDB.TABLE_QUESTION, afields, avalues);
+
+                        publishProgress("Saving questions data.. " + valuesquestion[4]);
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // FORMS
+                if(formsDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_FORMS);
+
+                    presentFile = formsDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_FORMS_formid,
+                            SQLiteDB.COLUMN_FORMS_audittempid,
+                            SQLiteDB.COLUMN_FORMS_typeid,
+                            SQLiteDB.COLUMN_FORMS_prompt,
+                            SQLiteDB.COLUMN_FORMS_required,
+                            SQLiteDB.COLUMN_FORMS_expected,
+                            SQLiteDB.COLUMN_FORMS_exempt,
+                            SQLiteDB.COLUMN_FORMS_picture,
+                            SQLiteDB.COLUMN_FORMS_defaultans
+                    };
+
+                    String sqlinsertForms = sql.createInsertBulkQuery(SQLiteDB.TABLE_FORMS, afields);
+                    SQLiteStatement sqlstatementForms = dbase.compileStatement(sqlinsertForms);
+                    dbase.beginTransaction();
+
+                    BufferedReader brForms = new BufferedReader(new FileReader(formsDIR));
+
+                    String line;
+
+                    line = brForms.readLine();
+
+                    while ((line = brForms.readLine()) != null) {
+                        String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementForms.clearBindings();
+                        for (int i = 0; i < values.length; i++) {
+                            sqlstatementForms.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementForms.execute();
+
+                        publishProgress("Saving forms data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // FORM TYPES
+                if(formtypesDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_FORMTYPE);
+
+                    presentFile = formtypesDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_FORMTYPE_code,
+                            SQLiteDB.COLUMN_FORMTYPE_desc
+                    };
+
+                    String sqlinsertFormtypes = sql.createInsertBulkQuery(SQLiteDB.TABLE_FORMTYPE, afields);
+                    SQLiteStatement sqlstatementFormtypes = dbase.compileStatement(sqlinsertFormtypes);
+                    dbase.beginTransaction();
+
+                    BufferedReader brFormtypes = new BufferedReader(new FileReader(formtypesDIR));
+
+                    String line;
+
+                    line = brFormtypes.readLine();
+
+                    while ((line = brFormtypes.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementFormtypes.clearBindings();
+                        for (int i = 0; i < values.length; i++) {
+                            sqlstatementFormtypes.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementFormtypes.execute();
+
+                        publishProgress("Saving form types..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // SINGLE SELECT
+                if(singleselectDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_SINGLESELECT);
+
+                    presentFile = singleselectDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_SINGLESELECT_formid,
+                            SQLiteDB.COLUMN_SINGLESELECT_optionid,
+                            SQLiteDB.COLUMN_SINGLESELECT_option
+                    };
+
+                    String sqlinsertSingle = sql.createInsertBulkQuery(SQLiteDB.TABLE_SINGLESELECT, afields);
+                    SQLiteStatement sqlstatementSingle = dbase.compileStatement(sqlinsertSingle);
+                    dbase.beginTransaction();
+
+                    BufferedReader bSingleselect = new BufferedReader(new FileReader(singleselectDIR));
+                    String line;
+
+                    line = bSingleselect.readLine();
+
+                    while ((line = bSingleselect.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementSingle.clearBindings();
+                        for (int i = 0; i < values.length; i++)
                         {
-                            ex.printStackTrace();
-                            runOnUiThread(new Runnable() {
-                                @Override
-                                public void run() {
-                                    messageBox.ShowMessage("Saving Exception", ex.getMessage());
-                                }
-                            });
-                            pbar.dismiss();
+                            sqlstatementSingle.bindString((i+1), values[i].trim().replace("\"",""));
                         }
+                        sqlstatementSingle.execute();
+
+                        publishProgress("Saving single select data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // MULTI SELECT
+                if(multiselectDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_MULTISELECT);
+
+                    presentFile = multiselectDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_MULTISELECT_formid,
+                            SQLiteDB.COLUMN_MULTISELECT_optionid,
+                            SQLiteDB.COLUMN_MULTISELECT_option
+                    };
+
+                    String sqlinsertMulti = sql.createInsertBulkQuery(SQLiteDB.TABLE_MULTISELECT, afields);
+                    SQLiteStatement sqlstatementMulti = dbase.compileStatement(sqlinsertMulti);
+                    dbase.beginTransaction();
+
+                    BufferedReader brMultiSelect = new BufferedReader(new FileReader(multiselectDIR));
+                    String line;
+                    line = brMultiSelect.readLine();
+
+                    while ((line = brMultiSelect.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementMulti.clearBindings();
+                        for (int i = 0; i < values.length; i++) {
+                            sqlstatementMulti.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementMulti.execute();
+
+                        publishProgress("Saving multi select data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // COMPUTATIONAL
+                if(computationalDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_COMPUTATIONAL);
+
+                    presentFile = computationalDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_COMPUTATIONAL_formid,
+                            SQLiteDB.COLUMN_COMPUTATIONAL_formula
+                    };
+
+                    String sqlinsertComp = sql.createInsertBulkQuery(SQLiteDB.TABLE_COMPUTATIONAL, afields);
+                    SQLiteStatement sqlstatementComp = dbase.compileStatement(sqlinsertComp);
+                    dbase.beginTransaction();
+
+                    BufferedReader brComputational = new BufferedReader(new FileReader(computationalDIR));
+                    String line;
+                    line = brComputational.readLine();
+
+                    while ((line = brComputational.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementComp.clearBindings();
+                        for (int i = 0; i < values.length; i++) {
+                            sqlstatementComp.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementComp.execute();
+
+                        publishProgress("Saving computational data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // CONDITIONAL
+                if(conditionalDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_CONDITIONAL);
+
+                    presentFile = conditionalDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_CONDITIONAL_formid,
+                            SQLiteDB.COLUMN_CONDITIONAL_condition,
+                            SQLiteDB.COLUMN_CONDITIONAL_conditionformsid,
+                            SQLiteDB.COLUMN_CONDITIONAL_optionid
+                    };
+
+                    String sqlinsertCond = sql.createInsertBulkQuery(SQLiteDB.TABLE_CONDITIONAL, afields);
+                    SQLiteStatement sqlstatementCond = dbase.compileStatement(sqlinsertCond);
+                    dbase.beginTransaction();
+
+                    BufferedReader brConditional = new BufferedReader(new FileReader(conditionalDIR));
+                    String line;
+                    line = brConditional.readLine();
+
+                    while ((line = brConditional.readLine()) != null) {
+                        final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
+
+                        sqlstatementCond.clearBindings();
+                        for (int i = 0; i < values.length; i++) {
+                            sqlstatementCond.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementCond.execute();
+
+                        publishProgress("Saving conditional data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // SECONDARY KEY LIST
+                if(secondarylistDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_SECONDARYKEYLIST);
+
+                    presentFile = secondarylistDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid
+                    };
+
+                    String sqlinsertKeyList = sql.createInsertBulkQuery(SQLiteDB.TABLE_SECONDARYKEYLIST, afields);
+                    SQLiteStatement sqlstatementKeyList = dbase.compileStatement(sqlinsertKeyList); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(secondarylistDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+
+                        sqlstatementKeyList.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementKeyList.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementKeyList.execute();
+
+                        publishProgress("Saving Secondary Keylist data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // SECONDARY DISPLAY
+                if(secondarylookupDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_SECONDARYDISP);
+
+                    presentFile = secondarylookupDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_SECONDARYDISP_storeid,
+                            SQLiteDB.COLUMN_SECONDARYDISP_categoryid,
+                            SQLiteDB.COLUMN_SECONDARYDISP_brand
+                    };
+
+                    String sqlinsertSecDisp = sql.createInsertBulkQuery(SQLiteDB.TABLE_SECONDARYDISP, afields);
+                    SQLiteStatement sqlstatementSecDisp = dbase.compileStatement(sqlinsertSecDisp); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(secondarylookupDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+
+                        sqlstatementSecDisp.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementSecDisp.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementSecDisp.execute();
+
+                        publishProgress("Saving Secondary display data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // OSA LIST
+                if(osalistDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_OSALIST);
+
+                    presentFile = osalistDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_OSALIST_osakeygroupid
+                    };
+
+                    String sqlinsertOsalist = sql.createInsertBulkQuery(SQLiteDB.TABLE_OSALIST, afields);
+                    SQLiteStatement sqlstatementOsalist = dbase.compileStatement(sqlinsertOsalist); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(osalistDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqlstatementOsalist.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementOsalist.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementOsalist.execute();
+
+                        publishProgress("Saving OSA Lists data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // OSA LOOKUP
+                if(osalookupDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_OSALOOKUP);
+
+                    presentFile = osalookupDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_OSALOOKUP_storeid,
+                            SQLiteDB.COLUMN_OSALOOKUP_categoryid,
+                            SQLiteDB.COLUMN_OSALOOKUP_target,
+                            SQLiteDB.COLUMN_OSALOOKUP_total,
+                            SQLiteDB.COLUMN_OSALOOKUP_lookupid
+                    };
+
+                    String sqlinsertOsalookup = sql.createInsertBulkQuery(SQLiteDB.TABLE_OSALOOKUP, afields);
+                    SQLiteStatement sqlstatementOsalookup = dbase.compileStatement(sqlinsertOsalookup); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(osalookupDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+
+                        sqlstatementOsalookup.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementOsalookup.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementOsalookup.execute();
+
+                        publishProgress("Saving OSA lookup data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // SOS LIST
+                if(soslistDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_SOSLIST);
+
+                    presentFile = soslistDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_SOSLIST_soskeygroupid
+                    };
+
+                    String sqlinsertSoslist = sql.createInsertBulkQuery(SQLiteDB.TABLE_SOSLIST, afields);
+                    SQLiteStatement sqlstatementSoslist = dbase.compileStatement(sqlinsertSoslist); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(soslistDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqlstatementSoslist.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementSoslist.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementSoslist.execute();
+
+                        publishProgress("Saving SOS Lists data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // SOS LOOKUP
+                if(soslookupDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_SOSLOOKUP);
+
+                    presentFile = soslookupDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_SOSLOOKUP_storeid,
+                            SQLiteDB.COLUMN_SOSLOOKUP_categoryid,
+                            SQLiteDB.COLUMN_SOSLOOKUP_sosid,
+                            SQLiteDB.COLUMN_SOSLOOKUP_less,
+                            SQLiteDB.COLUMN_SOSLOOKUP_value,
+                            SQLiteDB.COLUMN_SOSLOOKUP_lookupid
+                    };
+
+                    String sqlinsertSoslookup = sql.createInsertBulkQuery(SQLiteDB.TABLE_SOSLOOKUP, afields);
+                    SQLiteStatement sqlstatementSoslookup = dbase.compileStatement(sqlinsertSoslookup); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(soslookupDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+
+                        sqlstatementSoslookup.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementSoslookup.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementSoslookup.execute();
+
+                        publishProgress("Saving SOS lookup data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // IMAGE LISTS
+                if(imageListDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_PICTURES);
+
+                    presentFile = imageListDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_PICTURES_name
+                    };
+
+                    String sqlinsertPictures = sql.createInsertBulkQuery(SQLiteDB.TABLE_PICTURES, afields);
+                    SQLiteStatement sqlstatementPictures = dbase.compileStatement(sqlinsertPictures); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(imageListDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqlstatementPictures.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqlstatementPictures.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqlstatementPictures.execute();
+
+                        publishProgress("Saving brand images data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                result = true;
+            }
+            catch (FileNotFoundException fex)
+            {
+                fex.printStackTrace();
+                Log.e("Exception", fex.getMessage());
+                errmsg = fex.getMessage() + ", file not found.\nFILE: " + presentFile;
+                dbase.setTransactionSuccessful();
+                dbase.endTransaction();
+            }
+            catch (IOException iex) {
+                iex.printStackTrace();
+                Log.e("Exception", iex.getMessage());
+                errmsg = iex.getMessage() + "\nFILE: " + presentFile;
+                dbase.setTransactionSuccessful();
+                dbase.endTransaction();
+            }
+            catch (Exception ex) {
+                ex.printStackTrace();
+                Log.e("Exception", ex.getMessage());
+                errmsg = ex.getMessage() + ", Some files are corrupted.\nFILE: " + presentFile;
+                dbase.setTransactionSuccessful();
+                dbase.endTransaction();
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDL.dismiss();
+            alertDialog = new AlertDialog.Builder(MainActivity.this).create();
+
+            // CLOSE DATABASE CONN
+            if(dbase.isOpen()) dbase.close();
+
+            if(!bResult) {
+                alertDialog.setTitle("Exception error");
+                alertDialog.setMessage(errmsg);
+                alertDialog.setCancelable(false);
+                alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        sql.TruncateTable(SQLiteDB.TABLE_USER);
+                        finish();
                     }
                 });
-                threadLoad.start();
+                alertDialog.show();
+                return;
+            }
+
+            alertDialog.setTitle("Done");
+            alertDialog.setMessage("Saving Downloaded data done.");
+            alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            wlStayAwake.release();
+                            Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
+                            startActivity(mainIntent);
+                            finish();
+/*                                                    Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
+                                                    startActivity(mainIntent);*/
+                        }
+                    });
+            alertDialog.show();
         }
     }
 }

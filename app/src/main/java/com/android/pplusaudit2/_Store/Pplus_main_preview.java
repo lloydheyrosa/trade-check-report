@@ -309,6 +309,11 @@ public class Pplus_main_preview extends AppCompatActivity {
 
                         formtypedesc = sqlLibrary.GetFormTypeDesc(formtypeid);
 
+                        // FOR MULTI LINE, REPLACE ENDLINES WITH WHITESPACE
+                        if(formtypeid == 5) {
+                            fullAnswer = fullAnswer.trim().replace("\n", " ");
+                        }
+
                         strDetailsBody += categoryName + "|";
                         strDetailsBody += groupDesc + "|";
                         strDetailsBody += prompt + "|";
@@ -365,6 +370,11 @@ public class Pplus_main_preview extends AppCompatActivity {
                                     cursCondAns.close();
 
                                     fullAnswer = childAnswer;
+
+                                    // FOR MULTI LINE, REPLACE ENDLINES WITH WHITESPACE
+                                    if(condtypeid == 5 && !childAnswer.equals("")) {
+                                        fullAnswer = childAnswer.trim().replace("\n", " ");
+                                    }
 
                                     // SINGLE ITEM
                                     if (condtypeid == 10 && !childAnswer.equals("")) { // set full answer for single item
@@ -482,9 +492,14 @@ public class Pplus_main_preview extends AppCompatActivity {
                     String distributorCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
                     String distributor = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
                     String templateCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatecode));
+                    String auditid = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_auditid));
+
+                    double osa = 0.0;
+                    double npi = 0.0;
+                    double planogram = 0.0;
 
                     sBody += General.usercode + "|"
-                            + General.username + "|"
+                            + auditid + "|"
                             + account + "|"
                             + customerCode + "|"
                             + customer + "|"
@@ -494,11 +509,13 @@ public class Pplus_main_preview extends AppCompatActivity {
                             + distributor + "|"
                             + storeCode + "|"
                             + storename + "|"
-                            + startDate + "|"
-                            + endDate + "|"
                             + templateCode + "|"
                             + storeTemplate + "|"
-                            + storeFinalValue;
+                            + storeFinalValue + "|"
+                            + String.valueOf(osa) + "|"
+                            + String.valueOf(npi) + "|"
+                            + String.valueOf(planogram);
+
                     sBody += "\n";
                     sBody += strDetailsBody;
                 }
@@ -864,60 +881,7 @@ public class Pplus_main_preview extends AppCompatActivity {
                     // posting successful
                     strImageFolder = data.getString("audit_id");
 
-
-                    // STORE CATEGORY
-                    Cursor cursStoreCategory = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + previewStoreID + "' AND " + SQLiteDB.COLUMN_STORECATEGORY_status + " > '0'");
-                    cursStoreCategory.moveToFirst();
-
-                    int totalImages = 0;
-                    ArrayList<String> aStrFilenames = new ArrayList<>();
-                    ArrayList<File> aFileImages = new ArrayList<>();
-
-                    while (!cursStoreCategory.isAfterLast()) {
-
-                        int storecategoryID = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
-
-                        // STORE CATEGORY GROUP
-                        Cursor cursStoreCategoryGroups = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = '" + storecategoryID + "' AND " + SQLiteDB.COLUMN_STORECATEGORYGROUP_status + " > '0'");
-                        cursStoreCategoryGroups.moveToFirst();
-
-                        while (!cursStoreCategoryGroups.isAfterLast()) {
-
-                            int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
-
-                            if(!sqlLibrary.HasQuestionsByGroup(storeCategroupID)) {
-                                cursStoreCategoryGroups.moveToNext();
-                                continue;
-                            }
-
-                            // STORE QUESTION IMAGES
-                            Cursor cursImages = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + "," + SQLiteDB.COLUMN_STOREQUESTION_answer + "," + SQLiteDB.COLUMN_STOREQUESTION_isAnswered
-                                    + " FROM " + SQLiteDB.TABLE_STOREQUESTION
-                                    + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
-                                    + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " = '2' AND " + SQLiteDB.COLUMN_STOREQUESTION_isAnswered + " = '1' AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategroupID
-                                    + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
-                            cursImages.moveToFirst();
-                            totalImages += cursImages.getCount();
-
-                            while (!cursImages.isAfterLast()) {
-                                String strFilename = cursImages.getString(cursImages.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
-                                File file = new File(Settings.captureFolder, strFilename);
-                                aStrFilenames.add(strFilename);
-                                aFileImages.add(file);
-                                cursImages.moveToNext();
-                            }
-                            cursImages.close();
-
-                            cursStoreCategoryGroups.moveToNext();
-                        }
-
-                        cursStoreCategoryGroups.close();
-                        cursStoreCategory.moveToNext();
-                    }
-
-                    cursStoreCategory.close();
-
-                    new AsyncPostImages(totalImages, aStrFilenames, aFileImages).execute();
+                    new AsyncPostFile2(filepathToSend, strFilenameToSend, General.POSTING_DETAILS_URL).execute();
                 }
                 else {
                     postDialog = new AlertDialog.Builder(Pplus_main_preview.this).create();
@@ -936,6 +900,197 @@ public class Pplus_main_preview extends AppCompatActivity {
                 jex.printStackTrace();
                 Log.e("JSONException", jex.getMessage());
             }
+        }
+    }
+
+    public class AsyncPostFile2 extends AsyncTask<Void, Void, Boolean> {
+
+        private final File fileToSend;
+        private final String postingURL;
+        private final String strFilename;
+        String response = "";
+        String error = "";
+
+        public AsyncPostFile2(File filepath, String strFilename, String url) {
+            this.fileToSend = filepath;
+            this.postingURL = url.trim();
+            this.strFilename = strFilename;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(Pplus_main_preview.this, "", "Posting audit details.", true);
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+
+            Boolean result = false;
+
+            String attachmentName = "data";
+            String attachmentFileName = strFilename;
+            String crlf = "\r\n";
+            String twoHyphens = "--";
+            String boundary =  "*****";
+
+            String response = "";
+
+            int bytesRead, bytesAvailable, bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1*1024*1024;
+
+            try {
+
+                FileInputStream fileInputStream = new FileInputStream(fileToSend); // text file to upload
+                HttpURLConnection httpUrlConnection = null;
+                URL url = new URL(postingURL); // url to post
+                httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setUseCaches(false);
+                httpUrlConnection.setDoOutput(true);
+
+                httpUrlConnection.setRequestMethod("POST");
+                httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+                httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
+                httpUrlConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+
+                DataOutputStream request = new DataOutputStream(
+                        httpUrlConnection.getOutputStream());
+
+                request.writeBytes(twoHyphens + boundary + crlf);
+                request.writeBytes("Content-Disposition: form-data; name=\"" +
+                        attachmentName + "\";filename=\"" + attachmentFileName + "\"" + crlf);
+                request.writeBytes(crlf);
+
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                // Read file
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0)
+                {
+                    request.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                }
+
+                //I want to send only 8 bit black & white bitmaps
+/*                byte[] pixels = new byte[bitmap.getWidth() * bitmap.getHeight()];
+                for (int i = 0; i < bitmap.getWidth(); ++i) {
+                    for (int j = 0; j < bitmap.getHeight(); ++j) {
+                        //we're interested only in the MSB of the first byte,
+                        //since the other 3 bytes are identical for B&W images
+                        pixels[i + j] = (byte) ((bitmap.getPixel(i, j) & 0x80) >> 7);
+                    }
+                }
+
+                request.write(pixels);*/
+
+                request.writeBytes(crlf);
+                request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
+                request.flush();
+                request.close();
+
+                InputStream responseStream = new
+                        BufferedInputStream(httpUrlConnection.getInputStream());
+
+                BufferedReader responseStreamReader =
+                        new BufferedReader(new InputStreamReader(responseStream));
+
+                String line = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ((line = responseStreamReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
+                }
+                responseStreamReader.close();
+
+                response = stringBuilder.toString();
+                responseStream.close();
+                httpUrlConnection.disconnect();
+
+                result = true;
+            }
+            catch (final MalformedURLException ex) {
+                ex.printStackTrace();
+                error = ex.getMessage();
+            }
+            catch (final ProtocolException pex) {
+                pex.printStackTrace();
+                error = pex.getMessage();
+            }
+            catch (final IOException ioex) {
+                ioex.printStackTrace();
+                error = ioex.getMessage();
+            }
+            finally {
+                return result;
+            }
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            progressDL.dismiss();
+            if(!aBoolean) {
+                Toast.makeText(Pplus_main_preview.this, error, Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            // STORE CATEGORY
+            Cursor cursStoreCategory = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + previewStoreID + "' AND " + SQLiteDB.COLUMN_STORECATEGORY_status + " > '0'");
+            cursStoreCategory.moveToFirst();
+
+            int totalImages = 0;
+            ArrayList<String> aStrFilenames = new ArrayList<>();
+            ArrayList<File> aFileImages = new ArrayList<>();
+
+            while (!cursStoreCategory.isAfterLast()) {
+
+                int storecategoryID = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
+
+                // STORE CATEGORY GROUP
+                Cursor cursStoreCategoryGroups = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = '" + storecategoryID + "' AND " + SQLiteDB.COLUMN_STORECATEGORYGROUP_status + " > '0'");
+                cursStoreCategoryGroups.moveToFirst();
+
+                while (!cursStoreCategoryGroups.isAfterLast()) {
+
+                    int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+
+                    if(!sqlLibrary.HasQuestionsByGroup(storeCategroupID)) {
+                        cursStoreCategoryGroups.moveToNext();
+                        continue;
+                    }
+
+                    // STORE QUESTION IMAGES
+                    Cursor cursImages = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + "," + SQLiteDB.COLUMN_STOREQUESTION_answer + "," + SQLiteDB.COLUMN_STOREQUESTION_isAnswered
+                            + " FROM " + SQLiteDB.TABLE_STOREQUESTION
+                            + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
+                            + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " = '2' AND " + SQLiteDB.COLUMN_STOREQUESTION_isAnswered + " = '1' AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategroupID
+                            + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
+                    cursImages.moveToFirst();
+                    totalImages += cursImages.getCount();
+
+                    while (!cursImages.isAfterLast()) {
+                        String strFilename = cursImages.getString(cursImages.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
+                        File file = new File(Settings.captureFolder, strFilename);
+                        aStrFilenames.add(strFilename);
+                        aFileImages.add(file);
+                        cursImages.moveToNext();
+                    }
+                    cursImages.close();
+
+                    cursStoreCategoryGroups.moveToNext();
+                }
+
+                cursStoreCategoryGroups.close();
+                cursStoreCategory.moveToNext();
+            }
+
+            cursStoreCategory.close();
+
+            new AsyncPostImages(totalImages, aStrFilenames, aFileImages).execute();
         }
     }
 

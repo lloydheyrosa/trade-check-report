@@ -16,7 +16,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "unileverdb";
     private static final String TAG = "SettingsProvider";
-    private static final int DATABASE_VERSION = 1;
+    private static final int DATABASE_VERSION = 2;
 
     public SQLiteDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -59,6 +59,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
     public static final String COLUMN_STORE_distributorcode = "distributor_code";
     public static final String COLUMN_STORE_distributor = "distributor";
     public static final String COLUMN_STORE_templatecode = "template_code";
+    public static final String COLUMN_STORE_auditid = "auditID"; // new field
 
     private static final String DATABASE_CREATE_TABLE_STORE = "CREATE TABLE " + TABLE_STORE + "("
             + COLUMN_STORE_id + " integer PRIMARY KEY autoincrement, "
@@ -84,7 +85,8 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_STORE_region + " text, "
             + COLUMN_STORE_distributorcode + " text, "
             + COLUMN_STORE_distributor + " text, "
-            + COLUMN_STORE_templatecode + " text)";
+            + COLUMN_STORE_templatecode + " text, "
+            + COLUMN_STORE_auditid + " numeric)";
 
 
     // CATEGORY TABLE
@@ -449,6 +451,9 @@ public class SQLiteDB extends SQLiteOpenHelper {
 /*                db.execSQL("ALTER TABLE " + TABLE_QUESTION + " ADD COLUMN " + COLUMN_QUESTION_defaultans + " TEXT DEFAULT 0");
                 db.execSQL("ALTER TABLE " + TABLE_FORMS + " ADD COLUMN " + COLUMN_FORMS_defaultans + " TEXT DEFAULT 0");
                 db.execSQL("ALTER TABLE " + TABLE_CONDITIONAL + " ADD COLUMN " + COLUMN_CONDITIONAL_optionid + " NUMERIC DEFAULT 0");*/
+
+                // 2
+                db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_auditid + " NUMERIC");
 
                 Log.w(TAG, "Upgrading settings database from version " + oldVersion + " to "
                         + newVersion);
