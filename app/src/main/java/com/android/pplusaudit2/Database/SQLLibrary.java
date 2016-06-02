@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 
 import java.util.Date;
@@ -22,6 +23,7 @@ public class SQLLibrary {
     public SQLLibrary(Context context) {
         dbHelper = new SQLiteDB(context);
         mContext = context;
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(context, General.errlogFile));
     }
 
     /** ADDING RECORDS ********************************************************/
@@ -247,8 +249,7 @@ public class SQLLibrary {
     public int GetTotalQuestions(String storecateggroupid) {
         Cursor cursTotalQuestions = RawQuerySelect("SELECT COUNT(*) AS totQuestions FROM " + SQLiteDB.TABLE_STOREQUESTION
                 + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
-                + " WHERE " + SQLiteDB.COLUMN_QUESTION_required + " = '1'"
-                + " AND " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('2','3','4','5','6','7','8','9','10','11','12')"
+                + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('2','3','4','5','6','7','8','9','10','11','12')"
                 + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);
         cursTotalQuestions.moveToFirst();
 
@@ -270,7 +271,7 @@ public class SQLLibrary {
         return ret;
     }
 
-    public boolean HasQuestionsByGroup(int storeCategorygroupID) {
+    public boolean HasQuestionsPerGroup(int storeCategorygroupID) {
         boolean res = false;
         Cursor cursGetQuestions = GetDataCursor(SQLiteDB.TABLE_STOREQUESTION, SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategorygroupID);
         cursGetQuestions.moveToFirst();
@@ -447,7 +448,7 @@ public class SQLLibrary {
         return cursor;
     }*/
 
-    public void DeleteAllTables() {
+    public void InitializeAllTables() {
         TruncateTable(SQLiteDB.TABLE_USER);
         TruncateTable(SQLiteDB.TABLE_STORE);
         TruncateTable(SQLiteDB.TABLE_QUESTION);
@@ -469,6 +470,8 @@ public class SQLLibrary {
         TruncateTable(SQLiteDB.TABLE_SOSLIST);
         TruncateTable(SQLiteDB.TABLE_SOSLOOKUP);
         TruncateTable(SQLiteDB.TABLE_PICTURES);
+        TruncateTable(SQLiteDB.TABLE_NPI);
+        TruncateTable(SQLiteDB.TABLE_PLANOGRAM);
     }
 
     public boolean TruncateTable(String tableName) {

@@ -12,6 +12,7 @@ import android.view.View;
 import android.widget.Button;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.R;
@@ -39,6 +40,7 @@ public class Pplus_Questions_signaturepad extends AppCompatActivity {
 
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
         messageBox = new MyMessageBox(this);
         sqlLibrary = new SQLLibrary(this);
@@ -128,11 +130,6 @@ public class Pplus_Questions_signaturepad extends AppCompatActivity {
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
-
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
-        }
 
         if(id == android.R.id.home) {
             finish();

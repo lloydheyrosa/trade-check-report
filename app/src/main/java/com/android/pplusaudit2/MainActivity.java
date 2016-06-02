@@ -5,6 +5,7 @@ import android.app.ProgressDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.SharedPreferences;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
@@ -15,7 +16,6 @@ import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
-import android.support.design.widget.Snackbar;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
 import android.view.View;
@@ -27,18 +27,30 @@ import android.widget.EditText;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
+import com.android.pplusaudit2.Dashboard.DashboardActivity;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.Debug.DebugLog;
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.Json.JSON_pplus;
 
+import java.io.BufferedInputStream;
+import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.FileReader;
 
-import com.android.pplusaudit2.Pplus_Main.Field_main;
-
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.entity.StringEntity;
+import org.apache.http.impl.client.DefaultHttpClient;
+import org.apache.http.params.BasicHttpParams;
+import org.apache.http.params.HttpConnectionParams;
+import org.apache.http.params.HttpParams;
+import org.apache.http.util.EntityUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -81,6 +93,10 @@ public class MainActivity extends AppCompatActivity {
     File soslookupDIR;
     File imageListDIR;
     File imageProductDIR;
+    File npiDIR;
+    File planogramDIR;
+    File pcategoryDIR;
+    File pgroupDIR;
 
     String urlDownload;
     String urlDownloadperFile;
@@ -98,10 +114,16 @@ public class MainActivity extends AppCompatActivity {
 
     View mainLayout;
 
+    EditText txtUsername;
+    EditText txtPassword;
+
     private ProgressDialog progressDL;
 
     PowerManager powerman;
     PowerManager.WakeLock wlStayAwake;
+
+    String TAG = "";
+    boolean isSendError = false;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,8 +134,15 @@ public class MainActivity extends AppCompatActivity {
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
 
         final TextView tvwVersion = (TextView) findViewById(R.id.tvwVersion);
-        String versionCode = "v. " + General.GetVersionName(this);
-        tvwVersion.setText(versionCode);
+        General.versionName = "v. " + General.GetVersionName(this);
+        General.versionCode = General.GetVersionCode(this);
+        tvwVersion.setText(General.versionName);
+
+        General.deviceID = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+        General.errlogFile = General.deviceID + ".txt";
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
+
+        TAG = MainActivity.this.getLocalClassName();
 
         UrlAPI =  General.mainURL + "/api/auth";
         urlGet =  General.mainURL + "/api/auth?";
@@ -134,57 +163,17 @@ public class MainActivity extends AppCompatActivity {
 
         Settings.postingFolder = new File(appfolder, "Posted");
         Settings.postingFolder.mkdirs();
-
         Settings.imgFolder = new File(appfolder, "Images");
         Settings.imgFolder.mkdirs();
-
-        Cursor cursExisitingUser = sql.GetDataCursor(SQLiteDB.TABLE_USER);
-        cursExisitingUser.moveToFirst();
-
-        if(cursExisitingUser.getCount() == 1) {
-
-            for (String files : General.DOWNLOAD_FILES) {
-                File fDownload = new File(dlpath, files);
-                if(!fDownload.exists()) {
-                    Toast.makeText(MainActivity.this, "Downloaded files are incomplete. Please log in again.", Toast.LENGTH_LONG).show();
-
-                    sql.DeleteAllTables();
-                    Settings.captureFolder.delete();
-                    Settings.signatureFolder.delete();
-
-                    for (String fileToDelete : General.DOWNLOAD_FILES) {
-                        File fDelete = new File(dlpath, fileToDelete);
-                        if(!fDelete.delete()) Log.e("Deleting file", "Can't delete " + fileToDelete);
-                    }
-                    return;
-                }
-            }
-
-            General.usercode = cursExisitingUser.getString(cursExisitingUser.getColumnIndex("code"));
-            General.username = cursExisitingUser.getString(cursExisitingUser.getColumnIndex("name"));
-            Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
-            startActivity(mainIntent);
-            finish();
-            return;
-        }
+        Settings.captureFolder = new File(appfolder, "Captured Image");
+        Settings.captureFolder.mkdirs();
+        Settings.signatureFolder = new File(appfolder, "Signatures");
+        Settings.signatureFolder.mkdirs();
 
         Button btnLogin = (Button) findViewById(R.id.btnLogin);
 
-        final EditText txtUsername = (EditText) findViewById(R.id.txtUsername);
-        //final Spinner spnUsername = (Spinner) findViewById(R.id.spnUsername);
-        final EditText txtPassword = (EditText) findViewById(R.id.txtPassword);
-
-/*        ArrayList<String> arrUsers = new ArrayList<String>();
-        for (int i = 1; i <= 20; i++) {
-            arrUsers.add("USER" + i);
-        }
-
-        ArrayAdapter<String> dataAdapter = new ArrayAdapter<String>(MainActivity.this, android.R.layout.simple_spinner_dropdown_item, arrUsers);
-        dataAdapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item);
-        spnUsername.setAdapter(dataAdapter);*/
-
-        //txtUsername.setText("anj.castillo@unilever.com");
-        //txtPassword.setText("password");
+        txtUsername = (EditText) findViewById(R.id.txtUsername);
+        txtPassword = (EditText) findViewById(R.id.txtPassword);
 
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
@@ -192,11 +181,9 @@ public class MainActivity extends AppCompatActivity {
             public void onClick(View v) {
                 password = txtPassword.getText().toString().trim();
                 username = txtUsername.getText().toString().trim();
-                //username = String.valueOf(spnUsername.getSelectedItem());
 
                 if(username.isEmpty()) {
                     txtUsername.setError("Username required!");
-                    //Snackbar.make(mainLayout, "Username required.", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                     return;
                 }
 
@@ -208,15 +195,167 @@ public class MainActivity extends AppCompatActivity {
                 if(username.isEmpty() && password.isEmpty()) {
                     txtUsername.setError("Username required!");
                     txtPassword.setError("Password required!");
-                    //Snackbar.make(mainLayout, "Username and password required.", Snackbar.LENGTH_LONG).setAction("Action", null).show();
                     return;
                 }
 
-                wlStayAwake.acquire();
-                //new AsyncGetUser().execute();
-                new AsyncPingWebServer().execute();
+                if(General.mainAutoUpdate.isUpdating) {
+                    Toast.makeText(MainActivity.this, "New update is downloading. Please wait", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                isSendError = false;
+                new CheckInternet().execute();
             }
         });
+
+        General.sharedPref = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
+        boolean isLoggedIn = General.sharedPref.getBoolean(getString(R.string.pref_isLogged), false);
+        General.hashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
+        General.oldversionCode = General.sharedPref.getInt(getString(R.string.pref_oldvcode), General.versionCode);
+        General.dateLog = General.sharedPref.getString(getString(R.string.pref_date_log), General.getDateToday());
+
+        General.userName = General.sharedPref.getString(getString(R.string.pref_username), "");
+        General.userPassword = General.sharedPref.getString(getString(R.string.pref_password), "");
+
+        General.errorLog = new ErrorLog(General.errlogFile, this);
+        General.errorLog.appendLog("New application run.", TAG);
+
+        SharedPreferences.Editor spEdit = General.sharedPref.edit();
+        spEdit.putInt(getString(R.string.pref_oldvcode), General.versionCode);
+        spEdit.putString(getString(R.string.pref_date_log), General.getDateToday());
+        spEdit.apply();
+
+        if(isLoggedIn) {
+            Cursor cursExisitingUser = sql.GetDataCursor(SQLiteDB.TABLE_USER);
+            cursExisitingUser.moveToFirst();
+
+            General.usercode = cursExisitingUser.getString(cursExisitingUser.getColumnIndex("code"));
+            General.userFullName = cursExisitingUser.getString(cursExisitingUser.getColumnIndex("name"));
+            Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
+            startActivity(mainIntent);
+            finish();
+            return;
+        }
+
+        General.mainAutoUpdate = new AutoUpdate(this);
+    }
+
+    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+        String errmsg = "";
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking internet connection.");
+            wlStayAwake.acquire();
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
+
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            if(activeNetwork != null) {
+                if(activeNetwork.isFailover()) errmsg = "Internet connection fail over.";
+                result = activeNetwork.isAvailable() || activeNetwork.isConnectedOrConnecting();
+            }
+            else {
+                errmsg = "No internet connection.";
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDL.dismiss();
+            if(!bResult) {
+                Toast.makeText(MainActivity.this, errmsg, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            if(isSendError) {
+                isSendError = false;
+                new PostErrorReport().execute();
+            }
+            else
+                new CheckUpdates().execute();
+        }
+    }
+
+    public class CheckUpdates extends AsyncTask<Void, Void, Boolean> {
+
+        String messages = "";
+        private DefaultHttpClient httpclient = new DefaultHttpClient();
+
+        String urlCheck = AutoUpdate.API_URL_CHECK;
+
+        private boolean hasUpdate = false;
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking for new updates.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            if(General.BETA) urlCheck = AutoUpdate.API_BETA_URL_CHECK;
+
+            try {
+
+                HttpPost post = new HttpPost(urlCheck);
+                long start = System.currentTimeMillis();
+
+                HttpParams httpParameters = new BasicHttpParams();
+                int timeoutConnection = 10000;
+                HttpConnectionParams.setConnectionTimeout(httpParameters, timeoutConnection);
+                int timeoutSocket = 6000;
+                HttpConnectionParams.setSoTimeout(httpParameters, timeoutSocket);
+
+                httpclient.setParams(httpParameters);
+
+                String packagename = MainActivity.this.getPackageName();
+
+                StringEntity parameters = new StringEntity("pkgname=" + packagename);
+
+                post.setHeader("Content-Type", "application/x-www-form-urlencoded");
+                post.setEntity(parameters);
+                String response = EntityUtils.toString(httpclient.execute(post).getEntity(), "UTF-8");
+
+                int vcodeAPI = Integer.valueOf(response.trim());
+                if (vcodeAPI > General.versionCode) {
+                    hasUpdate = true;
+                }
+
+                result = true;
+            } catch (Exception ex) {
+                ex.printStackTrace();
+                messages = ex.getMessage() != null ? ex.getMessage() : ex.getLocalizedMessage();
+                General.errorLog.appendLog(messages, TAG);
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDL.dismiss();
+            if (!bResult) {
+                Toast.makeText(MainActivity.this, "Slow or unstable internet connection. Please try again.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            if (hasUpdate) {
+                General.mainAutoUpdate.StartAutoUpdate();
+                Toast.makeText(MainActivity.this, "An update has been released, please update system.", Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            new AsyncPingWebServer().execute();
+        }
     }
 
     @Override
@@ -229,7 +368,7 @@ public class MainActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.menu_send_error, menu);
         return true;
     }
 
@@ -240,15 +379,20 @@ public class MainActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        //noinspection SimplifiableIfStatement
-        if (id == R.id.action_settings) {
-            return true;
+        switch (id) {
+            case R.id.action_send_error:
+                isSendError = true;
+                new CheckInternet().execute();
+                break;
+            default:
+                break;
         }
 
         return super.onOptionsItemSelected(item);
     }
 
     public class AsyncPingWebServer extends AsyncTask<Void, Void, Integer> {
+        String errmsg = "";
         @Override
         protected void onPreExecute() {
             progressDL = ProgressDialog.show(MainActivity.this, "", "Checking web server availability.");
@@ -271,10 +415,15 @@ public class MainActivity extends AppCompatActivity {
                         nRet = 1;
                     }
                 } catch (MalformedURLException mue) {
-                    Log.e("MalformedURLException", mue.getMessage());
+                    errmsg = mue.getMessage() != null ? mue.getMessage() : "Can't connect to web server.";
+                    General.errorLog.appendLog(errmsg, TAG);
+                    Log.e("MalformedURLException", errmsg);
+
                     nRet = 3;
                 } catch (IOException ie) {
-                    Log.e("IOException", ie.getMessage());
+                    errmsg = ie.getMessage() != null ? ie.getMessage() : "Slow or unstable internet connection.";
+                    General.errorLog.appendLog(errmsg, TAG);
+                    Log.e("IOException", errmsg);
                     nRet = 3;
                 }
             }
@@ -289,7 +438,8 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Integer nReturn) {
             progressDL.dismiss();
             if(nReturn == 3) { // EXCEPTION ERROR
-                Toast.makeText(MainActivity.this, "Failed to connect to " + General.mainURL, Toast.LENGTH_SHORT).show();
+                Toast.makeText(MainActivity.this, errmsg, Toast.LENGTH_SHORT).show();
+                General.errorLog.appendLog(errmsg, TAG);
                 return;
             }
             if(nReturn == 0) { // WEB SERVER IS DOWN
@@ -316,7 +466,12 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // GET USER FROM WEB
-    public class AsyncGetUser extends AsyncTask<Void, Void, String> {
+    public class AsyncGetUser extends AsyncTask<Void, Void, Boolean> {
+
+        String errmsg = "";
+        String usercode;
+        String hashLogged;
+        String name;
 
         protected void onPreExecute() {
             progressDL = ProgressDialog.show(MainActivity.this, "", "Verifying user account....", true);
@@ -324,120 +479,106 @@ public class MainActivity extends AppCompatActivity {
             imm.hideSoftInputFromWindow(mainLayout.getWindowToken(), 0);
         }
 
-        protected String doInBackground(Void... urls) {
-            // Do some validation here
+        protected Boolean doInBackground(Void... urls) {
+
+            boolean result = false;
 
             try {
                 String urlfinal = urlGet + "email=" + username + "&pwd=" + password;
                 URL url = new URL(urlfinal);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
-                try {
-                    BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
-                    StringBuilder stringBuilder = new StringBuilder();
-                    String line;
-                    while ((line = bufferedReader.readLine()) != null) {
-                        stringBuilder.append(line).append("\n");
-                    }
-                    bufferedReader.close();
-                    return stringBuilder.toString();
+
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
                 }
-                finally{
-                    urlConnection.disconnect();
+                bufferedReader.close();
+
+                String response = stringBuilder.toString();
+
+                urlConnection.disconnect();
+
+                JSONObject data = new JSONObject(response);
+
+                if(!data.isNull("msg")) {
+                    errmsg = data.getString("msg");
+                }
+                else {
+                    usercode = data.getString("id").trim();
+                    name = data.getString("name").trim();
+                    hashLogged = data.getString("hash").trim();
+
+                    result = true;
                 }
             }
             catch(UnknownHostException e) {
-                Log.e("ERROR", e.getMessage(), e);
-                final String ex = e.getMessage();
-                progressDL.dismiss();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "Please check or connect wifi with internet connection. " + ex, Toast.LENGTH_LONG).show();
-                    }
-                });
-                return null;
-            }
-            catch(MalformedURLException e) {
-                Log.e("ERROR", e.getMessage(), e);
-                final String ex = e.getMessage();
-                progressDL.dismiss();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "(MalformedURLException) Invalid URL. " + ex, Toast.LENGTH_LONG).show();
-                    }
-                });
-                return null;
+                errmsg = e.getMessage() != null ? e.getMessage() : "Web Host not available. Please check connection.";
+                General.errorLog.appendLog(errmsg, TAG);
+                e.printStackTrace();
+                Log.e(TAG, errmsg, e);
             }
             catch(IOException e) {
-                Log.e("ERROR", e.getMessage(), e);
-                final String ex = e.getMessage();
-                progressDL.dismiss();
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        Toast.makeText(MainActivity.this, "(IOException) Stream not found. " + ex, Toast.LENGTH_LONG).show();
-                        //Snackbar.make(mainLayout, "(IOException) Stream not found. " + ex, Snackbar.LENGTH_LONG).setAction("Action", null).show();
-                    }
-                });
-                return null;
+                errmsg = e.getMessage() != null ? e.getMessage() : "Slow or unstable internet connection. Please try again.";
+                General.errorLog.appendLog(errmsg, TAG);
+                e.printStackTrace();
+                Log.e(TAG, errmsg);
             }
+            catch (JSONException e) {
+                errmsg = e.getMessage() != null ? e.getMessage() : "Error in data.";
+                General.errorLog.appendLog(errmsg, TAG);
+                e.printStackTrace();
+                Log.e(TAG, e.getMessage(), e);
+            }
+
+            return result;
         }
 
-        protected void onPostExecute(String response) {
-            if(response == null) {
-                progressDL.dismiss();
+        protected void onPostExecute(Boolean bResult) {
+            progressDL.dismiss();
+            if(!bResult) {
+                Toast.makeText(MainActivity.this, errmsg, Toast.LENGTH_LONG).show();
                 return;
             }
 
-            try {
-                JSONObject data = new JSONObject(response);
-                String usercode = "";
-                String name = "";
+            SharedPreferences.Editor spEditor = General.sharedPref.edit();
 
-                if(!data.isNull("msg")) {
-                    progressDL.dismiss();
-                    String msg = data.getString("msg");
-                    Snackbar.make(mainLayout, msg, Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                    return;
-                }
-                else {
-                    usercode = data.getString("id");
-                    name = data.getString("name");
-                }
+            General.usercode = usercode;
+            General.userFullName = name;
 
-                String[] afields = { SQLiteDB.COLUMN_USER_code, SQLiteDB.COLUMN_USER_name };
-                String[] avalues = { usercode, name };
-
-                Cursor cursUser = sql.GetDataCursor(SQLiteDB.TABLE_USER, SQLiteDB.COLUMN_USER_code + " = " + usercode);
-                cursUser.moveToFirst();
-
-                if(cursUser.getCount() > 0) {
-                    progressDL.dismiss();
-                    General.usercode = usercode;
-                    General.username = name;
-                    Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
-                    startActivity(mainIntent);
-                    finish();
-                    return;
-                }
-                sql.TruncateTable(SQLiteDB.TABLE_USER);
-
-                sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
-                General.usercode = usercode;
-                General.username = name;
-
-                urlDownload = urlDownload + "id=" + usercode;
-
-                progressDL.dismiss();
-                new AsyncDownloadFile().execute();
-
+            Cursor cursUser = sql.GetDataCursor(SQLiteDB.TABLE_USER);
+            String userCodeLogged = "";
+            if(cursUser.moveToFirst()) {
+                userCodeLogged = cursUser.getString(cursUser.getColumnIndex("code"));
             }
-            catch (JSONException ex) {
-                progressDL.dismiss();
-                Snackbar.make(mainLayout, ex.getMessage().trim(), Snackbar.LENGTH_SHORT).setAction("Action", null).show();
-                ex.printStackTrace();
+
+            General.userName = username.trim();
+            General.userPassword = password.trim();
+
+            Log.e("HASH", General.hashKey + " = " + hashLogged);
+            spEditor.putString(getString(R.string.pref_hash), hashLogged);
+            spEditor.putString(getString(R.string.pref_username), General.userName);
+            spEditor.putString(getString(R.string.pref_password), General.userPassword);
+            spEditor.putBoolean(getString(R.string.pref_isLogged), true);
+            spEditor.apply();
+
+            if(General.hashKey.trim().equals(hashLogged) && (usercode.equals(userCodeLogged))) {
+                General.hashKey = hashLogged;
+                Intent nxtIntent = new Intent(MainActivity.this, DashboardActivity.class);
+                startActivity(nxtIntent);
+                finish();
+                return;
             }
+
+            sql.InitializeAllTables();
+
+            String[] afields = { SQLiteDB.COLUMN_USER_code, SQLiteDB.COLUMN_USER_name };
+            String[] avalues = { usercode, name };
+            sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
+
+            urlDownload = urlDownload + "id=" + General.usercode;
+            new AsyncDownloadFile().execute();
         }
     }
 
@@ -579,15 +720,16 @@ public class MainActivity extends AppCompatActivity {
 
             AlertDialog alertDialog = new AlertDialog.Builder(MainActivity.this).create();
             alertDialog.setTitle("Done");
+            alertDialog.setCancelable(false);
             alertDialog.setMessage("Saving Downloaded data done.");
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             wlStayAwake.release();
-                            Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
+                            Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                             startActivity(mainIntent);
                             finish();
-/*                                                    Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
+/*                                                    Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                                                     startActivity(mainIntent);*/
                         }
                     });
@@ -596,16 +738,28 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DOWNLOADING FILE
-    public class AsyncDownloadFile extends AsyncTask<Void, Void, String> {
-
+    public class AsyncDownloadFile extends AsyncTask<Void, String, Boolean> {
+        String errmsg = "";
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(MainActivity.this, "", "Downloading data....", true);
+            progressDL = new ProgressDialog(MainActivity.this);
+            progressDL.setMessage("Downloading files.");
+            progressDL.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
+            progressDL.setMax(General.ARRAY_FILE_LISTS.length);
+            progressDL.setCancelable(false);
+            progressDL.show();
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected void onProgressUpdate(String... values) {
+            progressDL.incrementProgressBy(1);
+            progressDL.setMessage("Downloading " + values[0] + ".");
+        }
 
+        @Override
+        protected Boolean doInBackground(Void... params) {
+
+            boolean result = false;
             String saveDir = Uri.fromFile(dlpath).getPath();
 
             try{
@@ -658,6 +812,12 @@ public class MainActivity extends AppCompatActivity {
                         if(type.equals(General.SOS_LIST)) soslistDIR = new File(dlpath, fileName);
                         if(type.equals(General.SOS_LOOKUP)) soslookupDIR = new File(dlpath, fileName);
                         if(type.equals(General.IMG_LIST)) imageListDIR = new File(dlpath, fileName);
+                        if(type.equals(General.NPI_LIST)) npiDIR = new File(dlpath, fileName);
+                        if(type.equals(General.PLANOGRAM_LIST)) planogramDIR = new File(dlpath, fileName);
+                        if(type.equals(General.PERFECT_CATEGORY_LIST)) pcategoryDIR = new File(dlpath, fileName);
+                        if(type.equals(General.PERFECT_GROUP_LIST)) pgroupDIR = new File(dlpath, fileName);
+
+                        publishProgress(fileName);
 
                         // opens an output stream to save into file
                         FileOutputStream outputStream = new FileOutputStream(saveFilePath);
@@ -672,35 +832,35 @@ public class MainActivity extends AppCompatActivity {
                         outputStream.close();
                         inputStream.close();
 
-/*                        runOnUiThread(new Runnable() {
-                            @Override
-                            public void run() {
-                                messageBox.ShowMessage("Download", "Download complete");
-                            }
-                        });*/
-
                     } else {
-                        return "Error in downloading files.\nResponse code: " + String.valueOf(responseCode);
+                        errmsg = "Error in downloading files.\nResponse code: " + String.valueOf(responseCode);
                     }
 
                     httpConn.disconnect();
                 }
+                result = true;
             }
-            catch (Exception ex)
-            {
-
+            catch(IllegalStateException ex) {
+                General.errorLog.appendLog(errmsg, TAG);
+                errmsg = ex.getMessage() != null ? ex.getMessage() : "Error in data.";
+                Log.e(TAG, errmsg);
                 ex.printStackTrace();
-                return ex.getMessage();
+            }
+            catch (Exception ex) {
+                General.errorLog.appendLog(errmsg, TAG);
+                errmsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
+                Log.e(TAG, errmsg);
+                ex.printStackTrace();
             }
 
-            return null;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
-            if(s != null) {
-                messageBox.ShowMessage("Error in download", s);
+            if(!bResult) {
+                Toast.makeText(MainActivity.this, "Slow or unstable internet connection.", Toast.LENGTH_SHORT).show();
                 sql.TruncateTable(SQLiteDB.TABLE_USER);
                 return;
             }
@@ -708,7 +868,6 @@ public class MainActivity extends AppCompatActivity {
             new SaveDownloadedData().execute();
         }
     }
-
 
     public class SaveDownloadedData extends AsyncTask<Void, String, Boolean> {
 
@@ -875,6 +1034,39 @@ public class MainActivity extends AppCompatActivity {
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
+            if(npiDIR.exists()) {
+                try{
+                    lnReader = new LineNumberReader(new FileReader(npiDIR));
+                    while ((lnReader.readLine()) != null) { }
+                    nMaxprogress += lnReader.getLineNumber();
+                }
+                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+            }
+            if(planogramDIR.exists()) {
+                try{
+                    lnReader = new LineNumberReader(new FileReader(planogramDIR));
+                    while ((lnReader.readLine()) != null) { }
+                    nMaxprogress += lnReader.getLineNumber();
+                }
+                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+            }
+            if(pcategoryDIR.exists()) {
+                try{
+                    lnReader = new LineNumberReader(new FileReader(pcategoryDIR));
+                    while ((lnReader.readLine()) != null) { }
+                    nMaxprogress += lnReader.getLineNumber();
+                }
+                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+            }
+            if(pgroupDIR.exists()) {
+                try{
+                    lnReader = new LineNumberReader(new FileReader(pgroupDIR));
+                    while ((lnReader.readLine()) != null) { }
+                    nMaxprogress += lnReader.getLineNumber();
+                }
+                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+            }
+
 
             progressDL.setMax(nMaxprogress);
 
@@ -911,14 +1103,11 @@ public class MainActivity extends AppCompatActivity {
                     };
 
                     String sqlinsertStore = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORE, afields);
-
                     SQLiteStatement sqlstatementStore = dbase.compileStatement(sqlinsertStore); // insert into tblsample (fields1,fields2)
                     dbase.beginTransaction();
-
                     BufferedReader bReader = new BufferedReader(new FileReader(storeDIR));
 
                     String line;
-
                     line = bReader.readLine();
 
                     while ((line = bReader.readLine()) != null) {
@@ -932,6 +1121,7 @@ public class MainActivity extends AppCompatActivity {
 
                         publishProgress("Saving Store data.." + values[1].trim());
                     }
+
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
                 }
@@ -1554,6 +1744,147 @@ public class MainActivity extends AppCompatActivity {
                     dbase.endTransaction();
                 }
 
+                // NPI LIST
+                if(npiDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_NPI);
+
+                    presentFile = npiDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_NPI_keygroupid
+                    };
+
+                    String strInsertNpi = sql.createInsertBulkQuery(SQLiteDB.TABLE_NPI, afields);
+                    SQLiteStatement sqLiteStatement = dbase.compileStatement(strInsertNpi); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(npiDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqLiteStatement.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqLiteStatement.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqLiteStatement.execute();
+
+                        publishProgress("Saving NPI Lists data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // PLANOGRAM LIST
+                if(planogramDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_PLANOGRAM);
+
+                    presentFile = planogramDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_PLANOGRAM_keygroupid
+                    };
+
+                    String strInsertPlanogram = sql.createInsertBulkQuery(SQLiteDB.TABLE_PLANOGRAM, afields);
+                    SQLiteStatement sqLiteStatement = dbase.compileStatement(strInsertPlanogram); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(planogramDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqLiteStatement.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqLiteStatement.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqLiteStatement.execute();
+
+                        publishProgress("Saving Planogram Lists data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+                // PERFECT CATEGORY LIST
+                if(pcategoryDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_PERFECT_CATEGORY);
+
+                    presentFile = pcategoryDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_PCATEGORY_categoryid
+                    };
+
+                    String strInsertPcategory = sql.createInsertBulkQuery(SQLiteDB.TABLE_PERFECT_CATEGORY, afields);
+                    SQLiteStatement sqLiteStatement = dbase.compileStatement(strInsertPcategory); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(pcategoryDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqLiteStatement.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqLiteStatement.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqLiteStatement.execute();
+
+                        publishProgress("Saving Perfect Category Lists data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
+
+                // PERFECT GROUP LIST
+                if(pgroupDIR.exists()) {
+                    sql.TruncateTable(SQLiteDB.TABLE_PERFECT_GROUP);
+
+                    presentFile = pgroupDIR.getPath();
+
+                    String[] afields = {
+                            SQLiteDB.COLUMN_PGROUP_groupid
+                    };
+
+                    String strInsertgroup = sql.createInsertBulkQuery(SQLiteDB.TABLE_PERFECT_GROUP, afields);
+                    SQLiteStatement sqLiteStatement = dbase.compileStatement(strInsertgroup); // insert into tblsample (fields1,fields2)
+                    dbase.beginTransaction();
+
+                    BufferedReader bReader = new BufferedReader(new FileReader(pgroupDIR));
+
+                    String line;
+
+                    line = bReader.readLine();
+
+                    while ((line = bReader.readLine()) != null) {
+                        final String[] values = line.split(",");
+
+                        sqLiteStatement.clearBindings();
+                        for (int i = 0; i < afields.length; i++) {
+                            sqLiteStatement.bindString((i+1), values[i].trim().replace("\"",""));
+                        }
+                        sqLiteStatement.execute();
+
+                        publishProgress("Saving Perfect Group Lists data..");
+                    }
+                    dbase.setTransactionSuccessful();
+                    dbase.endTransaction();
+                }
+
                 result = true;
             }
             catch (FileNotFoundException fex)
@@ -1611,14 +1942,138 @@ public class MainActivity extends AppCompatActivity {
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
                             wlStayAwake.release();
-                            Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
+                            Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                             startActivity(mainIntent);
                             finish();
-/*                                                    Intent mainIntent = new Intent(MainActivity.this, Field_main.class);
+/*                                                    Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                                                     startActivity(mainIntent);*/
                         }
                     });
             alertDialog.show();
         }
     }
+
+    public class PostErrorReport extends AsyncTask<Void, Void, Boolean> {
+        String errMsg = "";
+        String response = "";
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Sending error report to dev team.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            String urlSend = General.mainURL + "/api/uploadtrace";
+
+            if(!General.errorLog.fileLog.exists()) {
+                errMsg = "No errors to send.";
+                return result;
+            }
+
+            String attachmentName = "data";
+            String attachmentFileName = General.errlogFile;
+            String crlf = "\r\n";
+            String twoHyphens = "--";
+            String boundary =  "*****";
+
+            int bytesRead, bytesAvailable, bufferSize;
+            byte[] buffer;
+            int maxBufferSize = 1*1024*1024;
+
+            try {
+
+                FileInputStream fileInputStream = new FileInputStream(General.errorLog.fileLog); // text file to upload
+                HttpURLConnection httpUrlConnection = null;
+                URL url = new URL(urlSend); // url to post
+                httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setUseCaches(false);
+                httpUrlConnection.setDoOutput(true);
+
+                httpUrlConnection.setRequestMethod("POST");
+                httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+                httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
+                httpUrlConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+
+                DataOutputStream request = new DataOutputStream(
+                        httpUrlConnection.getOutputStream());
+
+                request.writeBytes(twoHyphens + boundary + crlf);
+                request.writeBytes("Content-Disposition: form-data; name=\"" +
+                        attachmentName + "\";filename=\"" + attachmentFileName + "\"" + crlf);
+                request.writeBytes(crlf);
+
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                // Read file
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0) {
+                    request.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                }
+
+                request.writeBytes(crlf);
+                request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
+                request.flush();
+                request.close();
+
+                InputStream responseStream = new
+                        BufferedInputStream(httpUrlConnection.getInputStream());
+
+                BufferedReader responseStreamReader =
+                        new BufferedReader(new InputStreamReader(responseStream));
+
+                String line = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ((line = responseStreamReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
+                }
+                responseStreamReader.close();
+
+                response = stringBuilder.toString();
+
+                JSONObject jsonResp = new JSONObject(response);
+                if(!jsonResp.isNull("msg")) {
+                    response = jsonResp.getString("msg");
+                }
+
+                responseStream.close();
+                httpUrlConnection.disconnect();
+
+                result = true;
+            }
+            catch (IOException ex) {
+                errMsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
+                Log.e(TAG, errMsg);
+                General.errorLog.appendLog(errMsg, TAG);
+            }
+            catch (JSONException ex) {
+                errMsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
+                Log.e(TAG, errMsg);
+                General.errorLog.appendLog(errMsg, TAG);
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDL.dismiss();
+            if(!bResult) {
+                Toast.makeText(MainActivity.this, errMsg, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            Toast.makeText(MainActivity.this, response, Toast.LENGTH_SHORT).show();
+            General.errorLog.fileLog.delete();
+        }
+    }
+
 }

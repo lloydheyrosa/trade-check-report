@@ -1,28 +1,56 @@
 package com.android.pplusaudit2;
 
+import android.app.AlertDialog;
 import android.content.Context;
+import android.content.DialogInterface;
+import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
-import android.graphics.Typeface;
+import android.os.Build;
 import android.os.Environment;
 import android.util.Log;
 import android.widget.ImageView;
-import android.widget.TextView;
 
-import java.io.File;
+import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
+import com.android.pplusaudit2.Report.AuditSummary.Audit;
+
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.zip.CRC32;
+import java.util.zip.Checksum;
 
 /**
  * Created by ULTRABOOK on 9/30/2015.
  */
 public class General {
 
+    public static String TAG = "Debug";
+    public static String errlogFile = "errorlogs.txt";
+
+    public static boolean BETA = true;
+
+    public static String versionName = "";
+    public static int versionCode = 0;
+    public static int oldversionCode = 0;
+    public static String deviceID = "";
+
+    public static boolean hasUpdate = false;
+    public static AutoUpdate mainAutoUpdate;
+
+    public static SharedPreferences sharedPref;
+
+    public static ErrorLog errorLog;
+    public static String dateLog = "";
+
     public static String usercode = "";
-    public static String username = "";
+    public static String userFullName = "";
+    public static String userName = "";
+    public static String userPassword = "";
+    public static String hashKey = "";
     public static String storeid = "";
     public static int Temp_Storeid;
     public static String auditTemplateID = "";
@@ -46,10 +74,7 @@ public class General {
     public static String ICON_PASSED = "\uf00c";
     public static String ICON_FAILED = "\uf00d";
 
-    public static final String[] aReports = new String[] {
-            "USER AUDIT SUMMARY REPORT",
-            "STORE REPORT"
-    };
+    public static ArrayList<Audit> arraylistAudits;
 
     public enum SCORE_STATUS {
         PASSED,
@@ -57,19 +82,16 @@ public class General {
         NONE
     }
 
-    public enum STATUS {
-        NONE,
-        PENDING,
-        PARTIAL,
-        COMPLETE
-    }
-
     public static String extFolder = Environment.getExternalStorageDirectory().getAbsolutePath().trim()+"/PPLUS";
 
     public static String mainURL = "http://tcr2.chasetech.com";
-    public static String POSTING_URL = "http://tcr2.chasetech.com/api/storeaudit";
-    public static String POSTING_DETAILS_URL = "http://tcr2.chasetech.com/api/uploaddetails";
-    public static String POSTING_IMAGE = "http://tcr2.chasetech.com/api/uploadimage";
+    public static String POSTING_URL = mainURL + "/api/storeaudit";
+    public static String POSTING_DETAILS_URL = mainURL + "/api/uploaddetails";
+    public static String POSTING_IMAGE = mainURL + "/api/uploadimage";
+
+    public static String URL_REPORT_AUDITS = mainURL + "/api/audits";
+    public static String URL_REPORT_STORESUMMARY = mainURL + "/api/storesummaryreport";
+    public static String URL_REPORT_USERSUMMARY = mainURL + "/api/usersummaryreport";
 
     public static String QUESTION_IMAGE_CAPTURE = "Pplus2 Image";
 
@@ -89,15 +111,16 @@ public class General {
 
     public static final String SECONDARY_LOOKUP_LIST = "secondary_lookups";
     public static final String SECONDARY_LIST = "secondary_lists";
-
     public static final String OSA_LIST = "osa_lists";
     public static final String OSA_LOOKUP = "osa_lookups";
-
     public static final String SOS_LIST = "sos_lists";
     public static final String SOS_LOOKUP = "sos_lookups";
-
     public static final String IMG_LIST = "image_lists";
     public static final String IMG_PRODUCT = "image_product";
+    public static final String NPI_LIST = "npi_lists";
+    public static final String PLANOGRAM_LIST = "plano_lists";
+    public static final String PERFECT_CATEGORY_LIST = "perfect_category_lists";
+    public static final String PERFECT_GROUP_LIST = "perfect_group_lists";
 
     public static final String[] ARRAY_FILE_LISTS = {
             STORE_LIST,
@@ -116,7 +139,11 @@ public class General {
             OSA_LOOKUP,
             SOS_LIST,
             SOS_LOOKUP,
-            IMG_LIST
+            IMG_LIST,
+            NPI_LIST,
+            PLANOGRAM_LIST,
+            PERFECT_CATEGORY_LIST,
+            PERFECT_GROUP_LIST
     };
 
     public static final String[] DOWNLOAD_FILES = {
@@ -137,6 +164,10 @@ public class General {
         "stores.txt",
         "temp_category.txt",
         "temp_group.txt",
+        "plano_keylist.txt",
+        "npi_keylist.txt",
+        "perfect_category_lists.txt",
+        "perfect_group_lists.txt",
     };
 
 
@@ -249,5 +280,34 @@ public class General {
         }
 
         return versionName;
+    }
+
+    public static void ShowMessage(Context mContext, String title, String message) {
+        AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
+        alertDialog.setTitle(title);
+        alertDialog.setMessage(message);
+        alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "Ok", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                dialog.dismiss();
+            }
+        });
+        alertDialog.show();
+    }
+
+    public static int crc32(String str) {
+        byte bytes[] = str.getBytes();
+        Checksum checksum = new CRC32();
+        checksum.update(bytes,0,bytes.length);
+        return (int) checksum.getValue();
+    }
+
+    public static String getDeviceName() {
+        String manufacturer = Build.MANUFACTURER.toUpperCase();
+        String model = Build.MODEL.toUpperCase();
+        if (model.startsWith(manufacturer)) {
+            return model;
+        }
+        return manufacturer + " " + model;
     }
 }

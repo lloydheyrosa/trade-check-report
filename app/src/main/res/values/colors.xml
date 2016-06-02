@@ -23,7 +23,13 @@
     <color name="color_highlight">#dcf293</color>
 
     <color name="flat_pressed">#66999999</color>
+    <color name="lighgray">#eeeeee</color>
     <color name="flat_disabled_text">#40000000</color>
-    <color name="flat_normal_text">#000000</color>
+    <color name="flat_normal_text">#444444</color>
+
+    <color name="bg_osa">#9c27b0</color>
+    <color name="bg_npi">#e91e63</color>
+    <color name="bg_planogram">#4caf50</color>
+    <color name="bg_perfect_store">#ff9800</color>
 
 </resources>

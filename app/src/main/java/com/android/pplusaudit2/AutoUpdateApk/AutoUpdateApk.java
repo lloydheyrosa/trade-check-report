@@ -38,6 +38,9 @@ import android.support.v7.app.AlertDialog;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.General;
+
 import org.apache.http.HttpEntity;
 import org.apache.http.ParseException;
 import org.apache.http.client.ClientProtocolException;
@@ -86,6 +89,7 @@ public class AutoUpdateApk extends Observable {
 		setupVariables(ctx);
 		alertDialog = new AlertDialog.Builder(ctx).create();
 		this.mContext = ctx;
+		Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
 	}
 
 	// set icon for notification popup (default = application icon)
@@ -162,7 +166,11 @@ public class AutoUpdateApk extends Observable {
 
 	private final static String ANDROID_PACKAGE = "application/vnd.android.package-archive";
 //	private final static String API_URL = "http://auto-update-apk.appspot.com/check";
-	private final static String API_URL = "http://www.apps.chasetech.com/api/check";
+	public final static String API_URL = "http://www.apps.chasetech.com/api/check";
+	public final static String API_URL_CHECK = "http://www.apps.chasetech.com/api/verify";
+
+	public final static String API_BETA_URL = "http://www.apps.chasetech.com/api/betacheck";
+	public final static String API_BETA_URL_CHECK = "http://www.apps.chasetech.com/api/betaverify";
 	//private final static String API_URL = "http://www.auto-update-apk.com/check";
 
 	protected static Context context = null;
@@ -184,7 +192,7 @@ public class AutoUpdateApk extends Observable {
 	//private static long UPDATE_INTERVAL = 3 * HOURS;	// how often to check
 	private static long UPDATE_INTERVAL = 50 * 1000;	// how often to check
 
-	private static boolean mobile_updates = false;		// download updates over wifi only
+	private static boolean mobile_updates = true;		// download updates over wifi only
 
 	private final static Handler updateHandler = new Handler();
 	protected final static String UPDATE_FILE = "update_file";
@@ -268,7 +276,7 @@ public class AutoUpdateApk extends Observable {
 				}
 			}
 		}
-		raise_notification();
+		//raise_notification();
 
 		if( haveInternetPermissions() ) {
 			context.registerReceiver( connectivity_receiver,
@@ -314,7 +322,6 @@ public class AutoUpdateApk extends Observable {
 				post.setEntity(params);
 				String response = EntityUtils.toString( httpclient.execute( post ).getEntity(), "UTF-8" );
                 Log.wtf(TAG, "got a reply from update server");
-
                 String[] result = response.split("\n");
 
 				if( result.length > 1 && result[0].equalsIgnoreCase("have update") ) {
@@ -323,6 +330,10 @@ public class AutoUpdateApk extends Observable {
                     Log.wtf(TAG, "got a package from update server");
 					if( entity.getContentType().getValue().equalsIgnoreCase(ANDROID_PACKAGE)) {
 						String fname = result[1].substring(result[1].lastIndexOf('/')+1);
+
+						File fApk = new File("file://" + context.getFilesDir().getAbsolutePath() + "/" + fname);
+						if(fApk.exists()) return null;
+
 						FileOutputStream fos = context.openFileOutput(fname, Context.MODE_WORLD_READABLE);
 						entity.writeTo(fos);
 						fos.close();
@@ -428,23 +439,26 @@ public class AutoUpdateApk extends Observable {
             Notification  myNotication = builder.getNotification();
             nm.notify(NOTIFICATION_ID, myNotication);
 
-			alertDialog.setCancelable(false);
-			alertDialog.setTitle("Existing update");
-			alertDialog.setMessage("There's an " + appName + " update available. Tap UPDATE to install.");
-			alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "UPDATE", new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
-					mContext.startActivity(notificationIntent);
-				}
-			});
-			alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
-				@Override
-				public void onClick(DialogInterface dialog, int which) {
-					alertDialog.dismiss();
-				}
-			});
-			alertDialog.show();
+			try {
+				alertDialog.setCancelable(false);
+				alertDialog.setTitle("Existing update");
+				alertDialog.setMessage("There's an " + appName + " update available. Tap UPDATE to install.");
+				alertDialog.setButton(DialogInterface.BUTTON_POSITIVE, "UPDATE", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						notificationIntent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+						mContext.startActivity(notificationIntent);
+					}
+				});
+				alertDialog.setButton(DialogInterface.BUTTON_NEGATIVE, "Cancel", new DialogInterface.OnClickListener() {
+					@Override
+					public void onClick(DialogInterface dialog, int which) {
+						alertDialog.dismiss();
+					}
+				});
+				alertDialog.show();
+			}
+			catch (Exception ex) { }
 
         } else {
             nm.cancel( NOTIFICATION_ID );

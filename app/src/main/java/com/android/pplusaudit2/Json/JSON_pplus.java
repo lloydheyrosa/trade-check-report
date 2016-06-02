@@ -3,6 +3,8 @@ package com.android.pplusaudit2.Json;
 import android.content.Context;
 import android.os.NetworkOnMainThreadException;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 import com.squareup.okhttp.Call;
 import com.squareup.okhttp.MediaType;
@@ -24,6 +26,7 @@ public class JSON_pplus {
     public JSON_pplus(Context ctx) {
         mContext = ctx;
         messageBox = new MyMessageBox(mContext);
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
     }
 
     public String bodyValue(String email, String password) {

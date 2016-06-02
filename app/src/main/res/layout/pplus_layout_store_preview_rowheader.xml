@@ -25,6 +25,16 @@
         android:gravity="center"
         android:text="PG ANABU - MT ASPIRATIONAL"/>
 
+    <TextView
+        android:id="@+id/tvwOsa"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:textSize="25sp"
+        android:padding="3dp"
+        android:gravity="center"
+        android:textColor="@color/colorPrimary"
+        android:text="OSA: 0 / 100"/>
+
 <!--    <TextView
         android:id="@+id/tvwStoreScore"
         android:layout_width="match_parent"

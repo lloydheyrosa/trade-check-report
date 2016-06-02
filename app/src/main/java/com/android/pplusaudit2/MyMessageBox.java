@@ -4,6 +4,8 @@ import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+
 /**
  * Created by ULTRABOOK on 7/30/2015.
  */
@@ -15,7 +17,7 @@ public class MyMessageBox {
     public MyMessageBox(Context context) {
 
         this.mContext = context;
-
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(context, General.errlogFile));
     }
 
     public void ShowMessage(String title, String message) {

@@ -8,12 +8,15 @@ import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.widget.TextView;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.ArrayList;
 
 /**
  * Created by ULTRABOOK on 11/11/2015.
@@ -22,12 +25,16 @@ public class TCRLib {
 
     private Context mContext;
 
+    public static ArrayList<Integer> arrPGroupList = new ArrayList<>();
+    public static ArrayList<Integer> arrPCategoryList = new ArrayList<>();
+
     //public static String SOS_TOTAL_PERC = "FINAL ULP SOS PERCENTAGE";
     public static String SOS_TOTAL_PERC = "ULP SHARE OF SHELF PERCENTAGE";
     public static String SOS_PERFECT_STORE = "PERFECTSTORE-ULPSOSPERCENTAGE";
 
     public TCRLib(Context ctx) {
         this.mContext = ctx;
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
     }
 
     public String GetStatus(String statusNo, TextView tvw) {

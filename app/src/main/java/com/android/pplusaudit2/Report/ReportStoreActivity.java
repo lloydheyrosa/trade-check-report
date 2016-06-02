@@ -1,71 +1,206 @@
 package com.android.pplusaudit2.Report;
 
+import android.app.ProgressDialog;
+import android.content.Context;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.LayoutInflater;
+import android.util.Log;
+import android.view.Menu;
 import android.view.MenuItem;
-import android.widget.LinearLayout;
-import android.widget.TableLayout;
-import android.widget.TextView;
+import android.view.View;
+import android.widget.Button;
+import android.widget.ListView;
+import android.widget.Spinner;
+import android.widget.Toast;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
+import com.android.pplusaudit2.Report.AuditSummary.AuditAdapter;
+
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONObject;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.util.ArrayList;
 
 public class ReportStoreActivity extends AppCompatActivity {
 
-    private TableLayout tblStore;
-    LinearLayout lnrInflater;
+    ProgressDialog progressDialog;
+
+    ArrayList<StoreReport> arrStoreReports;
+    long selectedAuditID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.report_store_activity);
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
         String title = "STORE REPORT";
+        getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(title);
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
 
-        tblStore = (TableLayout) findViewById(R.id.tblStoreReport);
-        tblStore.removeAllViews();
+        arrStoreReports = new ArrayList<>();
+        final Spinner spnAudit = (Spinner) findViewById(R.id.spnAudit);
+        Button btnProcess = (Button) findViewById(R.id.btnProcess);
 
-        String[] aItems = null;
+        AuditAdapter dataAdapter = new AuditAdapter(ReportStoreActivity.this, android.R.layout.simple_dropdown_item_1line, General.arraylistAudits);
+        spnAudit.setAdapter(dataAdapter);
 
-        aItems = new String[] {
-                "SSM FAIRVIEW,Thursday March 17 2016,No,99,96,65",
-                "SVI FAIRVIEW,Thursday March 17 2016,Yes,99,74,91",
-                "SMCO ZABARTE,Tuesday March 8 2016,No,99,41,87",
-                "SVI NORTH EDSA,Thursday March 3 2016,No,97,74,91"
-        };
+        btnProcess.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                selectedAuditID = spnAudit.getSelectedItemId();
+                new CheckInternet().execute();
+            }
+        });
+    }
 
-        if(General.username.toUpperCase().equals("PAUEY SILVA")) {
-            aItems = new String[] {
-                    "SVI BF SUCAT,Monday March 28 2016,Yes,98,70,94",
-                    "SVI MAKATI,Tuesday March 22 2016,Yes,98,74,91",
-                    "SVI MEGAMALL B,Friday March 18 2016,No,98,41,87",
-                    "SVI MEGAMALL A,Friday March 18 2016,No,98,74,91"
-            };
+    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+        String errmsg = "";
+
+        @Override
+        protected void onPreExecute() {
+            progressDialog = ProgressDialog.show(ReportStoreActivity.this, "", "Checking internet connection.");
         }
 
-        for (String items : aItems) {
-            lnrInflater = (LinearLayout) LayoutInflater.from(ReportStoreActivity.this).inflate(R.layout.report_store_activity_row, null);
-            TextView tvwRow1 = (TextView) lnrInflater.findViewById(R.id.tvwRow1);
-            TextView tvwRow2 = (TextView) lnrInflater.findViewById(R.id.tvwRow2);
-            TextView tvwRow3 = (TextView) lnrInflater.findViewById(R.id.tvwRow3);
-            TextView tvwRow4 = (TextView) lnrInflater.findViewById(R.id.tvwRow4);
-            TextView tvwRow5 = (TextView) lnrInflater.findViewById(R.id.tvwRow5);
-            TextView tvwRow6 = (TextView) lnrInflater.findViewById(R.id.tvwRow6);
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
 
-            String[] splitted = items.split(",");
+            ConnectivityManager cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
 
-            tvwRow1.setText(splitted[0]);
-            tvwRow2.setText(splitted[1]);
-            tvwRow3.setText(splitted[2]);
-            tvwRow4.setText(splitted[3] + " %");
-            tvwRow5.setText(splitted[4] + " %");
-            tvwRow6.setText(splitted[5] + " %");
+            NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
+            if(activeNetwork != null) {
+                if(activeNetwork.isFailover()) errmsg = "Internet connection fail over.";
+                result = activeNetwork.isAvailable() || activeNetwork.isConnectedOrConnecting();
+            }
+            else errmsg = "Not connected to the internet.";
 
-            tblStore.addView(lnrInflater);
+            return result;
         }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDialog.dismiss();
+            if(!bResult) {
+                Toast.makeText(ReportStoreActivity.this, errmsg, Toast.LENGTH_SHORT).show();
+                return;
+            }
+
+            new GetStoreReports().execute();
+        }
+    }
+
+    public class GetStoreReports extends AsyncTask<Void, Void, Boolean> {
+        String errormsg = "";
+        @Override
+        protected void onPreExecute() {
+            progressDialog = ProgressDialog.show(ReportStoreActivity.this, "", "Processing Report.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            String response = "";
+            arrStoreReports.clear();
+
+            try {
+                URL url = new URL(General.URL_REPORT_STORESUMMARY + "/" + selectedAuditID + "/user/" + General.usercode);
+                HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
+                urlConnection.connect();
+
+                BufferedReader bufferedReader = new BufferedReader(new InputStreamReader(urlConnection.getInputStream()));
+                StringBuilder stringBuilder = new StringBuilder();
+                String line;
+                while ((line = bufferedReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
+                }
+                bufferedReader.close();
+                urlConnection.disconnect();
+                response = stringBuilder.toString();
+
+                if(response.trim().contains("No Report Available")) {
+                    String msg = new JSONObject(response).getString("msg");
+                    errormsg = msg;
+                    arrStoreReports.clear();
+                    return result;
+                }
+
+                if (!response.trim().equals("")) {
+
+                    JSONArray dataArray = new JSONArray(response);
+
+                    for (int i = 0; i < dataArray.length(); i++) {
+                        JSONObject jsonObject = (JSONObject) dataArray.get(i);
+
+                        StoreReport storeReport = new StoreReport();
+                        storeReport.ID = jsonObject.getInt("id");
+                        storeReport.userID = jsonObject.getInt("user_id");
+                        storeReport.auditID = jsonObject.getInt("audit_id");
+                        storeReport.account = jsonObject.getString("account");
+                        storeReport.customerCode = jsonObject.getString("customer_code");
+                        storeReport.customer = jsonObject.getString("customer");
+                        storeReport.area = jsonObject.getString("area");
+                        storeReport.regionCode = jsonObject.getString("region");
+                        storeReport.storeName = jsonObject.getString("store_name");
+                        storeReport.perfectStore = jsonObject.getDouble("perfect_store");
+                        storeReport.osa = jsonObject.getDouble("osa");
+                        storeReport.npi = jsonObject.getDouble("npi");
+                        storeReport.planogram = jsonObject.getDouble("planogram");
+                        storeReport.updateAt = jsonObject.getString("updated_at");
+                        storeReport.auditName = jsonObject.getString("audit_name");
+
+                        arrStoreReports.add(storeReport);
+                    }
+
+                    result = true;
+                }
+            }
+            catch (IOException ex) {
+                ex.printStackTrace();
+                Log.e("IO Error", ex.getMessage());
+                errormsg = ex.getLocalizedMessage();
+            }
+            catch (JSONException ex) {
+                ex.printStackTrace();
+                Log.e("IO Error", ex.getMessage());
+                errormsg = ex.getLocalizedMessage();
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDialog.dismiss();
+            if(!bResult) {
+                Toast.makeText(ReportStoreActivity.this, errormsg, Toast.LENGTH_LONG).show();
+            }
+
+            ListView lvwStoreReport = (ListView) findViewById(R.id.lvwStoreReport);
+            ReportStoreAdapter storeAdapter = new ReportStoreAdapter(ReportStoreActivity.this, arrStoreReports);
+            lvwStoreReport.setAdapter(storeAdapter);
+            storeAdapter.notifyDataSetChanged();
+        }
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        getMenuInflater().inflate(R.menu.menu_main, menu);
+
+        return super.onCreateOptionsMenu(menu);
     }
 
     @Override

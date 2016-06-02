@@ -6,6 +6,8 @@ import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 
 /**
@@ -16,10 +18,11 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "unileverdb";
     private static final String TAG = "SettingsProvider";
-    private static final int DATABASE_VERSION = 2;
+    public static final int DATABASE_VERSION = 6;
 
     public SQLiteDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(context, General.errlogFile));
     }
 
     //USER TABLE
@@ -60,6 +63,10 @@ public class SQLiteDB extends SQLiteOpenHelper {
     public static final String COLUMN_STORE_distributor = "distributor";
     public static final String COLUMN_STORE_templatecode = "template_code";
     public static final String COLUMN_STORE_auditid = "auditID"; // new field
+    public static final String COLUMN_STORE_osa = "osa"; // new field v.3
+    public static final String COLUMN_STORE_npi = "npi"; // new field v.3
+    public static final String COLUMN_STORE_planogram = "planogram"; // new field v.3
+    public static final String COLUMN_STORE_perfectstore = "perfect_store"; // new field v.6
 
     private static final String DATABASE_CREATE_TABLE_STORE = "CREATE TABLE " + TABLE_STORE + "("
             + COLUMN_STORE_id + " integer PRIMARY KEY autoincrement, "
@@ -86,7 +93,11 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_STORE_distributorcode + " text, "
             + COLUMN_STORE_distributor + " text, "
             + COLUMN_STORE_templatecode + " text, "
-            + COLUMN_STORE_auditid + " numeric)";
+            + COLUMN_STORE_auditid + " numeric, "
+            + COLUMN_STORE_osa + " text, "
+            + COLUMN_STORE_npi + " text, "
+            + COLUMN_STORE_planogram + " text, "
+            + COLUMN_STORE_perfectstore + " text)";
 
 
     // CATEGORY TABLE
@@ -409,6 +420,43 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_PICTURES_id + " integer PRIMARY KEY autoincrement, "
             + COLUMN_PICTURES_name + " text)";
 
+    //NPI LIST TABLE
+    public static final String TABLE_NPI = "tblnpi";
+    public static final String COLUMN_NPI_id = "id";
+    public static final String COLUMN_NPI_keygroupid = "npi_key_group_id";
+
+    private static final String DATABASE_CREATE_TABLE_NPI = "CREATE TABLE " + TABLE_NPI + "("
+            + COLUMN_NPI_id + " integer PRIMARY KEY autoincrement, "
+            + COLUMN_NPI_keygroupid + " numeric)";
+
+    //PLANOGRAM LIST TABLE
+    public static final String TABLE_PLANOGRAM = "tblplanogram";
+    public static final String COLUMN_PLANOGRAM_id = "id";
+    public static final String COLUMN_PLANOGRAM_keygroupid = "planogram_key_group_id";
+
+    private static final String DATABASE_CREATE_TABLE_PLANOGRAM = "CREATE TABLE " + TABLE_PLANOGRAM + "("
+            + COLUMN_PLANOGRAM_id + " integer PRIMARY KEY autoincrement, "
+            + COLUMN_PLANOGRAM_keygroupid + " numeric)";
+
+    //PERFECT CATEGORY TABLE
+    public static final String TABLE_PERFECT_CATEGORY = "tblperfectCategory";
+    public static final String COLUMN_PCATEGORY_id = "id";
+    public static final String COLUMN_PCATEGORY_categoryid = "pcategory_id";
+
+    private static final String DATABASE_CREATE_TABLE_PERFECTCATEGORY = "CREATE TABLE " + TABLE_PERFECT_CATEGORY + "("
+            + COLUMN_PCATEGORY_id + " integer PRIMARY KEY autoincrement, "
+            + COLUMN_PCATEGORY_categoryid + " numeric)";
+
+
+    //PERFECT GROUP TABLE
+    public static final String TABLE_PERFECT_GROUP = "tblperfectGroup";
+    public static final String COLUMN_PGROUP_id = "id";
+    public static final String COLUMN_PGROUP_groupid = "pgroup_id";
+
+    private static final String DATABASE_CREATE_TABLE_PERFECTGROUP = "CREATE TABLE " + TABLE_PERFECT_GROUP + "("
+            + COLUMN_PGROUP_id + " integer PRIMARY KEY autoincrement, "
+            + COLUMN_PGROUP_groupid + " numeric)";
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         try {
@@ -434,6 +482,10 @@ public class SQLiteDB extends SQLiteOpenHelper {
             db.execSQL(DATABASE_CREATE_TABLE_SOSLIST);
             db.execSQL(DATABASE_CREATE_TABLE_SOSLOOKUP);
             db.execSQL(DATABASE_CREATE_TABLE_PICTURES);
+            db.execSQL(DATABASE_CREATE_TABLE_NPI);
+            db.execSQL(DATABASE_CREATE_TABLE_PLANOGRAM);
+            db.execSQL(DATABASE_CREATE_TABLE_PERFECTCATEGORY);
+            db.execSQL(DATABASE_CREATE_TABLE_PERFECTGROUP);
             db.execSQL("CREATE INDEX userIndex ON " + TABLE_USER + " (" + COLUMN_USER_id + ")");
         }
         catch (Exception ex) {
@@ -452,8 +504,29 @@ public class SQLiteDB extends SQLiteOpenHelper {
                 db.execSQL("ALTER TABLE " + TABLE_FORMS + " ADD COLUMN " + COLUMN_FORMS_defaultans + " TEXT DEFAULT 0");
                 db.execSQL("ALTER TABLE " + TABLE_CONDITIONAL + " ADD COLUMN " + COLUMN_CONDITIONAL_optionid + " NUMERIC DEFAULT 0");*/
 
-                // 2
-                db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_auditid + " NUMERIC");
+                if(newVersion > oldVersion && oldVersion <= 1) { // version 2
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_auditid + " NUMERIC");
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 2) { // version 3
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_osa + " TEXT DEFAULT 0");
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_npi + " TEXT DEFAULT 0");
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_planogram + " TEXT DEFAULT 0");
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 3) { // version 4
+                    db.execSQL(DATABASE_CREATE_TABLE_NPI);
+                    db.execSQL(DATABASE_CREATE_TABLE_PLANOGRAM);
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 4) { // version 5
+                    db.execSQL(DATABASE_CREATE_TABLE_PERFECTCATEGORY);
+                    db.execSQL(DATABASE_CREATE_TABLE_PERFECTGROUP);
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 5) { // version 6
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_perfectstore + " TEXT DEFAULT 0");
+                }
 
                 Log.w(TAG, "Upgrading settings database from version " + oldVersion + " to "
                         + newVersion);
@@ -490,6 +563,8 @@ public class SQLiteDB extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_SOSLIST);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_SOSLOOKUP);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PICTURES);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NPI);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PLANOGRAM);
             onCreate(db);
 
             Log.w(TAG, "Downgrading settings database from version " + oldVersion + " to "

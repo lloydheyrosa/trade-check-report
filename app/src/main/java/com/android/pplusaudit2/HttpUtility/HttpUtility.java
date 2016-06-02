@@ -3,6 +3,8 @@ package com.android.pplusaudit2.HttpUtility;
 import android.app.ProgressDialog;
 import android.content.Context;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 
 import java.io.File;
@@ -24,6 +26,7 @@ public class HttpUtility {
     public HttpUtility(Context ctx) {
         mContext = ctx;
         messageBox = new MyMessageBox(mContext);
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
     }
 
     /**

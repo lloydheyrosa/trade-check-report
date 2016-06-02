@@ -1,7 +1,9 @@
 package com.android.pplusaudit2;
 
+import android.content.Context;
 import android.net.Uri;
 import android.os.Environment;
+import android.util.Log;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -24,17 +26,25 @@ public class Settings {
     public static Uri uriSignatureTempPath;
 
     public static void LoadSettings() {
-
         if(!mediaStorageDir.exists())
             mediaStorageDir.mkdirs();
-
-
     }
 
     public static Uri GetUriQuestionImagePath(String filename) {
 
         LoadSettings();
         return Uri.fromFile(new File(mediaStorageDir.getPath() + File.separator + filename.trim().toUpperCase() + ".jpg"));
+    }
+
+    public static void InitTransactionFolders(Context mContext) {
+        File dlpath =  new File(new File(mContext.getExternalFilesDir(null),""), "Downloads");
+        Settings.captureFolder.delete();
+        Settings.signatureFolder.delete();
+
+        for (String files : General.DOWNLOAD_FILES) {
+            File fDelete = new File(dlpath, files);
+            if(!fDelete.delete()) Log.e("Deleting file", "Can't delete " + files);
+        }
     }
 
     public static void CopyFile(File src, File dst) throws IOException {
