@@ -50,11 +50,10 @@ public class AutoErrorLog implements Thread.UncaughtExceptionHandler {
         report += "SQLite Version: " + String.valueOf(SQLiteDB.DATABASE_VERSION) + "\n";
         report += "Version code: " + String.valueOf(General.versionCode) + "\n";
         report += "Version name: " + String.valueOf(General.versionName);
+        report += "Device OS: " + General.getDeviceOsVersion();
         report += "\n-------------------------------\n\n";
 
         try {
-/*            FileOutputStream trace = app.openFileOutput(
-                    "stack.trace", Context.MODE_PRIVATE);*/
             FileOutputStream trace = new FileOutputStream(fileLog);
             trace.write(report.getBytes());
             trace.close();

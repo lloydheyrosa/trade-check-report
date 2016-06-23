@@ -20,7 +20,7 @@
         android:layout_width="match_parent"
         android:layout_height="match_parent"
         android:text="ADD PHOTO"
-        style="@style/ButtonTextBlue"
+        style="@style/button_design"
         android:background="@drawable/btn_primary"
         />
 

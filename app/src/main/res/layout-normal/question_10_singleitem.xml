@@ -37,7 +37,6 @@
                 style="@style/TextViewPrimary_small"
                 android:text="SAMPLE"/>
 
-
         </LinearLayout>
 
         <!--        <ImageView

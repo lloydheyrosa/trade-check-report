@@ -51,6 +51,7 @@ import org.apache.http.params.BasicHttpParams;
 import org.apache.http.params.HttpConnectionParams;
 import org.apache.http.params.HttpParams;
 import org.apache.http.util.EntityUtils;
+import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -63,79 +64,84 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
+import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
 
-    String UrlAPI;
-    String urlGet;
-    String password;
-    String username;
+    private String UrlAPI;
+    private String urlGet;
+    private String password;
+    private String username;
 
-    // DOWNLOAD TXT FILE
-    File appfolder;
-    File dlpath;
+    private File dlpath;
 
-    File storeDIR;
-    File categoryDIR;
-    File groupDIR;
-    File questionDIR;
-    File formsDIR;
-    File formtypesDIR;
-    File singleselectDIR;
-    File multiselectDIR;
-    File computationalDIR;
-    File conditionalDIR;
-    File secondarylookupDIR;
-    File secondarylistDIR;
-    File osalistDIR;
-    File osalookupDIR;
-    File soslistDIR;
-    File soslookupDIR;
-    File imageListDIR;
-    File imageProductDIR;
-    File npiDIR;
-    File planogramDIR;
-    File pcategoryDIR;
-    File pgroupDIR;
+    private File storeDIR;
+    private File categoryDIR;
+    private File groupDIR;
+    private File questionDIR;
+    private File formsDIR;
+    private File formtypesDIR;
+    private File singleselectDIR;
+    private File multiselectDIR;
+    private File computationalDIR;
+    private File conditionalDIR;
+    private File secondarylookupDIR;
+    private File secondarylistDIR;
+    private File osalistDIR;
+    private File osalookupDIR;
+    private File soslistDIR;
+    private File soslookupDIR;
+    private File imageListDIR;
+    private File imageProductDIR;
+    private File npiDIR;
+    private File planogramDIR;
+    private File pcategoryDIR;
+    private File pgroupDIR;
 
-    String urlDownload;
-    String urlDownloadperFile;
-    String urlImage;
-    String urlDownloadImage;
+    private String urlDownload;
+    private String urlDownloadperFile;
+    private String urlImage;
+    private String urlDownloadImage;
     private static final int BUFFER_SIZE = 4096;
     // -------
 
-    MyMessageBox messageBox;
-    JSON_pplus json;
-    AlertDialog alertDialog;
+    private MyMessageBox messageBox;
+    private JSON_pplus json;
+    private AlertDialog alertDialog;
 
-    SQLLibrary sql;
-    SQLiteDB sqLiteDB;
+    private SQLLibrary sql;
+    private SQLiteDB sqLiteDB;
 
-    View mainLayout;
+    private View mainLayout;
 
-    EditText txtUsername;
-    EditText txtPassword;
+    private EditText txtUsername;
+    private EditText txtPassword;
 
     private ProgressDialog progressDL;
 
-    PowerManager powerman;
-    PowerManager.WakeLock wlStayAwake;
+    private PowerManager.WakeLock wlStayAwake;
 
-    String TAG = "";
-    boolean isSendError = false;
+    private String TAG = "";
+    private boolean isSendError = false;
+    private String hashLogged;
+    private ArrayList<String> arrStringTemplates;
+    private ArrayList<Integer> arrTemplateId;
+
+    private String userCodeLogged = "";
+    private int selectedTemplateID = -1;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        PowerManager powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
 
         final TextView tvwVersion = (TextView) findViewById(R.id.tvwVersion);
-        General.versionName = "v. " + General.GetVersionName(this);
-        General.versionCode = General.GetVersionCode(this);
+        General.versionName = "v. " + General.getVersionName(this);
+        General.versionCode = General.getVersionCode(this);
         tvwVersion.setText(General.versionName);
 
         General.deviceID = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
@@ -154,9 +160,12 @@ public class MainActivity extends AppCompatActivity {
         sqLiteDB = new SQLiteDB(this);
         sql = new SQLLibrary(this);
 
+        arrStringTemplates = new ArrayList<>();
+        arrTemplateId = new ArrayList<>();
+
         mainLayout = findViewById(R.id.lnrMain);
 
-        appfolder = new File(getExternalFilesDir(null),"");
+        File appfolder = new File(getExternalFilesDir(null), "");
 
         dlpath =  new File(appfolder, "Downloads");
         dlpath.mkdirs();
@@ -174,7 +183,6 @@ public class MainActivity extends AppCompatActivity {
 
         txtUsername = (EditText) findViewById(R.id.txtUsername);
         txtPassword = (EditText) findViewById(R.id.txtPassword);
-
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -199,7 +207,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 if(General.mainAutoUpdate.isUpdating) {
-                    Toast.makeText(MainActivity.this, "New update is downloading. Please wait", Toast.LENGTH_LONG).show();
+                    Toast.makeText(MainActivity.this, "New update is downloading. Please wait", Toast.LENGTH_SHORT).show();
                     return;
                 }
 
@@ -210,7 +218,7 @@ public class MainActivity extends AppCompatActivity {
 
         General.sharedPref = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
         boolean isLoggedIn = General.sharedPref.getBoolean(getString(R.string.pref_isLogged), false);
-        General.hashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
+        General.savedHashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
         General.oldversionCode = General.sharedPref.getInt(getString(R.string.pref_oldvcode), General.versionCode);
         General.dateLog = General.sharedPref.getString(getString(R.string.pref_date_log), General.getDateToday());
 
@@ -238,9 +246,11 @@ public class MainActivity extends AppCompatActivity {
         }
 
         General.mainAutoUpdate = new AutoUpdate(this);
+
+        System.setProperty("http.keepAlive", "false");
     }
 
-    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+    private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
 
         @Override
@@ -284,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class CheckUpdates extends AsyncTask<Void, Void, Boolean> {
+    private class CheckUpdates extends AsyncTask<Void, Void, Boolean> {
 
         String messages = "";
         private DefaultHttpClient httpclient = new DefaultHttpClient();
@@ -391,7 +401,7 @@ public class MainActivity extends AppCompatActivity {
         return super.onOptionsItemSelected(item);
     }
 
-    public class AsyncPingWebServer extends AsyncTask<Void, Void, Integer> {
+    private class AsyncPingWebServer extends AsyncTask<Void, Void, Integer> {
         String errmsg = "";
         @Override
         protected void onPreExecute() {
@@ -461,16 +471,18 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
+            hashLogged = "";
+            General.isAdminMode = false;
+            selectedTemplateID = 0;
             new AsyncGetUser().execute();
         }
     }
 
     // GET USER FROM WEB
-    public class AsyncGetUser extends AsyncTask<Void, Void, Boolean> {
+    private class AsyncGetUser extends AsyncTask<Void, Void, Boolean> {
 
         String errmsg = "";
         String usercode;
-        String hashLogged;
         String name;
 
         protected void onPreExecute() {
@@ -495,9 +507,7 @@ public class MainActivity extends AppCompatActivity {
                     stringBuilder.append(line).append("\n");
                 }
                 bufferedReader.close();
-
                 String response = stringBuilder.toString();
-
                 urlConnection.disconnect();
 
                 JSONObject data = new JSONObject(response);
@@ -509,8 +519,28 @@ public class MainActivity extends AppCompatActivity {
                     usercode = data.getString("id").trim();
                     name = data.getString("name").trim();
                     hashLogged = data.getString("hash").trim();
+                    String roleName = data.getString("role_name");
 
-                    result = true;
+                    if(roleName.trim().toLowerCase().equals("admin")) {
+                        JSONArray jsonArray = data.getJSONArray("audits");
+                        if(jsonArray.length() > 0) {
+                            arrTemplateId.clear();
+                            arrStringTemplates.clear();
+                            General.isAdminMode = true;
+                            for (int i = 0; i < jsonArray.length(); i++) {
+                                JSONObject jsonTemplate = jsonArray.getJSONObject(i);
+
+                                int id = jsonTemplate.getInt("id");
+                                String strDesc = jsonTemplate.getString("description").trim();
+
+                                arrTemplateId.add(id);
+                                arrStringTemplates.add(strDesc);
+                            }
+                            result = true;
+                        }
+                        else errmsg = "No templates found for admin mode.";
+                    }
+                    else result = true;
                 }
             }
             catch(UnknownHostException e) {
@@ -548,7 +578,7 @@ public class MainActivity extends AppCompatActivity {
             General.userFullName = name;
 
             Cursor cursUser = sql.GetDataCursor(SQLiteDB.TABLE_USER);
-            String userCodeLogged = "";
+
             if(cursUser.moveToFirst()) {
                 userCodeLogged = cursUser.getString(cursUser.getColumnIndex("code"));
             }
@@ -556,29 +586,54 @@ public class MainActivity extends AppCompatActivity {
             General.userName = username.trim();
             General.userPassword = password.trim();
 
-            Log.e("HASH", General.hashKey + " = " + hashLogged);
-            spEditor.putString(getString(R.string.pref_hash), hashLogged);
+            Log.e("HASH", General.savedHashKey + " = " + hashLogged);
             spEditor.putString(getString(R.string.pref_username), General.userName);
             spEditor.putString(getString(R.string.pref_password), General.userPassword);
-            spEditor.putBoolean(getString(R.string.pref_isLogged), true);
+            //spEditor.putBoolean(getString(R.string.pref_isLogged), true);
             spEditor.apply();
 
-            if(General.hashKey.trim().equals(hashLogged) && (usercode.equals(userCodeLogged))) {
-                General.hashKey = hashLogged;
-                Intent nxtIntent = new Intent(MainActivity.this, DashboardActivity.class);
-                startActivity(nxtIntent);
-                finish();
-                return;
+            if(General.isAdminMode) {
+                new AlertDialog.Builder(MainActivity.this)
+                        .setTitle("Choose a template")
+                        .setItems(arrStringTemplates.toArray(new String[arrStringTemplates.size()]), new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+
+                                selectedTemplateID = arrTemplateId.get(which);
+
+                                sql.InitializeAllTables();
+
+                                String[] afields = {SQLiteDB.COLUMN_USER_code, SQLiteDB.COLUMN_USER_name};
+                                String[] avalues = {usercode, name};
+                                sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
+
+                                urlDownload = urlDownload + "id=" + General.usercode;
+                                new AsyncDownloadFile().execute();
+
+                            }
+                        })
+                        .setCancelable(true)
+                        .create().show();
             }
+            else {
+                if (General.savedHashKey.trim().equals(hashLogged) && (usercode.equals(userCodeLogged))) {
+                    General.savedHashKey = hashLogged;
+                    Intent nxtIntent = new Intent(MainActivity.this, DashboardActivity.class);
+                    startActivity(nxtIntent);
+                    finish();
+                    return;
+                }
 
-            sql.InitializeAllTables();
+                sql.InitializeAllTables();
 
-            String[] afields = { SQLiteDB.COLUMN_USER_code, SQLiteDB.COLUMN_USER_name };
-            String[] avalues = { usercode, name };
-            sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
+                String[] afields = {SQLiteDB.COLUMN_USER_code, SQLiteDB.COLUMN_USER_name};
+                String[] avalues = {usercode, name};
+                sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
 
-            urlDownload = urlDownload + "id=" + General.usercode;
-            new AsyncDownloadFile().execute();
+                urlDownload = urlDownload + "id=" + General.usercode;
+                new AsyncDownloadFile().execute();
+            }
         }
     }
 
@@ -591,7 +646,7 @@ public class MainActivity extends AppCompatActivity {
             progressDL = new ProgressDialog(MainActivity.this);
             progressDL.setTitle("");
             progressDL.setMessage("Saving product images...");
-            progressDL.setProgressStyle(progressDL.STYLE_SPINNER);
+            progressDL.setProgressStyle(ProgressDialog.STYLE_SPINNER);
             progressDL.setCancelable(false);
 
             progressDL.show();
@@ -765,7 +820,10 @@ public class MainActivity extends AppCompatActivity {
             try{
                 for (String type : General.ARRAY_FILE_LISTS) {
 
-                    urlDownloadperFile = urlDownload + "&type=" + type;
+                    if(General.isAdminMode)
+                        urlDownloadperFile = urlDownload + "&type=" + type + "&audit=" + String.valueOf(selectedTemplateID);
+                    else
+                        urlDownloadperFile = urlDownload + "&type=" + type;
 
                     URL url = new URL(urlDownloadperFile);
                     HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
@@ -787,8 +845,8 @@ public class MainActivity extends AppCompatActivity {
                             }
                         } else {
                             // extracts file name from URL
-                            fileName = urlDownload.substring(urlDownload.lastIndexOf("/") + 1,
-                                    urlDownload.length());
+                            fileName = urlDownloadperFile.substring(urlDownloadperFile.lastIndexOf("=") + 1,
+                                    urlDownloadperFile.length()) + ".txt";
                         }
 
                         // opens input stream from the HTTP connection
@@ -869,7 +927,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class SaveDownloadedData extends AsyncTask<Void, String, Boolean> {
+    private class SaveDownloadedData extends AsyncTask<Void, String, Boolean> {
 
         int nMaxprogress = 0;
         LineNumberReader lnReader;
@@ -1935,6 +1993,10 @@ public class MainActivity extends AppCompatActivity {
                 alertDialog.show();
                 return;
             }
+
+            SharedPreferences.Editor spEditor = General.sharedPref.edit();
+            spEditor.putBoolean(getString(R.string.pref_isLogged), true).apply();
+            spEditor.putString(getString(R.string.pref_hash), hashLogged).apply();
 
             alertDialog.setTitle("Done");
             alertDialog.setMessage("Saving Downloaded data done.");

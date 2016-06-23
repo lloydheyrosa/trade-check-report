@@ -1,6 +1,5 @@
 package com.android.pplusaudit2.AutoUpdateApk;
 
-import android.app.ProgressDialog;
 import android.content.BroadcastReceiver;
 import android.content.Context;
 import android.content.Intent;
@@ -10,23 +9,12 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.os.Handler;
 import android.util.Log;
-import android.widget.Toast;
 
-import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
-import com.android.pplusaudit2.AutoUpdateApk.AutoUpdateApk;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
-import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 
 import org.apache.http.NameValuePair;
-import org.apache.http.client.methods.HttpPost;
-import org.apache.http.entity.StringEntity;
-import org.apache.http.impl.client.DefaultHttpClient;
 import org.apache.http.message.BasicNameValuePair;
-import org.apache.http.params.BasicHttpParams;
-import org.apache.http.params.HttpConnectionParams;
-import org.apache.http.params.HttpParams;
-import org.apache.http.util.EntityUtils;
 
 import java.io.BufferedReader;
 import java.io.BufferedWriter;
@@ -158,15 +146,19 @@ public class CheckUpdateApk extends Observable {
                         if (vcodeAPI > General.versionCode) {
                             hasUpdate = true;
                         }
+                        else Log.wtf(TAG, "No updates found.");
 
                         result = true;
                     }
                     else {
                         messages = "Slow or unstable internet connection.";
-                        Log.e(TAG, messages);
+                        Log.wtf(TAG, messages);
                     }
                 }
-                else messages = "No internet connection.";
+                else {
+                    messages = "No internet connection.";
+                    Log.wtf(TAG, messages);
+                }
 
             } catch (Exception ex) {
                 ex.printStackTrace();
@@ -189,7 +181,7 @@ public class CheckUpdateApk extends Observable {
             }
 
             if (hasUpdate && !General.hasUpdate) {
-                Log.e(TAG, "Update is downloading..");
+                Log.wtf(TAG, "Update is downloading..");
                 General.mainAutoUpdate.StartAutoUpdate();
             }
         }

@@ -9,9 +9,9 @@
         android:id="@+id/tvwImagemenu"
         android:layout_width="wrap_content"
         android:layout_height="match_parent"
-        android:padding="20dp"
+        android:padding="15dp"
         android:gravity="center"
-        android:textSize="40sp"
+        android:textSize="30sp"
         android:text="5"
         android:textColor="@color/colorPrimary" />
 
@@ -23,29 +23,23 @@
         <TextView
             android:id="@+id/tvwMenu"
             android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_toLeftOf="@+id/friend_online_imageview"
-            android:layout_toRightOf="@+id/friend_profile_picture"
+            android:layout_height="match_parent"
             android:paddingTop="20dp"
-            android:textStyle="bold"
+            style="@style/title_style"
             android:textColor="@color/colorPrimaryDark"
             android:text="sample"
-            android:textSize="20sp"/>
+            android:textSize="16sp"/>
 
         <TextView
             android:id="@+id/tvwMenuDesc"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_below="@+id/friend_name"
-            android:layout_toLeftOf="@id/friend_online_imageview"
-            android:layout_toRightOf="@+id/friend_profile_picture"
+            android:textColor="@color/secondary_text"
             android:paddingBottom="20dp"
             android:text="sample"
             android:layout_marginLeft="10dp"
             android:textSize="14sp"/>
 
-
     </LinearLayout>
-
 
 </LinearLayout>

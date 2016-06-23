@@ -33,7 +33,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="CLEAR SIGNATURE"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:background="@drawable/btn_accent"
             />
 
@@ -43,7 +43,7 @@
             android:layout_height="wrap_content"
             android:layout_weight="1"
             android:text="SAVE"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:background="@drawable/btn_primary"
             />
 

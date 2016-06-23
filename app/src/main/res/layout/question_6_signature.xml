@@ -27,7 +27,7 @@
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:text="ADD SIGNATURE"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:background="@drawable/btn_primary" />
 
         <ImageView

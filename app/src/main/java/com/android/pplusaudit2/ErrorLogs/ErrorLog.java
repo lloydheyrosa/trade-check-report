@@ -1,6 +1,7 @@
 package com.android.pplusaudit2.ErrorLogs;
 
 import android.content.Context;
+import android.util.Log;
 
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.General;
@@ -48,8 +49,10 @@ public class ErrorLog {
             int lineNumber = Thread.currentThread().getStackTrace()[3].getLineNumber();
 
             //BufferedWriter for performance, true to set append to file flag
+            String strLog = "[" + General.getDateTime() + "][" + classname + "][" + methodName + "][" + lineNumber + "][" + General.getDeviceName() + "][" + General.getDeviceOsVersion() + "]" + General.versionCode + "-" + SQLiteDB.DATABASE_VERSION + ": " + text;
+            Log.e(classname, strLog);
             BufferedWriter buf = new BufferedWriter(new FileWriter(fileLog, true));
-            buf.append("[" + General.getDateTime() + "][" + classname + "][" + methodName + "][" + lineNumber + "][" + General.getDeviceName() + "]" + General.versionCode + "-" + SQLiteDB.DATABASE_VERSION + ": " + text + "\n");
+            buf.append(strLog + "\n");
             buf.newLine();
             buf.close();
         }

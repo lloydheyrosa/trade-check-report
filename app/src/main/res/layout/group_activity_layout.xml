@@ -17,7 +17,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:padding="10dp"
+        android:padding="6dp"
         android:background="#ffd6d6d6"
         android:orientation="horizontal"
         app:layout_behavior="@string/appbar_scrolling_view_behavior">

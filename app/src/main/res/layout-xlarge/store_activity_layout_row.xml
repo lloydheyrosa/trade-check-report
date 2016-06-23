@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/lnrMainStore"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
@@ -21,8 +22,7 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="STORE 1"
-            android:textStyle="bold"
-            style="@style/TextViewPrimary"
+            style="@style/title_style"
             android:textSize="20sp" />
 
         <TextView
@@ -55,7 +55,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        style="@style/ButtonTextBlue"
+        style="@style/button_design"
         android:text="PREVIEW"
         android:background="@drawable/btn_accent"
         android:onClick="previewOnClickEvent"/>
@@ -65,7 +65,7 @@
         android:layout_width="0dp"
         android:layout_height="match_parent"
         android:layout_weight="1"
-        style="@style/ButtonTextBlue"
+        style="@style/button_design"
         android:text="AUDIT"
         android:background="@drawable/btn_primary"
         android:onClick="auditOnClickEvent"/>

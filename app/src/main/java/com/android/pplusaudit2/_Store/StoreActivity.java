@@ -13,7 +13,6 @@ import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.widget.LinearLayout;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -98,46 +97,55 @@ public class StoreActivity extends AppCompatActivity {
     }
 
     // LOAD STORE SCORES
-    public class AsyncLoadStoreScores extends AsyncTask<Void, Void, String> {
+    public class LoadStores extends AsyncTask<Void, Void, String> {
+
+        ArrayList<Stores> arrPendings;
+        ArrayList<Stores> arrPosted;
 
         @Override
         protected void onPreExecute() {
+            arrPendings = new ArrayList<>();
+            arrPosted = new ArrayList<>();
             arrStoreList.clear();
-            progressDL = ProgressDialog.show(StoreActivity.this, "", "Getting store scores..");
+            progressDL = ProgressDialog.show(StoreActivity.this, "", "Loading stores. Please wait.");
         }
 
         @Override
         protected String doInBackground(Void... params) {
 
-            Cursor cursstores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
+            Cursor cursorStore = sql.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STORE + " ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC");
             int nstoreid;
             int templateid;
             String templatename;
             boolean isAudited = false;
             boolean isPosted = false;
 
-            cursstores.moveToFirst();
-            while(!cursstores.isAfterLast()) {
-                isAudited = false;
-                isPosted = false;
-                nstoreid = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_id));
+            cursorStore.moveToFirst();
+            while(!cursorStore.isAfterLast()) {
+                nstoreid = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_id));
 
-                String storeCode = cursstores.getString(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode));
-                String webStoreid = cursstores.getString(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_storeid));
+                String storeCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode));
+                String webStoreid = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storeid));
 
-                String storename = cursstores.getString(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim().replace("\"", "");
-                templateid = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_audittempid));
-                templatename = cursstores.getString(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim().replace("\"", "");
-                int nStoreStatus = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_status));
-                int finalValue = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
-                int nPosted = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_posted));
+                String storename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim().replace("\"", "");
+                templateid = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_audittempid));
+                templatename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim().replace("\"", "");
+                isAudited = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_status)) > 0;
+                int finalValue = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
+                isPosted = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_posted)) == 1;
 
-                if(nStoreStatus > 0) isAudited = true;
-                if(nPosted == 1) isPosted = true;
+                Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted);
 
-                arrStoreList.add(new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted));
-                cursstores.moveToNext();
+                if(isAudited && !isPosted)
+                    arrPendings.add(store);
+                else if(isAudited && isPosted)
+                    arrPosted.add(store);
+                else
+                    arrStoreList.add(store);
+
+                cursorStore.moveToNext();
             }
+            cursorStore.close();
 
             return null;
         }
@@ -146,10 +154,14 @@ public class StoreActivity extends AppCompatActivity {
         protected void onPostExecute(String s) {
 
             lstStores.clear();
+
+            lstStores.addAll(arrPendings);
+            lstStores.addAll(arrPosted);
             lstStores.addAll(arrStoreList);
 
             adapter = new StoreAdapter(StoreActivity.this, lstStores);
             lvwStore.setAdapter(adapter);
+            lvwStore.setSmoothScrollbarEnabled(true);
             adapter.notifyDataSetChanged();
 
             searchView.setOnClickListener(new View.OnClickListener() {
@@ -171,10 +183,10 @@ public class StoreActivity extends AppCompatActivity {
                     adapter.filter(newText.trim().toLowerCase(Locale.getDefault()));
                     return false;
                 }
+
             });
 
             searchView.setQuery(searchView.getQuery(), true);
-
             progressDL.dismiss();
         }
     }
@@ -521,13 +533,13 @@ public class StoreActivity extends AppCompatActivity {
     @Override
     protected void onResume() {
         super.onResume();
-        //new AsyncLoadStoreScores().execute();
+        //new LoadStores().execute();
     }
 
     @Override
     protected void onStart() {
         super.onStart();
-        new AsyncLoadStoreScores().execute();
+        new LoadStores().execute();
     }
 
     @Override

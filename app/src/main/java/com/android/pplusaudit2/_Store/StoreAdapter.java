@@ -6,6 +6,7 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
 import android.widget.Button;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
@@ -41,13 +42,13 @@ public class StoreAdapter extends BaseAdapter {
         TextView tvwStore;
         TextView tvwTemplatename;
         TextView tvwPostingDateTime;
-        //TextView tvwScoreStore;
         Button btnPreview;
         Button btnAudit;
+        LinearLayout lnrMain;
     }
 
     @Override
-    public View getView(int position, View view, ViewGroup parent) {
+    public View getView(final int position, View view, ViewGroup parent) {
 
         LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
@@ -60,9 +61,9 @@ public class StoreAdapter extends BaseAdapter {
             holder.tvwStore = (TextView) view.findViewById(R.id.tvwStore);
             holder.tvwTemplatename = (TextView) view.findViewById(R.id.tvwTemplatename);
             holder.tvwPostingDateTime = (TextView) view.findViewById(R.id.tvwPostingDatetime);
-            //holder.tvwScoreStore = (TextView) view.findViewById(R.id.tvwScoreStore);
             holder.btnPreview = (Button) view.findViewById(R.id.btnPreview);
             holder.btnAudit = (Button) view.findViewById(R.id.btnAudit);
+            holder.lnrMain = (LinearLayout) view.findViewById(R.id.lnrMainStore);
 
             view.setTag(holder);
         }
@@ -70,27 +71,51 @@ public class StoreAdapter extends BaseAdapter {
             holder = (ViewHolder) view.getTag();
         }
 
-        int storeid = storeClassResult.get(position).StoreID;
+        final int storeid = storeClassResult.get(position).storeID;
 
-        holder.tvwStore.setText(String.valueOf(storeClassResult.get(position).storeName));
+        holder.tvwStore.setText(String.valueOf(storeClassResult.get(position).storeName.toUpperCase()));
         holder.tvwTemplatename.setText(String.valueOf(storeClassResult.get(position).Tempname));
         holder.tvwPostingDateTime.setText("");
 
-        if(storeClassResult.get(position).isPosted) {
-            String postdate = sqlLibrary.GetPostingDateTime(storeid);
-            holder.tvwPostingDateTime.setText(postdate.trim());
+        if(storeClassResult.get(position).isAudited) {
+            holder.btnPreview.setEnabled(true);
+            holder.lnrMain.setBackgroundColor(view.getResources().getColor(R.color.light_red));
+
+            if(storeClassResult.get(position).isPosted) {
+                String postdate = sqlLibrary.GetPostingDateTime(storeid);
+                holder.tvwPostingDateTime.setText(postdate.trim());
+                holder.lnrMain.setBackgroundColor(view.getResources().getColor(R.color.color_highlight));
+            }
         }
+        else {
+            holder.btnPreview.setEnabled(false);
+            holder.lnrMain.setBackgroundColor(view.getResources().getColor(R.color.white));
+        }
+
+        holder.tvwStore.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                if(storeClassResult.get(position).isAudited) {
+                    holder.btnPreview.setEnabled(true);
+                    holder.lnrMain.setBackgroundColor(mContext.getResources().getColor(R.color.light_red));
+
+                    if(storeClassResult.get(position).isPosted) {
+                        String postdate = sqlLibrary.GetPostingDateTime(storeid);
+                        holder.tvwPostingDateTime.setText(postdate.trim());
+                        holder.lnrMain.setBackgroundColor(mContext.getResources().getColor(R.color.color_highlight));
+                    }
+                }
+                else {
+                    holder.btnPreview.setEnabled(false);
+                    holder.lnrMain.setBackgroundColor(mContext.getResources().getColor(R.color.white));
+                }
+            }
+        });
 
         holder.tvwStore.setTag(storeClassResult.get(position).Audittemplateid + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
         holder.btnPreview.setTag(storeClassResult.get(position).Audittemplateid + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
         holder.btnAudit.setTag(storeClassResult.get(position).Audittemplateid + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
 
-        if(storeClassResult.get(position).isAudited) {
-            holder.btnPreview.setEnabled(true);
-        }
-        else {
-            holder.btnPreview.setEnabled(false);
-        }
 
 /*        holder.tvwScoreStore.setText(String.valueOf(arrStoreList.get(position).totalAnswerStore) + " / " + String.valueOf(arrStoreList.get(position).totalQuestionStore));
 

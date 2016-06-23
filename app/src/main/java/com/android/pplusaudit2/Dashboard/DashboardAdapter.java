@@ -45,7 +45,7 @@ public class DashboardAdapter extends BaseAdapter {
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
 
             //convertView = inflater.inflate(R.layout.field_main_menu, parent, false);
-            convertView = inflater.inflate(R.layout.field_main_list_menu, parent, false);
+            convertView = inflater.inflate(R.layout.dashboard_activity_layout_row_list, parent, false);
             holder = new ViewHolder();
             //holder.imgMenu = (ImageView) convertView.findViewById(R.id.imageViewMenu);
             holder.tvwMenu = (TextView) convertView.findViewById(R.id.tvwMenu);
@@ -58,7 +58,7 @@ public class DashboardAdapter extends BaseAdapter {
         }
 
         //holder.imgMenu.setImageResource(menuValues[position]);
-        holder.tvwMenu.setText(General.Menu[position].split(":")[0]);
+        holder.tvwMenu.setText(General.Menu[position].split(":")[0].toUpperCase());
         holder.tvwMenuDesc.setText(General.Menu[position].split(":")[1]);
 
         holder.tvwImageMenu.setTypeface(menufontIcon);

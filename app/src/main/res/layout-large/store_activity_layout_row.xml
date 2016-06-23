@@ -1,18 +1,19 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/lnrMainStore"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
-    android:padding="17dp"
-    android:orientation="horizontal"
+    android:padding="10dp"
+    android:orientation="vertical"
     android:background="@drawable/style_listview_design">
 
     <LinearLayout
         android:id="@+id/lnrStore"
-        android:layout_width="0dp"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_weight="3"
         android:layout_gravity="center"
+        android:layout_marginBottom="6dp"
         android:orientation="vertical">
 
         <TextView
@@ -21,9 +22,8 @@
             android:layout_height="wrap_content"
             android:gravity="center"
             android:text="STORE 1"
-            android:textStyle="bold"
-            style="@style/TextViewPrimary"
-            android:textSize="20sp" />
+            style="@style/title_style"
+            android:textSize="21sp" />
 
         <TextView
             android:id="@+id/tvwTemplatename"
@@ -32,8 +32,9 @@
             android:gravity="center"
             android:paddingStart="20dp"
             android:paddingLeft="20dp"
-            android:text="Template name"
             android:textStyle="italic"
+            android:textColor="@color/secondary_text"
+            android:text="PG ANABU"
             android:textSize="15sp" />
 
         <TextView
@@ -44,42 +45,37 @@
             android:paddingStart="20dp"
             android:paddingLeft="20dp"
             android:text="Posted: 01/14/2016 13:34"
+            android:textColor="@color/secondary_text"
             android:textStyle="italic|bold"
             android:textSize="15sp" />
 
-
     </LinearLayout>
 
-    <Button
-        android:id="@+id/btnPreview"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        style="@style/ButtonTextBlue"
-        android:text="PREVIEW"
-        android:background="@drawable/btn_accent"
-        android:onClick="previewOnClickEvent"/>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal">
 
-    <Button
-        android:id="@+id/btnAudit"
-        android:layout_width="0dp"
-        android:layout_height="match_parent"
-        android:layout_weight="1"
-        style="@style/ButtonTextBlue"
-        android:text="AUDIT"
-        android:background="@drawable/btn_primary"
-        android:onClick="auditOnClickEvent"/>
-
-    <!--    <TextView
-            android:id="@+id/tvwScoreStore"
+        <Button
+            android:id="@+id/btnPreview"
             android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1.3"
-            android:gravity="right"
-            android:layout_gravity="center"
-            android:text="0 /10"
-            android:textColor="@color/red"
-            android:textStyle="bold"
-            android:textSize="25sp" />-->
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/button_design"
+            android:text="PREVIEW"
+            android:background="@drawable/btn_accent"
+            android:onClick="previewOnClickEvent"/>
+
+        <Button
+            android:id="@+id/btnAudit"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            style="@style/button_design"
+            android:text="AUDIT"
+            android:background="@drawable/btn_primary"
+            android:onClick="auditOnClickEvent"/>
+
+    </LinearLayout>
 
 </LinearLayout>

@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/lnrMainStore"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
@@ -19,10 +20,10 @@
             android:id="@+id/tvwStore"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:textColor="@color/primary_text"
             android:gravity="center"
             android:text="STORE 1"
-            android:textStyle="bold"
-            style="@style/TextViewPrimary"
+            style="@style/title_style"
             android:textSize="20sp" />
 
         <TextView
@@ -32,8 +33,9 @@
             android:gravity="center"
             android:paddingStart="20dp"
             android:paddingLeft="20dp"
-            android:text="Template name"
             android:textStyle="italic"
+            android:textColor="@color/secondary_text"
+            android:text="PG ANABU"
             android:textSize="15sp" />
 
         <TextView
@@ -44,9 +46,9 @@
             android:paddingStart="20dp"
             android:paddingLeft="20dp"
             android:text="Posted: 01/14/2016 13:34"
+            android:textColor="@color/secondary_text"
             android:textStyle="italic|bold"
             android:textSize="15sp" />
-
 
     </LinearLayout>
 
@@ -60,8 +62,9 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:text="PREVIEW"
+            android:fontFamily="Roboto"
             android:background="@drawable/btn_accent"
             android:onClick="previewOnClickEvent"/>
 
@@ -70,7 +73,7 @@
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:text="AUDIT"
             android:background="@drawable/btn_primary"
             android:onClick="auditOnClickEvent"/>

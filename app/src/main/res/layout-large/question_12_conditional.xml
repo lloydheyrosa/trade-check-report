@@ -30,10 +30,6 @@
         android:layout_marginBottom="10dp"
         android:divider="#ffd6d6d6">
 
-        <include layout="@layout/question_12_conditional_conditions" />
-        <include layout="@layout/question_12_conditional_conditions" />
-        <include layout="@layout/question_12_conditional_conditions" />
-
     </RadioGroup>
 
     <TableLayout
@@ -47,9 +43,6 @@
         android:divider="#ffd6d6d6"
         android:layout_marginBottom="10dp"
         android:dividerHeight="5dp">
-
-        <include layout="@layout/question_1_label"/>
-        <include layout="@layout/question_3_numeric"/>
 
     </TableLayout>
 

@@ -16,9 +16,7 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:background="#ffd6d6d6"
-        android:orientation="vertical"
-        app:layout_behavior="@string/appbar_scrolling_view_behavior">
+        android:orientation="vertical">
 
         <android.support.v7.widget.SearchView
             android:id="@+id/svStore"
@@ -30,7 +28,10 @@
         <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:padding="6dp">
+            android:padding="6dp"
+            android:background="#ffd6d6d6"
+            android:orientation="horizontal"
+            app:layout_behavior="@string/appbar_scrolling_view_behavior">
 
             <ListView
                 android:id="@+id/lvwStore"
@@ -38,8 +39,7 @@
                 android:layout_height="match_parent"
                 android:divider="#ffd6d6d6"
                 android:dividerHeight="5dp"
-                android:listSelector="@drawable/style_listview_design"
-                android:longClickable="true"/>
+                android:listSelector="@drawable/style_listview_design"/>
 
         </LinearLayout>
 

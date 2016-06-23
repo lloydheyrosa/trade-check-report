@@ -37,11 +37,14 @@ import java.util.ArrayList;
 public class ReportsActivity extends AppCompatActivity {
 
     ProgressDialog progressDialog;
+    private String TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.reports_activity);
+
+        TAG = ReportsActivity.this.getLocalClassName();
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
@@ -104,9 +107,9 @@ public class ReportsActivity extends AppCompatActivity {
     }
 
     public class FetchReportData extends AsyncTask<Void, Void, Boolean> {
-        String errmsg = "";
         String response = null;
         int reportID;
+        private String errorMsg;
 
         public FetchReportData(int reportID) {
             this.reportID = reportID;
@@ -153,16 +156,22 @@ public class ReportsActivity extends AppCompatActivity {
                 }
             }
             catch (MalformedURLException ex) {
-                Log.e("URL Error", ex.getMessage());
-                errmsg = ex.getMessage();
+                ex.printStackTrace();
+                errorMsg = "Can't connect to web server. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
             catch (IOException ex) {
-                Log.e("IO Error", ex.getMessage());
-                errmsg = "Url: " + ex.getMessage() + " not found in web server.";
+                ex.printStackTrace();
+                errorMsg = "Slow or unstable internet connection. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
             catch (JSONException ex) {
-                Log.e("JSON Error", ex.getMessage());
-                errmsg = ex.getMessage();
+                ex.printStackTrace();
+                errorMsg = "Error in web response of server. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
 
             return result;
@@ -172,7 +181,7 @@ public class ReportsActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDialog.dismiss();
             if(!bResult) {
-                Toast.makeText(ReportsActivity.this, errmsg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(ReportsActivity.this, errorMsg, Toast.LENGTH_SHORT).show();
                 return;
             }
 

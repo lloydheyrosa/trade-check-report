@@ -12,7 +12,6 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -104,6 +103,7 @@ public class StorePreviewActivity extends AppCompatActivity {
     boolean toggleAudit;
 
     ArrayList<Category> arrCategories;
+    private String TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -112,6 +112,8 @@ public class StorePreviewActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
+
+        TAG = StorePreviewActivity.this.getLocalClassName();
 
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
@@ -193,10 +195,10 @@ public class StorePreviewActivity extends AppCompatActivity {
         tvwPlanoIcon.setTypeface(fontIcon);
         tvwPerfectIcon.setTypeface(fontIcon);
 
-        tvwOsaIcon.setText("\uf274");
-        tvwNpiIcon.setText("\uf080");
-        tvwPlanoIcon.setText("\uf00b");
-        tvwPerfectIcon.setText("\uf087");
+        tvwOsaIcon.setText("\uf201");
+        tvwNpiIcon.setText("\uf0a1");
+        tvwPlanoIcon.setText("\uf07a");
+        tvwPerfectIcon.setText("\uf0e4");
 
         btnPost.setTypeface(fontIcon);
         btnBack.setTypeface(fontIcon);
@@ -210,7 +212,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
         if(!CheckDateValidation(startDate, endDate)) {
             btnPost.setEnabled(false);
-            General.ShowMessage(StorePreviewActivity.this, "End of posting", "End date of posting");
+            General.messageBox(StorePreviewActivity.this, "End of posting", "End date of posting");
         }
 
         btnPost.setOnClickListener(new View.OnClickListener() {
@@ -547,18 +549,12 @@ public class StorePreviewActivity extends AppCompatActivity {
             }
             lvwPreview.setAdapter(new PreviewCategoryAdapter(StorePreviewActivity.this, arrCategories));
             lvwPreview.setSmoothScrollbarEnabled(true);
-
-            DisplayPercentages();
         }
-    }
-
-    private void DisplayPercentages() {
-
     }
 
     public class AsyncGenerateTextFile extends AsyncTask<Void, Void, Boolean> {
 
-        private String exError;
+        private String errorMsg;
 
         @Override
         protected void onPreExecute() {
@@ -567,6 +563,8 @@ public class StorePreviewActivity extends AppCompatActivity {
 
         @Override
         protected Boolean doInBackground(Void... params) {
+
+            boolean result = false;
 
             if(filepathToSend.exists()) filepathToSend.delete();
 
@@ -615,27 +613,27 @@ public class StorePreviewActivity extends AppCompatActivity {
                 writer.append(sBody);
                 writer.flush();
                 writer.close();
-                return true;
+                result = true;
             }
-            catch(IOException e)
-            {
-                progressDL.dismiss();
-                e.printStackTrace();
-                Log.e("IOException", e.getMessage());
-                exError = e.getMessage();
-                return false;
+            catch(IOException ex) {
+                ex.printStackTrace();
+                errorMsg = "Error in generating CSV. Please check error log.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
+
+            return result;
         }
 
         @Override
         protected void onPostExecute(Boolean s) {
+            progressDL.dismiss();
             if(!s) {
                 wlStayAwake.release();
-                progressDL.dismiss();
-                Toast.makeText(StorePreviewActivity.this, exError, Toast.LENGTH_LONG).show();
+                Toast.makeText(StorePreviewActivity.this, errorMsg, Toast.LENGTH_LONG).show();
                 return;
             }
-            progressDL.dismiss();
+
             new AsyncPostFiles(filepathToSend, strFilenameToSend, General.POSTING_URL).execute();
         }
     }
@@ -646,6 +644,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         private String response;
         private ArrayList<String> aStrFilename;
         private ArrayList<File> aFileImage;
+        private String errorMsg;
 
         public AsyncPostImages(Integer nMax, ArrayList<String> arrStrFilename, ArrayList<File> arrfilePic) {
             this.maxnum = nMax;
@@ -658,6 +657,7 @@ public class StorePreviewActivity extends AppCompatActivity {
             progressDL = ProgressDialog.show(StorePreviewActivity.this, "", "Posting images.");
             progressDL.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
             progressDL.setMax(this.maxnum);
+            wlStayAwake.acquire();
         }
 
         @Override
@@ -677,6 +677,8 @@ public class StorePreviewActivity extends AppCompatActivity {
             byte[] buffer;
             int maxBufferSize = 1*1024*1024;
 
+            HttpURLConnection httpUrlConnection = null;
+
             try {
 
                 for (int i = 0; i < aFileImage.size(); i++) {
@@ -684,7 +686,6 @@ public class StorePreviewActivity extends AppCompatActivity {
                     attachmentFileName = aStrFilename.get(i);
                     FileInputStream fileInputStream = new FileInputStream(aFileImage.get(i)); // text file to upload
 
-                    HttpURLConnection httpUrlConnection = null;
                     URL url = new URL(General.POSTING_IMAGE + "/" + strImageFolder); // url to post
                     httpUrlConnection = (HttpURLConnection) url.openConnection();
                     httpUrlConnection.setUseCaches(false);
@@ -718,18 +719,6 @@ public class StorePreviewActivity extends AppCompatActivity {
                         bytesRead = fileInputStream.read(buffer, 0, bufferSize);
                     }
 
-                    //I want to send only 8 bit black & white bitmaps
-/*                byte[] pixels = new byte[bitmap.getWidth() * bitmap.getHeight()];
-                for (int i = 0; i < bitmap.getWidth(); ++i) {
-                    for (int j = 0; j < bitmap.getHeight(); ++j) {
-                        //we're interested only in the MSB of the first byte,
-                        //since the other 3 bytes are identical for B&W images
-                        pixels[i + j] = (byte) ((bitmap.getPixel(i, j) & 0x80) >> 7);
-                    }
-                }
-
-                request.write(pixels);*/
-
                     request.writeBytes(crlf);
                     request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
                     request.flush();
@@ -752,14 +741,39 @@ public class StorePreviewActivity extends AppCompatActivity {
                     response = stringBuilder.toString();
 
                     responseStream.close();
-                    httpUrlConnection.disconnect();
+
+                    JSONObject jsonObject = new JSONObject(response);
+                    if(!jsonObject.isNull("msg")) {
+                        int status = jsonObject.getInt("status");
+                        String msg = jsonObject.getString("msg");
+
+                        if(status == 0) {
+                            response = msg.trim();
+                            bReturn =  true;
+                        }
+                        else {
+                            errorMsg = msg.trim();
+                            bReturn = false;
+                            break;
+                        }
+                    }
                 }
-                bReturn =  true;
             }
             catch (IOException ex) {
-                response = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
-                Log.e("Posting Image", response);
                 ex.printStackTrace();
+                errorMsg = "Slow or unstable internet connection. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
+            }
+            catch (JSONException ex) {
+                ex.printStackTrace();
+                errorMsg = "Error in web response from server. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
+            }
+            finally {
+                if(httpUrlConnection != null)
+                    httpUrlConnection.disconnect();
             }
 
             return bReturn;
@@ -769,30 +783,42 @@ public class StorePreviewActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean aBoolean) {
             progressDL.dismiss();
             if(!aBoolean) {
-                Toast.makeText(StorePreviewActivity.this, response, Toast.LENGTH_LONG).show();
+                General.messageBox(StorePreviewActivity.this, "Posting of image unsuccessful", errorMsg);
                 return;
             }
 
-            postDialog = new AlertDialog.Builder(StorePreviewActivity.this).create();
-            postDialog.setTitle("Success");
-            postDialog.setMessage("Survey is successfully posted!\n\nMessage: " + response);
-            postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-                @Override
-                public void onClick(DialogInterface dialog, int which) {
-                    postDialog.dismiss();
-                    finish();
-                }
-            });
-            postDialog.show();
+            SetPostingSuccessful(response);
         }
     }
 
+    public void SetPostingSuccessful(String msg) {
+        sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STORE
+                + " SET " + SQLiteDB.COLUMN_STORE_posted + " = '1', "
+                + SQLiteDB.COLUMN_STORE_postingdate + " = '" + General.getDateToday() + "', " + SQLiteDB.COLUMN_STORE_postingtime + " = '" + General.getTimeToday() + "'  WHERE " + SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
+
+        postDialog = new AlertDialog.Builder(StorePreviewActivity.this).create();
+        postDialog.setTitle("Success");
+        postDialog.setMessage("Survey is successfully posted!\n\nMessage: " + msg);
+        postDialog.setCancelable(false);
+        postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialog, int which) {
+                postDialog.dismiss();
+                finish();
+            }
+        });
+        postDialog.show();
+    }
+
     // send file
-    public class AsyncPostFiles extends AsyncTask<Void, Void, String> {
+    public class AsyncPostFiles extends AsyncTask<Void, Void, Boolean> {
 
         private final File fileToSend;
         private final String postingURL;
         private final String strFilename;
+        private String errorMsg;
+        private String response;
+        private String auditID;
 
         public AsyncPostFiles(File filepath, String strFilename, String url) {
             this.fileToSend = filepath;
@@ -806,7 +832,9 @@ public class StorePreviewActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected Boolean doInBackground(Void... params) {
+
+            boolean result = false;
 
             String attachmentName = "data";
             String attachmentFileName = strFilename;
@@ -814,16 +842,16 @@ public class StorePreviewActivity extends AppCompatActivity {
             String twoHyphens = "--";
             String boundary =  "*****";
 
-            String response = "";
-
             int bytesRead, bytesAvailable, bufferSize;
             byte[] buffer;
             int maxBufferSize = 1*1024*1024;
 
+            HttpURLConnection httpUrlConnection = null;
+
             try {
 
                 FileInputStream fileInputStream = new FileInputStream(fileToSend); // text file to upload
-                HttpURLConnection httpUrlConnection = null;
+
                 URL url = new URL(postingURL); // url to post
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setUseCaches(false);
@@ -857,18 +885,6 @@ public class StorePreviewActivity extends AppCompatActivity {
                     bytesRead = fileInputStream.read(buffer, 0, bufferSize);
                 }
 
-                //I want to send only 8 bit black & white bitmaps
-/*                byte[] pixels = new byte[bitmap.getWidth() * bitmap.getHeight()];
-                for (int i = 0; i < bitmap.getWidth(); ++i) {
-                    for (int j = 0; j < bitmap.getHeight(); ++j) {
-                        //we're interested only in the MSB of the first byte,
-                        //since the other 3 bytes are identical for B&W images
-                        pixels[i + j] = (byte) ((bitmap.getPixel(i, j) & 0x80) >> 7);
-                    }
-                }
-
-                request.write(pixels);*/
-
                 request.writeBytes(crlf);
                 request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
                 request.flush();
@@ -888,100 +904,69 @@ public class StorePreviewActivity extends AppCompatActivity {
                 }
                 responseStreamReader.close();
 
-                response = stringBuilder.toString();
+                response = stringBuilder.toString().trim();
                 responseStream.close();
-                httpUrlConnection.disconnect();
 
-                return response;
+                JSONObject jsonObject = new JSONObject(response);
+                if(!jsonObject.isNull("msg")) {
+                    int status = jsonObject.getInt("status");
+                    String msg = jsonObject.getString("msg");
+
+                    if(status == 0) {
+                        response = msg.trim();
+                        auditID = jsonObject.getString("audit_id");
+                        result = true;
+                    }
+                    else {
+                        errorMsg = msg.trim();
+                    }
+                }
+            }
+            catch (JSONException ex) {
+                ex.printStackTrace();
+                errorMsg = "Error in web response of server. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
             catch (final MalformedURLException ex) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        messageBox.ShowMessage("MalformedURLException", ex.getMessage());
-                        ex.printStackTrace();
-                    }
-                });
+                ex.printStackTrace();
+                errorMsg = "Can't connect to web server. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
-            catch (final ProtocolException pex) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        messageBox.ShowMessage("ProtocolException", pex.getMessage());
-                        pex.printStackTrace();
-                    }
-                });
+            catch (final ProtocolException ex) {
+                ex.printStackTrace();
+                errorMsg = "Error in web protocol. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
-            catch (final IOException ioex) {
-                runOnUiThread(new Runnable() {
-                    @Override
-                    public void run() {
-                        messageBox.ShowMessage("IOException", ioex.getMessage());
-                        ioex.printStackTrace();
-                    }
-                });
+            catch (final IOException ex) {
+                ex.printStackTrace();
+                errorMsg = "Slow or unstable internet connection. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
             finally {
-                return response;
+                if(httpUrlConnection != null)
+                    httpUrlConnection.disconnect();
             }
+
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
             wlStayAwake.release();
-            if(s == null) {
-                Toast.makeText(StorePreviewActivity.this, "Something went wrong, posting of survey is cancelled", Toast.LENGTH_LONG).show();
+            if(!bResult) {
+                General.messageBox(StorePreviewActivity.this, "Posting unsuccessful", errorMsg);
                 return;
             }
 
-            try {
-                JSONObject data = new JSONObject(s);
+            strImageFolder = auditID;
 
-                if (!data.isNull("msg")) {
-                    String status = data.getString("status");
-                    String msg = data.getString("msg");
+            new AsyncPostFile2(filepathToSend, strFilenameToSend, General.POSTING_DETAILS_URL).execute();
 
-                    if(status.equals("1")) {
-                        postDialog = new AlertDialog.Builder(StorePreviewActivity.this).create();
-                        postDialog.setTitle("Unsuccessful");
-                        postDialog.setMessage("Survey not posted. There's a problem in posting data to web server: \n" + msg);
-                        postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-                            @Override
-                            public void onClick(DialogInterface dialog, int which) {
-                                postDialog.dismiss();
-                            }
-                        });
-                        postDialog.show();
-                        return;
-                    }
-
-                    sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STORE
-                            + " SET " + SQLiteDB.COLUMN_STORE_posted + " = '1', "
-                            + SQLiteDB.COLUMN_STORE_postingdate + " = '" + General.getDateToday() + "', " + SQLiteDB.COLUMN_STORE_postingtime + " = '" + General.getTimeToday() + "'  WHERE " + SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
-
-                    // posting successful
-                    strImageFolder = data.getString("audit_id");
-
-                    new AsyncPostFile2(filepathToSend, strFilenameToSend, General.POSTING_DETAILS_URL).execute();
-                }
-                else {
-                    postDialog = new AlertDialog.Builder(StorePreviewActivity.this).create();
-                    postDialog.setTitle("Unsuccessful");
-                    postDialog.setMessage("Error in posting survey");
-                    postDialog.setCancelable(false);
-                    postDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
-                        @Override
-                        public void onClick(DialogInterface dialog, int which) {
-                            postDialog.dismiss();
-                        }
-                    });
-                }
-            }
-            catch (JSONException jex) {
-                jex.printStackTrace();
-                Log.e("JSONException", jex.getMessage());
-            }
         }
     }
 
@@ -991,7 +976,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         private final String postingURL;
         private final String strFilename;
         String response = "";
-        String error = "";
+        private String errorMsg;
 
         public AsyncPostFile2(File filepath, String strFilename, String url) {
             this.fileToSend = filepath;
@@ -1001,6 +986,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
+            wlStayAwake.acquire();
             progressDL = ProgressDialog.show(StorePreviewActivity.this, "", "Posting audit details.", true);
         }
 
@@ -1015,16 +1001,15 @@ public class StorePreviewActivity extends AppCompatActivity {
             String twoHyphens = "--";
             String boundary =  "*****";
 
-            String response = "";
-
             int bytesRead, bytesAvailable, bufferSize;
             byte[] buffer;
             int maxBufferSize = 1*1024*1024;
+            HttpURLConnection httpUrlConnection = null;
 
             try {
 
                 FileInputStream fileInputStream = new FileInputStream(fileToSend); // text file to upload
-                HttpURLConnection httpUrlConnection = null;
+
                 URL url = new URL(postingURL); // url to post
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
                 httpUrlConnection.setUseCaches(false);
@@ -1058,18 +1043,6 @@ public class StorePreviewActivity extends AppCompatActivity {
                     bytesRead = fileInputStream.read(buffer, 0, bufferSize);
                 }
 
-                //I want to send only 8 bit black & white bitmaps
-/*                byte[] pixels = new byte[bitmap.getWidth() * bitmap.getHeight()];
-                for (int i = 0; i < bitmap.getWidth(); ++i) {
-                    for (int j = 0; j < bitmap.getHeight(); ++j) {
-                        //we're interested only in the MSB of the first byte,
-                        //since the other 3 bytes are identical for B&W images
-                        pixels[i + j] = (byte) ((bitmap.getPixel(i, j) & 0x80) >> 7);
-                    }
-                }
-
-                request.write(pixels);*/
-
                 request.writeBytes(crlf);
                 request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
                 request.flush();
@@ -1091,32 +1064,59 @@ public class StorePreviewActivity extends AppCompatActivity {
 
                 response = stringBuilder.toString();
                 responseStream.close();
-                httpUrlConnection.disconnect();
 
-                result = true;
+                JSONObject jsonObject = new JSONObject(response);
+                if(!jsonObject.isNull("msg")) {
+                    int status = jsonObject.getInt("status");
+                    String msg = jsonObject.getString("msg");
+
+                    if(status == 0) {
+                        response = msg.trim();
+                        result = true;
+                    }
+                    else {
+                        errorMsg = msg.trim();
+                    }
+                }
+            }
+            catch (JSONException ex) {
+                ex.printStackTrace();
+                errorMsg = "Error in web response of server. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
             catch (final MalformedURLException ex) {
                 ex.printStackTrace();
-                error = ex.getMessage();
+                errorMsg = "Can't connect to web server. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
-            catch (final ProtocolException pex) {
-                pex.printStackTrace();
-                error = pex.getMessage();
+            catch (final ProtocolException ex) {
+                ex.printStackTrace();
+                errorMsg = "Error in web protocol. Please try again.";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
-            catch (final IOException ioex) {
-                ioex.printStackTrace();
-                error = ioex.getMessage();
+            catch (final IOException ex) {
+                ex.printStackTrace();
+                errorMsg = "Slow or unstable internet connection. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
+                General.errorLog.appendLog(errmsg, TAG);
             }
             finally {
-                return result;
+                if(httpUrlConnection != null)
+                    httpUrlConnection.disconnect();
             }
+
+            return result;
         }
 
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             progressDL.dismiss();
+            if(wlStayAwake.isHeld()) wlStayAwake.release();
             if(!aBoolean) {
-                Toast.makeText(StorePreviewActivity.this, error, Toast.LENGTH_LONG).show();
+                General.messageBox(StorePreviewActivity.this, "Unsuccessful posting", errorMsg);
                 return;
             }
 
@@ -1172,7 +1172,10 @@ public class StorePreviewActivity extends AppCompatActivity {
 
             cursStoreCategory.close();
 
-            new AsyncPostImages(totalImages, aStrFilenames, aFileImages).execute();
+            if(aFileImages.size() > 0) {
+                new AsyncPostImages(totalImages, aStrFilenames, aFileImages).execute();
+            }
+            else SetPostingSuccessful("Audit posted.");
         }
     }
 

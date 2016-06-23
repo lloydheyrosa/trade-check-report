@@ -39,7 +39,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:text="Set Time"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:background="@drawable/btn_primary" />
 
     </LinearLayout>

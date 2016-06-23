@@ -18,7 +18,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "unileverdb";
     private static final String TAG = "SettingsProvider";
-    public static final int DATABASE_VERSION = 6;
+    public static final int DATABASE_VERSION = 7;
 
     public SQLiteDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -457,6 +457,26 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_PGROUP_id + " integer PRIMARY KEY autoincrement, "
             + COLUMN_PGROUP_groupid + " numeric)";
 
+
+    // PJP CHECK IN TABLE - new table in db version 7
+    public static final String TABLE_PJPCOMP = "tblPjpCompliance";
+    public static final String COLUMN_PJPCOMP_id = "id";
+    public static final String COLUMN_PJPCOMP_userid = "user_id";
+    public static final String COLUMN_PJPCOMP_usercode = "user_code";
+    public static final String COLUMN_PJPCOMP_storeid = "store_id";
+    public static final String COLUMN_PJPCOMP_webstoreid = "webstore_id";
+    public static final String COLUMN_PJPCOMP_date = "date_checkin";
+    public static final String COLUMN_PJPCOMP_time = "time_checkin";
+
+    private static final String DATABASE_CREATE_TABLE_PJPCOMP = "CREATE TABLE " + TABLE_PJPCOMP + "("
+            + COLUMN_PJPCOMP_id + " integer PRIMARY KEY autoincrement, "
+            + COLUMN_PJPCOMP_userid + " numeric, "
+            + COLUMN_PJPCOMP_usercode + " text, "
+            + COLUMN_PJPCOMP_storeid + " numeric, "
+            + COLUMN_PJPCOMP_webstoreid + " numeric, "
+            + COLUMN_PJPCOMP_date + " text, "
+            + COLUMN_PJPCOMP_time + " text)";
+
     @Override
     public void onCreate(SQLiteDatabase db) {
         try {
@@ -486,6 +506,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
             db.execSQL(DATABASE_CREATE_TABLE_PLANOGRAM);
             db.execSQL(DATABASE_CREATE_TABLE_PERFECTCATEGORY);
             db.execSQL(DATABASE_CREATE_TABLE_PERFECTGROUP);
+            db.execSQL(DATABASE_CREATE_TABLE_PJPCOMP);
             db.execSQL("CREATE INDEX userIndex ON " + TABLE_USER + " (" + COLUMN_USER_id + ")");
         }
         catch (Exception ex) {
@@ -528,6 +549,10 @@ public class SQLiteDB extends SQLiteOpenHelper {
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_perfectstore + " TEXT DEFAULT 0");
                 }
 
+                if(newVersion > oldVersion && oldVersion <= 6) { // version 7
+                    db.execSQL(DATABASE_CREATE_TABLE_PJPCOMP);
+                }
+
                 Log.w(TAG, "Upgrading settings database from version " + oldVersion + " to "
                         + newVersion);
             }
@@ -540,7 +565,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
     @Override
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
-        if(newVersion < oldVersion) {
+/*        if(newVersion < oldVersion) {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_STORE);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORY);
@@ -565,10 +590,13 @@ public class SQLiteDB extends SQLiteOpenHelper {
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PICTURES);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_NPI);
             db.execSQL("DROP TABLE IF EXISTS " + TABLE_PLANOGRAM);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PJPCOMP);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PERFECT_CATEGORY);
+            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PERFECT_GROUP);
             onCreate(db);
 
             Log.w(TAG, "Downgrading settings database from version " + oldVersion + " to "
                     + newVersion);
-        }
+        }*/
     }
 }

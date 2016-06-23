@@ -47,7 +47,7 @@
             android:layout_weight="1"
             android:layout_gravity="center_vertical"
             android:text="PROCESS"
-            style="@style/ButtonTextBlue"
+            style="@style/button_design"
             android:background="@drawable/btn_accent" />
 
     </LinearLayout>

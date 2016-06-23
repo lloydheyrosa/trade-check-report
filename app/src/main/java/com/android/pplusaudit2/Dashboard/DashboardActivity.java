@@ -14,6 +14,7 @@ import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
+import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -31,6 +32,7 @@ import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MainActivity;
 import com.android.pplusaudit2.MyMessageBox;
+import com.android.pplusaudit2.PJP_Compliance.PjpActivity;
 import com.android.pplusaudit2.Report.ReportsActivity;
 import com.android.pplusaudit2._Store.StoreActivity;
 import com.android.pplusaudit2.R;
@@ -61,27 +63,27 @@ import java.net.UnknownHostException;
  */
 public class DashboardActivity extends AppCompatActivity {
 
-    SQLLibrary sql;
-    MyMessageBox messageBox;
-    ProgressDialog progressDL;
-    String TAG = "";
+    private SQLLibrary sql;
+    private MyMessageBox messageBox;
+    private ProgressDialog progressDL;
+    private String TAG = "";
     private String urlDownload = "";
 
-    public enum MENU_MODE {
+    private enum MENU_MODE {
         CHECK_NEW_UPDATE,
         SEND_ERROR,
         SYNC_MASTERFILE
     }
 
-    MENU_MODE menuMode;
-    CheckUpdateApk checkUpdateApk;
-    PowerManager powerman;
-    public static PowerManager.WakeLock wlStayAwake;
+    private MENU_MODE menuMode;
+    private CheckUpdateApk checkUpdateApk;
+    private PowerManager powerman;
+    static PowerManager.WakeLock wlStayAwake;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.field_main);
+        setContentView(R.layout.dashboard_activity_layout);
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
 
         powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
@@ -91,8 +93,8 @@ public class DashboardActivity extends AppCompatActivity {
         General.errlogFile = General.deviceID + ".txt";
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
-        General.versionName = "Trade Check Report v." + General.GetVersionName(this);
-        General.versionCode = General.GetVersionCode(this);
+        General.versionName = "Trade Check Report v." + General.getVersionName(this);
+        General.versionCode = General.getVersionCode(this);
         try {
             getSupportActionBar().setTitle(General.versionName);
         }
@@ -101,11 +103,9 @@ public class DashboardActivity extends AppCompatActivity {
         TAG = DashboardActivity.this.getLocalClassName();
 
         General.sharedPref = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
-        General.hashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
+        General.savedHashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
         General.oldversionCode = General.sharedPref.getInt(getString(R.string.pref_oldvcode), General.versionCode);
         General.dateLog = General.sharedPref.getString(getString(R.string.pref_date_log), General.getDateToday());
-
-        General.errorLog.appendLog("Dashboard run. User: " + General.userFullName, TAG);
 
         SharedPreferences.Editor spEdit = General.sharedPref.edit();
         spEdit.putInt(getString(R.string.pref_oldvcode), General.versionCode);
@@ -131,7 +131,6 @@ public class DashboardActivity extends AppCompatActivity {
                 switch (position)
                 {
                     case 0: // AUDIT
-
                         Cursor cursorStores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
                         if(cursorStores.getCount() <= 0) {
                             messageBox.ShowMessage("Unavailable", "Store records are empty. Please re-download the files.");
@@ -142,37 +141,16 @@ public class DashboardActivity extends AppCompatActivity {
                         }
 
                         break;
-                    case 1: // REPORTS
+                    case 1: // PJP COMPLIANCE
+                        Intent intentPjp = new Intent(DashboardActivity.this, PjpActivity.class);
+                        startActivity(intentPjp);
+                        break;
+                    case 2: // REPORTS
                         Intent intentReport = new Intent(DashboardActivity.this, ReportsActivity.class);
                         startActivity(intentReport);
                         break;
-                    case 2: // LOGOUT
-
-                        final AlertDialog alert = new AlertDialog.Builder(DashboardActivity.this).create();
-                        alert.setMessage("Do you want to log out?");
-                        alert.setTitle("Log out");
-                        alert.setButton(AlertDialog.BUTTON_POSITIVE, "YES",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-
-                                        SharedPreferences.Editor spEditor = General.sharedPref.edit();
-                                        spEditor.putBoolean(getString(R.string.pref_isLogged), false);
-                                        spEditor.apply();
-
-                                        Intent intentmenu = new Intent(DashboardActivity.this, MainActivity.class);
-                                        startActivity(intentmenu);
-                                        finish();
-                                    }
-                                });
-                        alert.setButton(AlertDialog.BUTTON_NEGATIVE, "NO",
-                                new DialogInterface.OnClickListener() {
-                                    public void onClick(DialogInterface dialog, int which) {
-                                        dialog.dismiss();
-                                    }
-                                });
-
-                        alert.show();
+                    case 3: // LOGOUT
+                        new LoadStores().execute();
                     default:
                         break;
                 }
@@ -183,9 +161,89 @@ public class DashboardActivity extends AppCompatActivity {
         General.errorLog = new ErrorLog(General.errlogFile, this);
         General.mainAutoUpdate = new AutoUpdate(this);
         checkUpdateApk = new CheckUpdateApk(this);
+
+        General.errorLog.appendLog("Dashboard run. User: " + General.userFullName, TAG);
     }
 
-    public class CheckUpdates extends AsyncTask<Void, Void, Boolean> {
+    private class LoadStores extends AsyncTask<Void, Void, Void> {
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(DashboardActivity.this, "", "Logging out.");
+        }
+
+        @Override
+        protected Void doInBackground(Void... params) {
+            Cursor cursstores = sql.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STORE + " ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC");
+            boolean isAudited = false;
+            boolean isPosted = false;
+
+            General.arrPendingStores.clear();
+
+            cursstores.moveToFirst();
+            while(!cursstores.isAfterLast()) {
+
+                String storeName = cursstores.getString(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim().replace("\"", "");
+                isAudited = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_status)) > 0;
+                isPosted = cursstores.getInt(cursstores.getColumnIndex(SQLiteDB.COLUMN_STORE_posted)) == 1;
+
+                if(isAudited && !isPosted) {
+                    General.arrPendingStores.add(storeName);
+                }
+
+                cursstores.moveToNext();
+            }
+
+            return null;
+        }
+
+        @Override
+        protected void onPostExecute(Void aVoid) {
+            progressDL.dismiss();
+            final AlertDialog alert = new AlertDialog.Builder(DashboardActivity.this).create();
+
+            String msg = "No previous audit found. Do you want to log out?";
+            if(General.arrPendingStores.size() > 0) {
+                msg = "Logging out may delete your previous audit survey. Do you want to log out?\n\nThe following store's audit are not yet posted:";
+                LayoutInflater inflater = getLayoutInflater();
+                View layout = inflater.inflate(R.layout.logout_prompt_layout, null);
+                TextView tvwPrompt = (TextView) layout.findViewById(R.id.tvwLogoutStore);
+
+                String strStore = "";
+                for (String storeName : General.arrPendingStores) {
+                    strStore += storeName.toUpperCase() + "\n";
+                }
+                tvwPrompt.setText(strStore);
+                alert.setView(layout);
+            }
+
+            alert.setMessage(msg);
+            alert.setTitle("Log out");
+            alert.setButton(AlertDialog.BUTTON_POSITIVE, "YES",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+
+                            SharedPreferences.Editor spEditor = General.sharedPref.edit();
+                            spEditor.putBoolean(getString(R.string.pref_isLogged), false);
+                            spEditor.apply();
+
+                            Intent intentmenu = new Intent(DashboardActivity.this, MainActivity.class);
+                            startActivity(intentmenu);
+                            finish();
+                        }
+                    });
+            alert.setButton(AlertDialog.BUTTON_NEGATIVE, "NO",
+                    new DialogInterface.OnClickListener() {
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    });
+
+            alert.show();
+        }
+    }
+
+    private class CheckUpdates extends AsyncTask<Void, Void, Boolean> {
 
         String messages = "";
         private DefaultHttpClient httpclient = new DefaultHttpClient();
@@ -569,13 +627,13 @@ public class DashboardActivity extends AppCompatActivity {
                 userCodeLogged = cursUser.getString(cursUser.getColumnIndex("code"));
             }
 
-            Log.e("HASH", General.hashKey + " = " + hashLogged);
+            Log.e("HASH", General.savedHashKey + " = " + hashLogged);
             spEditor.putString(getString(R.string.pref_hash), hashLogged);
             spEditor.putBoolean(getString(R.string.pref_isLogged), true);
             spEditor.apply();
 
-            if(General.hashKey.trim().equals(hashLogged) && (usercode.equals(userCodeLogged))) {
-                General.hashKey = hashLogged;
+            if(General.savedHashKey.trim().equals(hashLogged) && (usercode.equals(userCodeLogged))) {
+                General.savedHashKey = hashLogged;
                 Toast.makeText(DashboardActivity.this, "The masterfile is updated.", Toast.LENGTH_LONG).show();
                 return;
             }
@@ -589,7 +647,7 @@ public class DashboardActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
                             wlStayAwake.acquire();
-                            General.hashKey = hashLogged;
+                            General.savedHashKey = hashLogged;
                             sql.InitializeAllTables();
 
                             String[] afields = { SQLiteDB.COLUMN_USER_code, SQLiteDB.COLUMN_USER_name };

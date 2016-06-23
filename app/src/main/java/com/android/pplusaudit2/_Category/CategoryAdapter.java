@@ -18,14 +18,14 @@ import java.util.List;
 /**
  * Created by ULTRABOOK on 9/22/2015.
  */
-public class CategoryAdapter extends BaseAdapter {
+class CategoryAdapter extends BaseAdapter {
 
     private Context mContext;
     private List<Category> activityResultList = null;
     private ArrayList<Category> arrActivityList;
     private Typeface menuFontIcon;
 
-    public CategoryAdapter(Context ctx, ArrayList<Category> arrList)
+    CategoryAdapter(Context ctx, ArrayList<Category> arrList)
     {
         this.mContext = ctx;
         activityResultList = arrList;

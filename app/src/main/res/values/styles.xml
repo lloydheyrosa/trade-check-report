@@ -25,14 +25,16 @@
     <style name="AppTheme.AppBarOverlay" parent="ThemeOverlay.AppCompat.Dark.ActionBar" />
     <style name="AppTheme.PopupOverlay" parent="ThemeOverlay.AppCompat.Light" />
 
-    <style name="ButtonTextBlue">
-        <item name="android:layout_width">fill_parent</item>
-        <item name="android:layout_height">wrap_content</item>
+    <style name="button_design">
+        <item name="android:layout_width">wrap_content</item>
+        <item name="android:layout_height">32dp</item>
         <item name="android:textColor">#ffffff</item>
         <item name="android:gravity">center</item>
+        <item name="android:paddingLeft">16dp</item>
+        <item name="android:paddingRight">16dp</item>
         <item name="android:layout_margin">2dp</item>
-        <item name="android:textSize">17sp</item>
-        <item name="android:textStyle">bold</item>
+        <item name="android:textSize">16sp</item>
+        <item name="android:fontFamily">sans-serif</item>
     </style>
 
     <style name="ButtonTextBlue_normal">
@@ -45,25 +47,24 @@
         <item name="android:textStyle">bold</item>
     </style>
 
+    <style name="title_style" parent="@android:style/Widget.TextView">
+        <item name="android:textColor">@color/primary_text</item>
+        <item name="android:textSize">21sp</item>
+    </style>
+
     <style name="TextViewPrimary" parent="@android:style/Widget.TextView">
-        <item name="android:textColor">#444444</item>
-        <item name="android:shadowDx">1</item>
-        <item name="android:shadowDy">1</item>
+        <item name="android:textColor">@color/primary_text</item>
         <item name="android:textSize">20sp</item>
     </style>
 
     <style name="TextViewPrimary_medium" parent="@android:style/Widget.TextView">
-        <item name="android:textColor">#444444</item>
-        <item name="android:shadowDx">1</item>
-        <item name="android:shadowDy">1</item>
+        <item name="android:textColor">@color/primary_text</item>
         <item name="android:textSize">16sp</item>
     </style>
 
 
     <style name="TextViewPrimary_small" parent="@android:style/Widget.TextView">
-        <item name="android:textColor">#444444</item>
-        <item name="android:shadowDx">1</item>
-        <item name="android:shadowDy">1</item>
+        <item name="android:textColor">@color/primary_text</item>
         <item name="android:textSize">12sp</item>
     </style>
 

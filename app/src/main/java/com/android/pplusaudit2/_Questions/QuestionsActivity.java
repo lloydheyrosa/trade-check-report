@@ -23,8 +23,10 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
+import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -59,73 +61,74 @@ import java.util.Locale;
  */
 public class QuestionsActivity extends AppCompatActivity {
 
-    SQLLibrary sqlLibrary;
-    TCRLib tcrLib;
-    String TAG = "";
+    private SQLLibrary sqlLibrary;
+    private TCRLib tcrLib;
+    private String TAG = "";
 
-    LinearLayout layoutrow = null;
-    TableLayout tblQuestion = null;
+    private LinearLayout layoutrow = null;
+    private TableLayout tblQuestion = null;
 
     //FOR CONDITIONAL
-    TableLayout tblFormsPerCondition = null;
-    HashMap<Integer, TableLayout> hmCondTableLayout;
-    HashMap<Integer, String[]> hmformCondsid;
-    int ctrConditions;
-    int selectedCondID;
-    HashMap<Integer, String> hmConditionalAnswers;
+    private TableLayout tblFormsPerCondition = null;
+    private HashMap<Integer, TableLayout> hmCondTableLayout;
+    private HashMap<Integer, String[]> hmformCondsid;
+    private HashMap<Integer, View> hmCondRadioButtons;
+    private int ctrConditions;
+    private HashMap<Integer, String> hmConditionalAnswers;
 
     //FOR COMPUTATIONAL
-    HashMap<Integer, EditText> hmPerfectStoreValue;
-    ArrayList<EditText> arrCompRequired;
+    private HashMap<Integer, EditText> hmPerfectStoreValue;
+    private HashMap<String, EditText> hmNumericComputational;
+    private ArrayList<EditText> arrCompRequired;
 
-    String storeCategoryGroupID;
-    String storeCategoryID;
+    private String storeCategoryGroupID;
+    private String storeCategoryID;
 
-    String formgroupID;
-    String categoryid;
+    private String formgroupID;
+    private String categoryid;
 
-    HashMap<String, Uri> hmUriImagequestionfile;
-    HashMap<String, Uri>  hmUriCondImagefile;
-    MyMessageBox messageBox;
+    private HashMap<String, Uri> hmUriImagequestionfile;
+    private HashMap<String, Uri>  hmUriCondImagefile;
+    private MyMessageBox messageBox;
 
     // FOR IMAGE CAPTURING
-    ImageView captureImgview;
-    int imgQuestionid;
-    String imgFormtypeid;
-    String imgFilename;
+    private ImageView captureImgview;
+    private int imgQuestionid;
+    private String imgFormtypeid;
+    private String imgFilename;
 
-    View mainLayout;
+    private View mainLayout;
 
-    ProgressDialog saveProgress;
+    private ProgressDialog saveProgress;
 
-    String SOSAnswer = "";
+    private String SOSAnswer = "";
 
     // <INTEGER KEY = QUESTIONID, HASHMAP<INTEGER = VIEW ID, ANSWERCLASS>>
-    HashMap<Integer, HashMap<Integer, Pplus_AnswerClass>> hmlistAnswers;
-    HashMap<Integer, String> hmFormulalists;
-    HashMap<Integer, String> hmExpectedAnswers;
-    HashMap<Integer, String> hmFormulalistsByFormid;
-    HashMap<Integer, EditText> hmCompForms;
-    HashMap<Integer, Double> hmCompValues;
+    private HashMap<Integer, HashMap<Integer, Pplus_AnswerClass>> hmlistAnswers;
+    private HashMap<Integer, String> hmFormulalists;
+    private HashMap<Integer, String> hmExpectedAnswers;
+    private HashMap<Integer, String> hmFormulalistsByFormid;
+    private HashMap<Integer, EditText> hmCompForms;
+    private HashMap<Integer, Double> hmCompValues;
 
-    ArrayList<Integer> arrQuestionid;
-    ArrayList<Integer> arrConditionalQuestionid;
-    ArrayList<View> arrRequired;
+    private ArrayList<Integer> arrQuestionid;
+    private ArrayList<Integer> arrConditionalQuestionid;
+    private ArrayList<View> arrRequired;
     //ArrayList<View> hmChildRequired;
-    HashMap<Integer, View> hmChildRequired;
-    HashMap<Integer, String> hmChildAnswers;
-    HashMap<Integer, CheckBox> hmMultiCheckConditionAns;
+    private HashMap<Integer, View> hmChildRequired;
+    private HashMap<Integer, String> hmChildAnswers;
+    private HashMap<Integer, CheckBox> hmMultiCheckConditionAns;
 
-    Typeface mainTypeface;
+    private Typeface mainTypeface;
 
     private RadioButton rbSelectedCondition = null;
 
     // CAMERA CAPTURE DATA
-    int CONDITIONAL_MODE;
-    int CAMERA_CONDFORM_ID;
-    int CAMERA_COND_QUESTION_ID;
-    String CAMERA_COND_CHILDANSWER;
-    int CAMERA_COND_FORMTYPE_ID;
+    private int CONDITIONAL_MODE;
+    private int CAMERA_CONDFORM_ID;
+    private int CAMERA_COND_QUESTION_ID;
+    private String CAMERA_COND_CHILDANSWER;
+    private int CAMERA_COND_FORMTYPE_ID;
 
 
     @Override
@@ -159,23 +162,25 @@ public class QuestionsActivity extends AppCompatActivity {
 
         messageBox = new MyMessageBox(this);
         tcrLib = new TCRLib(this);
-        hmlistAnswers = new HashMap<Integer, HashMap<Integer, Pplus_AnswerClass>>();
-        arrQuestionid = new ArrayList<Integer>();
-        arrConditionalQuestionid = new ArrayList<Integer>();
-        General.hmSignature = new HashMap<Integer, ImageView>();
-        General.hmCondSignature = new HashMap<Integer, ImageView>();
-        hmFormulalists = new HashMap<Integer, String>();
-        hmExpectedAnswers = new HashMap<Integer, String>();
+        hmlistAnswers = new HashMap<>();
+        arrQuestionid = new ArrayList<>();
+        arrConditionalQuestionid = new ArrayList<>();
+        General.hmSignature = new HashMap<>();
+        General.hmCondSignature = new HashMap<>();
+        hmFormulalists = new HashMap<>();
+        hmExpectedAnswers = new HashMap<>();
 
-        hmFormulalistsByFormid = new HashMap<Integer, String>();
-        hmCompForms = new HashMap<Integer, EditText>();
-        hmCompValues = new HashMap<Integer, Double>();
+        hmFormulalistsByFormid = new HashMap<>();
+        hmCompForms = new HashMap<>();
+        hmCompValues = new HashMap<>();
+        hmNumericComputational = new HashMap<>();
 
         arrRequired = new ArrayList<View>();
         hmChildRequired = new HashMap<>();
         hmChildAnswers = new HashMap<>();
-        hmMultiCheckConditionAns = new HashMap<Integer, CheckBox>();
+        hmMultiCheckConditionAns = new HashMap<>();
         hmformCondsid = new HashMap<>();
+        hmCondRadioButtons = new HashMap<>();
         hmCondTableLayout = new HashMap<>();
         hmConditionalAnswers = new HashMap<>();
 
@@ -281,7 +286,6 @@ public class QuestionsActivity extends AppCompatActivity {
         bmoptions.inSampleSize = 8;
 
         ctrConditions = 0;
-        selectedCondID = 0;
 
         while (!cursorQuestions.isAfterLast()) {
 
@@ -310,14 +314,14 @@ public class QuestionsActivity extends AppCompatActivity {
 
                 switch (formtypeid) {
 
-                    case "1": // LABEL
+                    case "1": // 1LABEL
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_1_label, null);
                         TextView tvwLabel = (TextView) layoutrow.findViewById(R.id.tvwLabel);
                         tvwLabel.setText(strPrompt.trim());
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "2": // IMAGE CAPTURE
+                    case "2": // 1IMAGE CAPTURE
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_2_imagecapture, null);
                         Button btnAddphoto = (Button) layoutrow.findViewById(R.id.btnAddphoto);
                         final ImageView imgCapture = (ImageView) layoutrow.findViewById(R.id.imgCapture);
@@ -357,7 +361,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "3": // NUMERIC
+                    case "3": // 1NUMERIC
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_3_numeric, null);
                         TextView tvwNumeric = (TextView) layoutrow.findViewById(R.id.tvwNumeric);
                         EditText txtNumeric = (EditText) layoutrow.findViewById(R.id.txtNumeric);
@@ -396,11 +400,14 @@ public class QuestionsActivity extends AppCompatActivity {
                         arrQuestionid.add(nQuestionid);
                         tvwNumeric.setText(strPrompt.trim());
 
+                        hmNumericComputational.put(formid, txtNumeric); // to reference computation with bang(!)
+
                         if(nRequired == 1) arrRequired.add(txtNumeric);
                         tblQuestion.addView(layoutrow);
+
                         break;
 
-                    case "4": // SINGLE LINE TEXT
+                    case "4": // 1SINGLE LINE TEXT
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_4_singlelinetext, null);
                         TextView tvwSingleLine = (TextView) layoutrow.findViewById(R.id.tvwSingleLine);
                         EditText txtSingleLine = (EditText) layoutrow.findViewById(R.id.txtSingleline);
@@ -425,7 +432,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "5": // MULTI LINE TEXT
+                    case "5": // 1MULTI LINE TEXT
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_5_multilinetext, null);
                         TextView tvwMultiLine = (TextView) layoutrow.findViewById(R.id.tvwMultiLine);
                         EditText txtMultiLine = (EditText) layoutrow.findViewById(R.id.txtMultiline);
@@ -450,7 +457,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "6": // SIGNATURE CAPTURE
+                    case "6": // 1SIGNATURE CAPTURE
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_6_signature, null);
                         TextView tvwSign = (TextView) layoutrow.findViewById(R.id.tvwSign);
                         ImageView imgSign = (ImageView) layoutrow.findViewById(R.id.imgSignature);
@@ -485,7 +492,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "7": // DATE
+                    case "7": // 1DATE
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_7_date, null);
                         TextView tvwDate = (TextView) layoutrow.findViewById(R.id.tvwDate);
                         final EditText txtDate = (EditText) layoutrow.findViewById(R.id.txtDate);
@@ -543,7 +550,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "8": // TIME
+                    case "8": // 1TIME
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_8_time, null);
                         TextView tvwTime = (TextView) layoutrow.findViewById(R.id.tvwTime);
                         final EditText txtTime = (EditText) layoutrow.findViewById(R.id.txtTime);
@@ -601,7 +608,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "9": // MULTI ITEM SELECT
+                    case "9": // 1MULTI ITEM SELECT
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_9_multiitem, null);
                         TextView tvwMultiItem = (TextView) layoutrow.findViewById(R.id.tvwMultiitem);
                         tvwMultiItem.setText(strPrompt.trim());
@@ -668,7 +675,8 @@ public class QuestionsActivity extends AppCompatActivity {
                                 if(!strDefaultAnswer.equals("")) {
                                     String[] aDefaultAns = strDefaultAnswer.split(",");
                                     if(Arrays.asList(aDefaultAns).contains(strOption.trim())) {
-                                        SetFormAnswer(aDefaultAns + "_" + cb.getText().toString(), nQuestionid, cb, formtypeid);
+                                        String ans = nOptionid + "_" + cb.getText().toString();
+                                        SetFormAnswer(ans, nQuestionid, cb, formtypeid);
                                     }
                                 }
                             }
@@ -685,7 +693,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "10": // SINGLE ITEM SELECT
+                    case "10": // 1SINGLE ITEM SELECT
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_10_singleitem, null);
                         TextView tvwSingleItem = (TextView) layoutrow.findViewById(R.id.tvwSingleItem);
                         tvwSingleItem.setText(strPrompt.trim().replace("\"", ""));
@@ -709,7 +717,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                 imgBrandPic.setImageDrawable(singleItemDrawable);
                             }
                             catch (IOException ioex) {
-                                messageBox.ShowMessage("", ioex.getMessage());
+                                messageBox.showMessage("", ioex.getMessage());
                                 Log.d("IOException", ioex.getMessage());
                             }
                         }
@@ -763,7 +771,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "11": // COMPUTATIONAL
+                    case "11": // 1COMPUTATIONAL
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_11_computational, null);
 
                         TextView tvwTotComp = (TextView) layoutrow.findViewById(R.id.tvwComputationTotal);
@@ -781,9 +789,8 @@ public class QuestionsActivity extends AppCompatActivity {
                         Cursor cursFormula = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_COMPUTATIONAL, SQLiteDB.COLUMN_COMPUTATIONAL_formid + " = " + formid);
                         cursFormula.moveToFirst();
 
-                        final String stroriginalFormula = cursFormula.getString(cursFormula.getColumnIndex(SQLiteDB.COLUMN_COMPUTATIONAL_formula)).trim().replace("\"","").replace("!","");
-
-                        hmFormulalistsByFormid.put(Integer.parseInt(formid), stroriginalFormula);
+                        final String strOriginalFormula = cursFormula.getString(cursFormula.getColumnIndex(SQLiteDB.COLUMN_COMPUTATIONAL_formula)).trim().replace("\"","").replace("!","");
+                        hmFormulalistsByFormid.put(Integer.parseInt(formid), strOriginalFormula);
 
                         if(cursFormula.getCount() > 0) {
 
@@ -809,49 +816,56 @@ public class QuestionsActivity extends AppCompatActivity {
                                 }
                             }
 
+                            hmCompForms.put(Integer.parseInt(formid), txtTotComp);
+
                             for (int i = 0; i < aFormids.length; i++) {
+                                String compFormId = aFormids[i].replace("!", "");
+                                boolean formIdHasBang = aFormids[i].substring(0,1).equals("!");
 
-                                Cursor cursFormulaType = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + aFormids[i] + "'");
+                                Cursor cursFormulaType = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + compFormId + "'");
                                 cursFormulaType.moveToFirst();
-
-                                if(aFormids[i].substring(0,1).equals("!")) {
-                                    continue;
-                                }
-
-                                String strPromptFormula = cursFormulaType.getString(cursFormulaType.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
-                                int compRequired = cursFormulaType.getInt(cursFormulaType.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
 
                                 LinearLayout lnrComp = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_11_computational_formula, null);
 
                                 TextView tvwFormulaPrompt = (TextView) lnrComp.findViewById(R.id.tvwFormula);
-                                EditText txtAnswFormula = (EditText) lnrComp.findViewById(R.id.txtFormula);
+                                EditText txtAnswFormula = null;
 
+                                // if referenced computational form id with bang (!)
+                                if(formIdHasBang) {
+                                    txtAnswFormula = hmNumericComputational.get(compFormId);
+                                }
+                                else
+                                    txtAnswFormula = (EditText) lnrComp.findViewById(R.id.txtFormula);
+
+                                String strPromptFormula = cursFormulaType.getString(cursFormulaType.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
+                                int compRequired = cursFormulaType.getInt(cursFormulaType.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
+                                TextWatcher twComputational = new TextWatcherComputational(txtAnswFormula, txtTotComp, formtypeid);
                                 tvwFormulaPrompt.setText(strPromptFormula.trim());
-                                txtAnswFormula.setTag(nQuestionid + ",0");
-                                txtAnswFormula.setId(Integer.parseInt(aFormids[i]));
 
-                                if(isAnswered == 1)
+                                txtAnswFormula.setTag(nQuestionid + ",0");
+                                txtAnswFormula.setId(Integer.parseInt(compFormId));
+
+                                if (isAnswered == 1)
                                     SetAnswerComputational(formAnswer, txtAnswFormula);
                                 else
-                                    hmCompValues.put(Integer.parseInt(aFormids[i]), 0.0);
+                                    hmCompValues.put(Integer.parseInt(compFormId), 0.0);
 
                                 // TEXT CHANGE EVENT
-                                txtAnswFormula.addTextChangedListener(new TextWatcherComputational(txtAnswFormula, txtTotComp, formtypeid));
+                                txtAnswFormula.addTextChangedListener(twComputational);
+                                hmCompForms.put(Integer.parseInt(compFormId), txtAnswFormula);
+                                if (compRequired == 1) arrCompRequired.add(txtAnswFormula);
 
-                                hmCompForms.put(Integer.parseInt(aFormids[i]), txtAnswFormula);
-
-                                if(compRequired == 1) arrCompRequired.add(txtAnswFormula);
+                                if(!formIdHasBang) {
+                                    tblComputational.addView(lnrComp);
+                                }
 
                                 cursFormulaType.close();
-                                tblComputational.addView(lnrComp);
                             }
 
                             if(isAnswered == 1)
                                 SetFormAnswer(formAnswer, nQuestionid, txtTotComp, formtypeid);
                             else
                                 hmCompValues.put(Integer.parseInt(formid), 0.0);
-
-                            hmCompForms.put(Integer.parseInt(formid), txtTotComp);
                         }
 
                         CalculateFormula();
@@ -860,7 +874,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "12": // CONDITIONALS
+                    case "12": // 1CONDITIONALS
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_12_conditional, null);
                         //conditionalAnswers = "";
                         TextView tvwCondprompt = (TextView) layoutrow.findViewById(R.id.tvwCondprompt);
@@ -872,10 +886,9 @@ public class QuestionsActivity extends AppCompatActivity {
                         final Cursor cursConditional = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL, SQLiteDB.COLUMN_CONDITIONAL_formid + " = " + formid);
                         cursConditional.moveToFirst();
 
-                        if(cursConditional.getCount() > 0) {
-                            cursConditional.moveToFirst();
+                        if(cursConditional.moveToFirst()) {
 
-                            RadioGroup rbgConditions = (RadioGroup) layoutrow.findViewById(R.id.rbgConditions);
+                            final RadioGroup rbgConditions = (RadioGroup) layoutrow.findViewById(R.id.rbgConditions);
                             rbgConditions.removeAllViews();
 
                             LinearLayout.LayoutParams rbCondLayout = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
@@ -902,6 +915,97 @@ public class QuestionsActivity extends AppCompatActivity {
                                 LinearLayout lnrLines = (LinearLayout) layoutrow.findViewById(R.id.lnrCondlines);
                                 lnrLines.setBackgroundColor(getResources().getColor(R.color.colorAccentDark));
 
+                                // Get inner forms
+                                if(!strformConditionsId.equals("")) {
+
+                                    hmformCondsid.put(nCondOptionID, strformConditionsId.split("\\^"));
+
+                                    rb.setOnClickListener(new View.OnClickListener() {
+                                        Cursor cursformsperCond;
+                                        @Override
+                                        public void onClick(View v) {
+
+                                            int rbID = v.getId();
+
+                                            RadioButton rbSub = (RadioButton) v;
+
+                                            rbSelectedCondition = rbSub;
+
+                                            int tblCount = (Integer) rbSub.getTag();
+
+                                            TableLayout tblCond = hmCondTableLayout.get(tblCount);
+                                            tblCond.removeAllViews();
+
+                                            hmChildRequired.remove(nQuestionid);
+
+                                            final String[] conditionFormid = hmformCondsid.get(rbID);
+
+                                            if(conditionFormid != null) {
+
+                                                hmlistAnswers.remove(nQuestionid);
+                                                String rbAnswer = rbSelectedCondition.getText().toString();
+                                                PutAnswers(nQuestionid, rbSelectedCondition, rbAnswer, formtypeid);
+
+                                                for (String formIDperCondition : conditionFormid) {
+
+                                                    cursformsperCond = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + formIDperCondition + "'");
+                                                    cursformsperCond.moveToFirst();
+
+                                                    while (!cursformsperCond.isAfterLast()) {
+
+                                                        String strcondFormtypeid = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
+                                                        String strcondPrompt = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
+                                                        String strcondExpected = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_expected));
+                                                        int nCondRequired = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
+                                                        int nCondExempt = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_exempt));
+
+                                                        CreateConditionalSurveyForms(nQuestionid, strcondFormtypeid, formIDperCondition, strcondPrompt, strcondExpected, nCondRequired, nCondExempt, rbSub.getText().toString(), isAnswered, tblCount);
+
+                                                        // LOAD SIGNATURE IMAGE INSIDE CONDITIONAL
+                                                        LoadCondSignatures(Integer.parseInt(formIDperCondition), Integer.parseInt(strcondFormtypeid));
+                                                        cursformsperCond.moveToNext();
+                                                    }
+                                                }
+
+                                                cursformsperCond.close();
+                                            }
+                                        }
+                                    });
+                                }
+                                else {
+                                    rb.setOnClickListener(new View.OnClickListener() {
+                                        @Override
+                                        public void onClick(View v) {
+
+                                            int id = v.getId();
+
+                                            RadioButton rbSub2 = (RadioButton) hmCondRadioButtons.get(id);
+                                            int i = (Integer) rbSub2.getTag();
+                                            TableLayout tbl = hmCondTableLayout.get(i);
+                                            tbl.removeAllViews();
+                                            hmlistAnswers.remove(nQuestionid);
+                                            String rbPrompt = rb.getText().toString().trim();
+                                            PutAnswers(nQuestionid, rbSub2, rbPrompt, formtypeid);
+                                            hmChildRequired.remove(nQuestionid);
+
+                                        }
+                                    });
+                                }
+
+                                hmCondRadioButtons.put(nCondOptionID, rb);
+
+                                rbgConditions.addView(rb);
+                                cursConditional.moveToNext();
+                            }
+
+                            cursConditional.moveToFirst();
+                            while (!cursConditional.isAfterLast()) {
+
+                                String strConditionPrompt = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_condition));
+                                final int nCondOptionID = cursConditional.getInt(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_optionid));
+
+                                RadioButton rb = (RadioButton) hmCondRadioButtons.get(nCondOptionID);
+
                                 if(isAnswered == 1) {
                                     if(strConditionPrompt.toUpperCase().equals(formAnswer)) {
                                         hmConditionalAnswers.put(ctrConditions, formAnswer);
@@ -920,82 +1024,18 @@ public class QuestionsActivity extends AppCompatActivity {
                                         cursGetOptionid.close();
                                     }
                                 }
-
-                                if(!strformConditionsId.equals("")) {
-                                    hmformCondsid.put(nCondOptionID, strformConditionsId.split("\\^"));
-
-                                    rb.setOnClickListener(new View.OnClickListener() {
-
-                                        Cursor cursformsperCond;
-
-                                        @Override
-                                        public void onClick(View v) {
-
-                                            rbSelectedCondition = (RadioButton) v;
-
-                                            int rbID = v.getId();
-                                            int tblCount = (Integer) v.getTag();
-
-                                            TableLayout tblCond = hmCondTableLayout.get(tblCount);
-                                            tblCond.removeAllViews();
-
-                                            hmChildRequired.remove(nQuestionid);
-                                            
-                                            final String[] conditionFormid = hmformCondsid.get(rbID);
-
-                                            hmlistAnswers.remove(nQuestionid);
-                                            String rbAnswer = rbSelectedCondition.getText().toString();
-                                            PutAnswers(nQuestionid, rbSelectedCondition, rbAnswer, formtypeid);
-
-                                            for (String formIDperCondition : conditionFormid) {
-
-                                                cursformsperCond = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + formIDperCondition + "'");
-                                                cursformsperCond.moveToFirst();
-
-                                                while(!cursformsperCond.isAfterLast()) {
-
-                                                    String strcondFormtypeid = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
-                                                    String strcondPrompt = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
-                                                    String strcondExpected = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_expected));
-                                                    int nCondRequired = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
-                                                    int nCondExempt = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_exempt));
-
-                                                    CreateConditionalSurveyForms(nQuestionid, strcondFormtypeid, formIDperCondition, strcondPrompt, strcondExpected, nCondRequired, nCondExempt, rb.getText().toString(), isAnswered, tblCount);
-
-                                                    // LOAD SIGNATURE IMAGE INSIDE CONDITIONAL
-                                                    LoadCondSignatures(Integer.parseInt(formIDperCondition), Integer.parseInt(strcondFormtypeid));
-                                                    cursformsperCond.moveToNext();
-                                                }
-                                            }
-                                        }
-                                    });
-                                } else {
-                                    rb.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-                                            //tblFormsPerCondition.removeAllViews();
-                                            int i = (Integer) rb.getTag();
-                                            TableLayout tbl = hmCondTableLayout.get(i);
-                                            tbl.removeAllViews();
-                                            hmlistAnswers.remove(nQuestionid);
-                                            String rbPrompt = rb.getText().toString().trim();
-                                            PutAnswers(nQuestionid, rb, rbPrompt, formtypeid);
-                                            hmChildRequired.remove(nQuestionid);
-                                        }
-                                    });
-                                }
-
-                                rbgConditions.addView(rb);
-
                                 cursConditional.moveToNext();
                             }
+                            cursConditional.close();
                         }
 
                         arrQuestionid.add(nQuestionid);
+//                        if(layoutrow.getParent() != null)
+//                            ((ViewGroup)layoutrow.getParent()).removeView(layoutrow);
                         tblQuestion.addView(layoutrow);
                         break;
 
-                    case "13": // LABEL HEADER
+                    case "13": // 1LABEL HEADER
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_13_header, null);
                         TextView tvwHeader = (TextView) layoutrow.findViewById(R.id.tvwHeader);
                         tvwHeader.setText(strPrompt.trim());
@@ -1016,6 +1056,49 @@ public class QuestionsActivity extends AppCompatActivity {
         }*/
 
         System.gc();
+    }
+
+    private void LoadConditionals(View v, int nQuestionid, String formtypeid, RadioButton rbMain, int isAnswered) {
+
+        Cursor cursformsperCond = null;
+
+        rbSelectedCondition = (RadioButton) v;
+
+        int rbID = v.getId();
+        int tblCount = (Integer) v.getTag();
+
+        TableLayout tblCond = hmCondTableLayout.get(tblCount);
+        tblCond.removeAllViews();
+
+        hmChildRequired.remove(nQuestionid);
+
+        final String[] conditionFormid = hmformCondsid.get(rbID);
+
+        hmlistAnswers.remove(nQuestionid);
+        String rbAnswer = rbSelectedCondition.getText().toString();
+        PutAnswers(nQuestionid, rbSelectedCondition, rbAnswer, formtypeid);
+
+        for (String formIDperCondition : conditionFormid) {
+
+            cursformsperCond = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + formIDperCondition + "'");
+            cursformsperCond.moveToFirst();
+
+            while(!cursformsperCond.isAfterLast()) {
+
+                String strcondFormtypeid = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
+                String strcondPrompt = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
+                String strcondExpected = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_expected));
+                int nCondRequired = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
+                int nCondExempt = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_exempt));
+
+                CreateConditionalSurveyForms(nQuestionid, strcondFormtypeid, formIDperCondition, strcondPrompt, strcondExpected, nCondRequired, nCondExempt, rbMain.getText().toString(), isAnswered, tblCount);
+
+                // LOAD SIGNATURE IMAGE INSIDE CONDITIONAL
+                LoadCondSignatures(Integer.parseInt(formIDperCondition), Integer.parseInt(strcondFormtypeid));
+                cursformsperCond.moveToNext();
+            }
+        }
+        cursformsperCond.close();
     }
 
     private void LoadCondSignatures(int conformid, int formtypeid) {
@@ -1256,7 +1339,7 @@ public class QuestionsActivity extends AppCompatActivity {
     }
 
     //EVENT FOR EDITEXTS
-    public class EditTextWatcher implements TextWatcher {
+    private class EditTextWatcher implements TextWatcher {
 
         private View mView;
 
@@ -1301,7 +1384,7 @@ public class QuestionsActivity extends AppCompatActivity {
     }
 
     //EVENT FOR CONDITIONAL EDITTEXT
-    public class EditTextWatcherCond implements TextWatcher {
+    private class EditTextWatcherCond implements TextWatcher {
 
         private View mView;
 
@@ -1341,7 +1424,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
 
     //EVENT FOR computational
-    public class TextWatcherComputational implements TextWatcher {
+    private class TextWatcherComputational implements TextWatcher {
 
         private View mView;
         private EditText edt;
@@ -1929,7 +2012,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 for(int qid : arrQuestionid) {
 
                     hmAns = hmlistAnswers.get(qid); // get inner hashmap hmAns: <view id, answer class>
-                    ArrayList<String> arrExpectedAns = new ArrayList<>(Arrays.asList(hmExpectedAnswers.get(qid).split("\\^"))); // get expected answer by questionid
+                    ArrayList<String> arrExpectedAns = new ArrayList<>(Arrays.asList(hmExpectedAnswers.get(qid).split("\\~"))); // get expected answer by questionid
 
                     // FIRST, CHANGE ALL QUESTION TO NOT ANSWERED
                     if(hmAns != null) { // if question id is found
@@ -1940,7 +2023,6 @@ public class QuestionsActivity extends AppCompatActivity {
                         Cursor cursStoreQuestions = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STOREQUESTION, SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategoryGroupID + " AND " + SQLiteDB.COLUMN_STOREQUESTION_id + " = " + qid);
                         cursStoreQuestions.moveToFirst();
                         String storequestionid = cursStoreQuestions.getString(cursStoreQuestions.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_id));
-
 
                             for (HashMap.Entry<Integer, Pplus_AnswerClass> entry : hmAns.entrySet()) {
                             //int key = entry.getKey();
@@ -1995,6 +2077,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                         General.errorLog.appendLog(err, TAG);
                                         return err;
                                     }
+
                                     break;
 
                                 case "9": // MULTI SELECT
@@ -2335,7 +2418,6 @@ public class QuestionsActivity extends AppCompatActivity {
             cursStoreCategoryGroups.moveToFirst();
 
             while (!cursStoreCategoryGroups.isAfterLast()) {
-
                 String groupID = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupid));
                 int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
 
@@ -2655,8 +2737,10 @@ public class QuestionsActivity extends AppCompatActivity {
                 //String innerConditionAns = wholeAnswer[1];
                 String rbText = rbConditional.getText().toString().toUpperCase();
 
-                if(outerConditionAns.equals(rbText)) // if condition answer == radiobutton value
+                if(outerConditionAns.equals(rbText)) { // if condition answer == radiobutton value
                     rbConditional.setChecked(true);
+                    rbConditional.performClick();
+                }
 
 /*                String[] arrInnerValues = innerConditionAns.split(",");
                 for (String innerVal : arrInnerValues) {

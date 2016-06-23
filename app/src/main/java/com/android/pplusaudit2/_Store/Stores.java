@@ -5,7 +5,7 @@ package com.android.pplusaudit2._Store;
  */
 public class Stores {
 
-    public final int StoreID;
+    public final int storeID;
     public final String storeName;
     public final String storeCode;
     public final String webStoreID;
@@ -16,10 +16,13 @@ public class Stores {
     public final int totalAnswerStore;*/
     public final boolean isAudited;
     public final boolean isPosted;
+    public boolean isChecked = false;
+    public String dateChecked = "";
+    public String timeChecked = "";
 
     public Stores(int id, String code, String webstoreid, String storename, int templateid, String templatename, int finalval, boolean bAns, boolean posted) {
 
-        this.StoreID = id;
+        this.storeID = id;
         this.storeName = storename;
         this.Audittemplateid = templateid;
         this.Tempname = templatename;

@@ -472,6 +472,9 @@ public class SQLLibrary {
         TruncateTable(SQLiteDB.TABLE_PICTURES);
         TruncateTable(SQLiteDB.TABLE_NPI);
         TruncateTable(SQLiteDB.TABLE_PLANOGRAM);
+        TruncateTable(SQLiteDB.TABLE_PERFECT_CATEGORY);
+        TruncateTable(SQLiteDB.TABLE_PERFECT_GROUP);
+        TruncateTable(SQLiteDB.TABLE_PJPCOMP);
     }
 
     public boolean TruncateTable(String tableName) {

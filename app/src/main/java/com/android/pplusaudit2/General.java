@@ -14,6 +14,7 @@ import android.widget.ImageView;
 import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.Report.AuditSummary.Audit;
+import com.android.pplusaudit2._Store.Stores;
 
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
@@ -31,7 +32,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = true;
+    public static boolean BETA = false;
 
     public static String versionName = "";
     public static int versionCode = 0;
@@ -40,7 +41,6 @@ public class General {
 
     public static boolean hasUpdate = false;
     public static AutoUpdate mainAutoUpdate;
-
     public static SharedPreferences sharedPref;
 
     public static ErrorLog errorLog;
@@ -50,7 +50,7 @@ public class General {
     public static String userFullName = "";
     public static String userName = "";
     public static String userPassword = "";
-    public static String hashKey = "";
+    public static String savedHashKey = "";
     public static String storeid = "";
     public static int Temp_Storeid;
     public static String auditTemplateID = "";
@@ -75,6 +75,11 @@ public class General {
     public static String ICON_FAILED = "\uf00d";
 
     public static ArrayList<Audit> arraylistAudits;
+    public static ArrayList<String> arrPendingStores = new ArrayList<>();
+
+    public static Stores selectedStore;
+
+    public static boolean isAdminMode = false;
 
     public enum SCORE_STATUS {
         PASSED,
@@ -170,39 +175,16 @@ public class General {
         "perfect_group_lists.txt",
     };
 
-
-    public static int[] mainIcons = new int[] {
-            R.drawable.ic_menu_pjpcalendar,
-            R.drawable.ic_menu_audit,
-            R.drawable.ic_menu_auditsummary,
-            R.drawable.ic_menu_settings,
-            R.drawable.ic_menu_logout
-    };
-
-/*    public static String[] mainIconsFont = new String[] {
-            "\uf073",
-            "\uf059",
-            "\uf016",
-            "\uf1de",
-            "\uf011"
-    };*/
-
     public static String[] mainIconsFont = new String[] {
             "\uf059",
+            "\uf274",
             "\uf1ea",
             "\uf011"
     };
 
-/*    public static String[] Menu = {
-            "PJP Calendar",
-            "Audit",
-            "Audit Summary",
-            "Settings",
-            "Log out"
-    };*/
-
     public static String[] Menu = {
             "Audit:Audit and answer a survey from selected store.",
+            "PJP Compliance:Start in checking in stores for auditing.",
             "Reports:Generate a report for references.",
             "Log out:Log out user."
     };
@@ -250,7 +232,11 @@ public class General {
         return dateFormat.format(date);
     }
 
-    public static int GetVersionCode(Context mContext) {
+    public static String getDeviceOsVersion() {
+        return android.os.Build.VERSION.RELEASE;
+    }
+
+    public static int getVersionCode(Context mContext) {
         PackageManager pm = mContext.getPackageManager();
         String packageName = mContext.getPackageName();
         int flags = PackageManager.GET_PERMISSIONS;
@@ -266,7 +252,7 @@ public class General {
         return vcode;
     }
 
-    public static String GetVersionName(Context mContext) {
+    public static String getVersionName(Context mContext) {
         PackageManager pm = mContext.getPackageManager();
         String packageName = mContext.getPackageName();
         int flags = PackageManager.GET_PERMISSIONS;
@@ -280,19 +266,6 @@ public class General {
         }
 
         return versionName;
-    }
-
-    public static void ShowMessage(Context mContext, String title, String message) {
-        AlertDialog alertDialog = new AlertDialog.Builder(mContext).create();
-        alertDialog.setTitle(title);
-        alertDialog.setMessage(message);
-        alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "Ok", new DialogInterface.OnClickListener() {
-            @Override
-            public void onClick(DialogInterface dialog, int which) {
-                dialog.dismiss();
-            }
-        });
-        alertDialog.show();
     }
 
     public static int crc32(String str) {
@@ -309,5 +282,20 @@ public class General {
             return model;
         }
         return manufacturer + " " + model;
+    }
+
+    public static void messageBox(Context mContext, String title, String msg) {
+        new AlertDialog.Builder(mContext)
+                .setCancelable(false)
+                .setTitle(title)
+                .setMessage(msg)
+                .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(DialogInterface dialog, int which) {
+                        dialog.dismiss();
+                    }
+                })
+                .create()
+                .show();
     }
 }
