@@ -41,9 +41,7 @@ public class General {
 
     public static boolean hasUpdate = false;
     public static AutoUpdate mainAutoUpdate;
-    public static SharedPreferences sharedPref;
 
-    public static ErrorLog errorLog;
     public static String dateLog = "";
 
     public static String usercode = "";
@@ -51,9 +49,6 @@ public class General {
     public static String userName = "";
     public static String userPassword = "";
     public static String savedHashKey = "";
-    public static String storeid = "";
-    public static int Temp_Storeid;
-    public static String auditTemplateID = "";
     public static int gradematrixID;
 
     public static String typefacename = "fonts/fontawesome-webfont.ttf";
@@ -63,7 +58,7 @@ public class General {
 
     public static String STATUS_PENDING = "PENDING";
     public static String STATUS_PARTIAL = "PARTIAL";
-    public static String STATUS_COMPLETE = "COMPLETE";
+    static String STATUS_COMPLETE = "COMPLETE";
 
     public static String SCORE_STATUS_PASSED = "PASSED";
     public static String SCORE_STATUS_FAILED = "FAILED";
@@ -81,6 +76,10 @@ public class General {
 
     public static boolean isAdminMode = false;
 
+    public static String GetApiLevelDevice() {
+        return android.os.Build.VERSION.RELEASE;
+    }
+
     public enum SCORE_STATUS {
         PASSED,
         FAILED,
@@ -89,12 +88,14 @@ public class General {
 
     public static String extFolder = Environment.getExternalStorageDirectory().getAbsolutePath().trim()+"/PPLUS";
 
-    public static String mainURL = "http://tcr2.chasetech.com";
+    public static String mainURL = BETA ? "http://testtcr.chasetech.com" : "http://tcr2.chasetech.com";
+
     public static String POSTING_URL = mainURL + "/api/storeaudit";
+    public static String URL_UPLOAD_CHECKIN = mainURL + "/api/uploadcheckin";
     public static String POSTING_DETAILS_URL = mainURL + "/api/uploaddetails";
     public static String POSTING_IMAGE = mainURL + "/api/uploadimage";
 
-    public static String URL_REPORT_AUDITS = mainURL + "/api/audits";
+    public static String URL_REPORT_AUDITS = mainURL + "/api/postedaudits";
     public static String URL_REPORT_STORESUMMARY = mainURL + "/api/storesummaryreport";
     public static String URL_REPORT_USERSUMMARY = mainURL + "/api/usersummaryreport";
 
@@ -284,6 +285,10 @@ public class General {
         return manufacturer + " " + model;
     }
 
+    public static String getDeviceID(Context mContext) {
+       return android.provider.Settings.Secure.getString(mContext.getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
+    }
+
     public static void messageBox(Context mContext, String title, String msg) {
         new AlertDialog.Builder(mContext)
                 .setCancelable(false)
@@ -297,5 +302,9 @@ public class General {
                 })
                 .create()
                 .show();
+    }
+
+    static String cleanString(String strValue) {
+        return strValue.trim().replace("\uFEFF", "").replace("\"", "");
     }
 }

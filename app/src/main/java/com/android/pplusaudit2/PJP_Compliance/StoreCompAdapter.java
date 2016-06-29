@@ -1,11 +1,9 @@
 package com.android.pplusaudit2.PJP_Compliance;
 
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
-import android.support.v7.app.AlertDialog;
-import android.support.v7.widget.RecyclerView;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
@@ -18,6 +16,7 @@ import android.widget.Toast;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2._Store.Stores;
@@ -29,55 +28,29 @@ import java.util.List;
 /**
  * Created by ULTRABOOK on 6/7/2016.
  */
-public class StoreCompAdapter extends BaseAdapter {
+class StoreCompAdapter extends BaseAdapter {
 
-    Context mContext;
-    List<Stores> storesArrayList = Collections.EMPTY_LIST;
-    SQLLibrary sqlLibrary;
+    private Context mContext;
+    private SQLLibrary sql;
+    private List<Stores> storesArrayList = Collections.EMPTY_LIST;
+    private ArrayList<Compliance> arrCompliance;
+    private Typeface menuFontIcon;
 
-    public StoreCompAdapter(Context mContext, List<Stores> storesArrayList) {
+    StoreCompAdapter(Context mContext, List<Stores> storesArrayList, ArrayList<Compliance> aComp) {
         this.mContext = mContext;
         this.storesArrayList = storesArrayList;
-        this.sqlLibrary = new SQLLibrary(mContext);
+        this.sql = new SQLLibrary(mContext);
+        this.menuFontIcon = Typeface.createFromAsset(mContext.getAssets(), General.typefacename);
+        this.arrCompliance = new ArrayList<>();
+        this.arrCompliance.addAll(aComp);
+
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(mContext, General.errlogFile));
     }
 
-/*    public class PjpViewHolder extends RecyclerView.ViewHolder {
+    private class PjpViewHolder {
         TextView tvwTitle;
         TextView tvwDetails;
-
-        public PjpViewHolder(View itemView) {
-            super(itemView);
-            this.tvwTitle = (TextView) itemView.findViewById(R.id.tvwPjpStoreName);
-            this.tvwDetails = (TextView) itemView.findViewById(R.id.tvwPjpDetails);
-        }
-    }
-
-    @Override
-    public PjpViewHolder onCreateViewHolder(ViewGroup parent, int viewType) {
-        View v = LayoutInflater.from(mContext).inflate(R.layout.pjp_activity_layout_row, parent, false);
-        PjpViewHolder viewHolder = new PjpViewHolder(v);
-        return viewHolder;
-    }
-
-    @Override
-    public void onBindViewHolder(PjpViewHolder holder, int position) {
-        holder.tvwTitle.setText(storesArrayList.get(position).storeName);
-        holder.tvwDetails.setText("Check in: ");
-    }
-
-    @Override
-    public int getItemCount() {
-        return storesArrayList.size();
-    }
-
-    @Override
-    public void onAttachedToRecyclerView(RecyclerView recyclerView) {
-        super.onAttachedToRecyclerView(recyclerView);
-    }*/
-
-    public class PjpViewHolder {
-        TextView tvwTitle;
-        TextView tvwDetails;
+        TextView tvwSubDetails;
         Button btnPreview;
         Button btnCheckin;
         RelativeLayout relMain;
@@ -101,6 +74,7 @@ public class StoreCompAdapter extends BaseAdapter {
                 holder.btnCheckin = (Button) convertView.findViewById(R.id.btnCheckInPjp);
                 holder.relMain = (RelativeLayout) convertView.findViewById(R.id.relMainPjp);
                 holder.lnrButtons = (LinearLayout) convertView.findViewById(R.id.lnrPjpButtons);
+                holder.tvwSubDetails = (TextView) convertView.findViewById(R.id.tvwPjpSubDetails);
 
                 convertView.setTag(holder);
             }
@@ -109,10 +83,15 @@ public class StoreCompAdapter extends BaseAdapter {
             }
             holder.tvwTitle.setText(storesArrayList.get(position).storeName);
 
-            String checkMsg = "Check in: ";
+            String checkMsg = "";
+            String strAddress = "";
+
+            holder.tvwDetails.setTypeface(menuFontIcon);
+            holder.tvwSubDetails.setTypeface(menuFontIcon);
 
             if(storesArrayList.get(position).isChecked) {
-                checkMsg += storesArrayList.get(position).dateChecked + " " + storesArrayList.get(position).timeChecked;
+                checkMsg = "\uf00c" + " Checked in: " + storesArrayList.get(position).dateCheckedIn + " " + storesArrayList.get(position).timeChecked;
+                strAddress = "\uf041" + "   Location: " + storesArrayList.get(position).addressChecked;
                 holder.relMain.setBackgroundColor(mContext.getResources().getColor(R.color.color_highlight));
                 holder.lnrButtons.setBackgroundColor(mContext.getResources().getColor(R.color.color_highlight));
             }
@@ -122,6 +101,7 @@ public class StoreCompAdapter extends BaseAdapter {
             }
 
             holder.tvwDetails.setText(checkMsg);
+            holder.tvwSubDetails.setText(strAddress);
 
             holder.btnCheckin.setTag(storesArrayList.get(position));
             holder.btnPreview.setTag(storesArrayList.get(position));
@@ -130,7 +110,15 @@ public class StoreCompAdapter extends BaseAdapter {
                 @Override
                 public void onClick(View v) {
                     General.selectedStore = (Stores) v.getTag();
-                    mContext.startActivity(new Intent(mContext, PjpPreviewActivity.class));
+
+                    Cursor cursChecked = sql.GetDataCursor(SQLiteDB.TABLE_PJPCOMP, SQLiteDB.COLUMN_PJPCOMP_storeid + " = '" + General.selectedStore.storeID + "'");
+                    if(!cursChecked.moveToFirst()) {
+                        Toast.makeText(mContext, "No records found.", Toast.LENGTH_SHORT).show();
+                        return;
+                    }
+
+                    Intent intentPreview = new Intent(mContext, PjpPreviewActivity.class);
+                    mContext.startActivity(intentPreview);
                 }
             });
 

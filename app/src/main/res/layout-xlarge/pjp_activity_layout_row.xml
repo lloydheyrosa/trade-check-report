@@ -30,6 +30,7 @@
                     android:id="@+id/tvwPjpStoreName"
                     android:text="Sample"
                     style="@style/title_style"
+                    android:layout_marginBottom="4dp"
                     android:layout_alignParentTop="true"
                     android:textSize="20sp" />
 
@@ -40,8 +41,18 @@
                     android:text="Sample details"
                     android:textColor="@color/secondary_text"
                     android:layout_marginStart="20dp"
-                    android:layout_marginBottom="10dp"
+                    android:layout_marginBottom="2dp"
                     android:layout_below="@+id/tvwPjpStoreName" />
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:id="@+id/tvwPjpSubDetails"
+                    android:text="Sample details"
+                    android:textColor="@color/secondary_text"
+                    android:layout_marginStart="20dp"
+                    android:layout_marginBottom="10dp"
+                    android:layout_below="@+id/tvwPjpDetails" />
 
             </RelativeLayout>
 

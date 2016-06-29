@@ -7,6 +7,7 @@ import android.database.sqlite.SQLiteOpenHelper;
 import android.util.Log;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 
@@ -14,14 +15,17 @@ import com.android.pplusaudit2.MyMessageBox;
  * Created by LLOYD on 9/30/2015.
  */
 public class SQLiteDB extends SQLiteOpenHelper {
-    MyMessageBox messageBox;
+    private MyMessageBox messageBox;
+    private Context mContext;
 
     private static final String DATABASE_NAME = "unileverdb";
     private static final String TAG = "SettingsProvider";
-    public static final int DATABASE_VERSION = 7;
+    public static final int DATABASE_VERSION = 10;
 
     public SQLiteDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
+        this.mContext = context;
+        messageBox = new MyMessageBox(context);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(context, General.errlogFile));
     }
 
@@ -67,6 +71,8 @@ public class SQLiteDB extends SQLiteOpenHelper {
     public static final String COLUMN_STORE_npi = "npi"; // new field v.3
     public static final String COLUMN_STORE_planogram = "planogram"; // new field v.3
     public static final String COLUMN_STORE_perfectstore = "perfect_store"; // new field v.6
+    public static final String COLUMN_STORE_area = "area"; // new field v.9
+    public static final String COLUMN_STORE_templatetype = "templatetype"; // new field v.10
 
     private static final String DATABASE_CREATE_TABLE_STORE = "CREATE TABLE " + TABLE_STORE + "("
             + COLUMN_STORE_id + " integer PRIMARY KEY autoincrement, "
@@ -97,7 +103,9 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_STORE_osa + " text, "
             + COLUMN_STORE_npi + " text, "
             + COLUMN_STORE_planogram + " text, "
-            + COLUMN_STORE_perfectstore + " text)";
+            + COLUMN_STORE_perfectstore + " text, "
+            + COLUMN_STORE_area + " text, "
+            + COLUMN_STORE_templatetype + " numeric)";
 
 
     // CATEGORY TABLE
@@ -467,6 +475,10 @@ public class SQLiteDB extends SQLiteOpenHelper {
     public static final String COLUMN_PJPCOMP_webstoreid = "webstore_id";
     public static final String COLUMN_PJPCOMP_date = "date_checkin";
     public static final String COLUMN_PJPCOMP_time = "time_checkin";
+    public static final String COLUMN_PJPCOMP_longitude = "longitude"; // v8
+    public static final String COLUMN_PJPCOMP_latitude = "latitude"; // v8
+    public static final String COLUMN_PJPCOMP_address = "complete_address"; // v8
+    public static final String COLUMN_PJPCOMP_posted = "posted"; // v9
 
     private static final String DATABASE_CREATE_TABLE_PJPCOMP = "CREATE TABLE " + TABLE_PJPCOMP + "("
             + COLUMN_PJPCOMP_id + " integer PRIMARY KEY autoincrement, "
@@ -475,7 +487,11 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_PJPCOMP_storeid + " numeric, "
             + COLUMN_PJPCOMP_webstoreid + " numeric, "
             + COLUMN_PJPCOMP_date + " text, "
-            + COLUMN_PJPCOMP_time + " text)";
+            + COLUMN_PJPCOMP_time + " text, "
+            + COLUMN_PJPCOMP_longitude + " text, "
+            + COLUMN_PJPCOMP_latitude + " text, "
+            + COLUMN_PJPCOMP_address + " text, "
+            + COLUMN_PJPCOMP_posted + " text)";
 
     @Override
     public void onCreate(SQLiteDatabase db) {
@@ -508,6 +524,11 @@ public class SQLiteDB extends SQLiteOpenHelper {
             db.execSQL(DATABASE_CREATE_TABLE_PERFECTGROUP);
             db.execSQL(DATABASE_CREATE_TABLE_PJPCOMP);
             db.execSQL("CREATE INDEX userIndex ON " + TABLE_USER + " (" + COLUMN_USER_id + ")");
+
+            String strLog = "Setting new database schema with version: " + DATABASE_VERSION;
+
+            Log.wtf(TAG, strLog);
+            new ErrorLog(General.getDeviceID(mContext) + ".txt", mContext).appendLog(strLog, TAG);
         }
         catch (Exception ex) {
             messageBox.ShowExceptionError(ex, "Error in Database");
@@ -553,8 +574,26 @@ public class SQLiteDB extends SQLiteOpenHelper {
                     db.execSQL(DATABASE_CREATE_TABLE_PJPCOMP);
                 }
 
-                Log.w(TAG, "Upgrading settings database from version " + oldVersion + " to "
-                        + newVersion);
+                if(newVersion > oldVersion && oldVersion <= 7) { // version 8
+                    db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_longitude + " TEXT DEFAULT 0");
+                    db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_latitude + " TEXT DEFAULT 0");
+                    db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_address + " TEXT");
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 8) { // version 9
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_area + " TEXT");
+                    db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_posted + " TEXT DEFAULT 0");
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 9) { // version 10
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_templatetype + " NUMERIC");
+                }
+
+                String strLog = "Upgrading settings database from version " + oldVersion + " to "
+                        + newVersion;
+
+                Log.wtf(TAG, strLog);
+                new ErrorLog(General.getDeviceID(mContext) + ".txt", mContext).appendLog(strLog, TAG);
             }
             catch (SQLException err) {
                 Log.wtf("SQLException", err.getMessage());
@@ -564,39 +603,10 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
     @Override
     public void onDowngrade(SQLiteDatabase db, int oldVersion, int newVersion) {
+        String strLog = "Downgrading database schema from version " + oldVersion + " to "
+                + newVersion;
 
-/*        if(newVersion < oldVersion) {
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_USER);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_STORE);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_CATEGORY);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_GROUP);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_QUESTION);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_FORMS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_FORMTYPE);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SINGLESELECT);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_MULTISELECT);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_COMPUTATIONAL);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONDITIONAL);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_CONDITIONAL_ANSWERS);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_STORECATEGORY);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_STORECATEGORYGROUP);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_STOREQUESTION);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SECONDARYDISP);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SECONDARYKEYLIST);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_OSALIST);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_OSALOOKUP);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SOSLIST);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_SOSLOOKUP);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PICTURES);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_NPI);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PLANOGRAM);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PJPCOMP);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PERFECT_CATEGORY);
-            db.execSQL("DROP TABLE IF EXISTS " + TABLE_PERFECT_GROUP);
-            onCreate(db);
-
-            Log.w(TAG, "Downgrading settings database from version " + oldVersion + " to "
-                    + newVersion);
-        }*/
+        Log.wtf(TAG, strLog);
+        new ErrorLog(General.getDeviceID(mContext) + ".txt", mContext).appendLog(strLog, TAG);
     }
 }

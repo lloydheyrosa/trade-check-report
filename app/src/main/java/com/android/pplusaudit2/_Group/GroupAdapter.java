@@ -18,14 +18,14 @@ import java.util.List;
 /**
  * Created by ULTRABOOK on 9/22/2015.
  */
-public class GroupAdapter extends BaseAdapter {
+class GroupAdapter extends BaseAdapter {
 
     private Context mContext;
     private List<Group> lstGroup = null;
     private ArrayList<Group> arrGrouplist;
     private Typeface menufontIcon;
 
-    public GroupAdapter(Context ctx, ArrayList<Group> arrList)
+    GroupAdapter(Context ctx, ArrayList<Group> arrList)
     {
         this.mContext = ctx;
         lstGroup = arrList;

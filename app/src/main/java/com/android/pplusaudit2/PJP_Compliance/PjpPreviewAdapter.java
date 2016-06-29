@@ -1,19 +1,16 @@
 package com.android.pplusaudit2.PJP_Compliance;
 
 import android.content.Context;
-import android.content.Intent;
+import android.graphics.Typeface;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.BaseAdapter;
-import android.widget.Button;
-import android.widget.RelativeLayout;
 import android.widget.TextView;
 
-import com.android.pplusaudit2.Database.SQLLibrary;
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
-import com.android.pplusaudit2._Store.Stores;
 
 import java.util.Collections;
 import java.util.List;
@@ -21,22 +18,25 @@ import java.util.List;
 /**
  * Created by ULTRABOOK on 6/7/2016.
  */
-public class PjpPreviewAdapter extends BaseAdapter {
+class PjpPreviewAdapter extends BaseAdapter {
 
-    Context mContext;
-    List<Compliance> storesArrayList = Collections.EMPTY_LIST;
-    SQLLibrary sqlLibrary;
+    private Context mContext;
+    private List<Compliance> complianceList = Collections.EMPTY_LIST;
+    private Typeface menuFontIcon;
 
-    public PjpPreviewAdapter(Context mContext, List<Compliance> storesArrayList) {
+    PjpPreviewAdapter(Context mContext, List<Compliance> complianceList) {
         this.mContext = mContext;
-        this.storesArrayList = storesArrayList;
-        this.sqlLibrary = new SQLLibrary(mContext);
+        this.complianceList = complianceList;
+        this.menuFontIcon = Typeface.createFromAsset(mContext.getAssets(), General.typefacename);
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(mContext, General.errlogFile));
+
     }
 
-    public class ViewHolder {
-        TextView tvwDate;
-        TextView tvwTime;
+    private class ViewHolder {
+        TextView tvwDatetime;
+        TextView tvwLocation;
         TextView tvwUser;
+        TextView tvwStatus;
     }
 
     @Override
@@ -50,20 +50,31 @@ public class PjpPreviewAdapter extends BaseAdapter {
             holder = new ViewHolder();
             convertView = inflater.inflate(R.layout.pjppreview_activity_layout_row, parent, false);
 
-            holder.tvwDate = (TextView) convertView.findViewById(R.id.tvwPjpDate);
-            holder.tvwTime = (TextView) convertView.findViewById(R.id.tvwPjpTime);
+            holder.tvwDatetime = (TextView) convertView.findViewById(R.id.tvwPjpDatetime);
             holder.tvwUser = (TextView) convertView.findViewById(R.id.tvwPjpUsername);
+            holder.tvwLocation = (TextView) convertView.findViewById(R.id.tvwPjpLocation);
+            holder.tvwStatus = (TextView) convertView.findViewById(R.id.tvwPjpStatus);
             convertView.setTag(holder);
         }
         else {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        Compliance c = storesArrayList.get(position);
+        String strDatetime = complianceList.get(position).date + " " + complianceList.get(position).time;
 
-        holder.tvwDate.setText(storesArrayList.get(position).date);
-        holder.tvwTime.setText(storesArrayList.get(position).time);
-        holder.tvwUser.setText(storesArrayList.get(position).username);
+        holder.tvwDatetime.setText(strDatetime);
+        holder.tvwUser.setText(complianceList.get(position).username);
+        holder.tvwLocation.setText(complianceList.get(position).address);
+        holder.tvwStatus.setTypeface(menuFontIcon);
+
+        if(complianceList.get(position).isPosted) {
+            holder.tvwStatus.setText("\uF00C");
+            holder.tvwStatus.setTextColor(mContext.getResources().getColor(R.color.green));
+        }
+        else
+            holder.tvwStatus.setText("");
+
+
 
         return convertView;
     }
@@ -72,16 +83,16 @@ public class PjpPreviewAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return storesArrayList.size();
+        return complianceList.size();
     }
 
     @Override
     public Compliance getItem(int position) {
-        return storesArrayList.get(position);
+        return complianceList.get(position);
     }
 
     @Override
     public long getItemId(int position) {
-        return storesArrayList.get(position).complianceID;
+        return complianceList.get(position).complianceID;
     }
 }

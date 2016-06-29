@@ -30,4 +30,5 @@
     <string name="action_sync_mfile">Sync new masterfile</string>
     <string name="pref_username">USER_NAME</string>
     <string name="pref_password">PASS_WORD</string>
+    <string name="pref_adminmode">ADMIN_MODE</string>
 </resources>

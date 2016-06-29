@@ -18,6 +18,7 @@ import android.widget.Toast;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.HttpUtility.HttpUtility;
 import com.android.pplusaudit2.MyMessageBox;
@@ -32,27 +33,21 @@ import java.util.ArrayList;
  */
 public class CategoryActivity extends AppCompatActivity {
 
-    private ArrayList<Category> arrActivityList = new ArrayList<Category>();
-    private ArrayList<Category> lstActivities = new ArrayList<Category>();
+    private ArrayList<Category> arrActivityList;
+    private ArrayList<Category> lstActivities;
 
-    HttpUtility httpDownload;
-    MyMessageBox messageBox;
-    SQLLibrary sqlLibrary;
-    SQLiteDB sqLiteDB;
-    TCRLib tcrLib;
+    private SQLLibrary sqlLibrary;
+    private TCRLib tcrLib;
 
     private static final int BUFFER_SIZE = 4096;
     private ProgressDialog progressDL;
 
-    String storeid = "";
-    String storename;
-    int nGradeMatrix;
+    private String storeid = "";
+    private int nGradeMatrix;
 
-    General.SCORE_STATUS scoreStatus;
-
-    ListView lvwActivity;
-    CategoryAdapter adapter;
-    String TAG = "";
+    private ListView lvwActivity;
+    private String TAG = "";
+    private ErrorLog errorLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -64,17 +59,19 @@ public class CategoryActivity extends AppCompatActivity {
         TAG = CategoryActivity.this.getLocalClassName();
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
+        errorLog = new ErrorLog(General.errlogFile, this);
+
+        arrActivityList = new ArrayList<>();
+        lstActivities = new ArrayList<>();
+
         overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
 
-        httpDownload = new HttpUtility(this);
-        messageBox = new MyMessageBox(this);
         sqlLibrary = new SQLLibrary(this);
-        sqLiteDB = new SQLiteDB(this);
         tcrLib = new TCRLib(this);
 
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
-            storename = extras.getString("STORE_NAME");
+            String storename = extras.getString("STORE_NAME");
             storeid = extras.getString("STORE_ID");
             nGradeMatrix = extras.getInt("GRADE_MATRIX");
             getSupportActionBar().setTitle(storename.toUpperCase());
@@ -84,7 +81,7 @@ public class CategoryActivity extends AppCompatActivity {
     }
 
     // LOAD ACTIVITY SCORES
-    public class AsyncLoadActivities extends AsyncTask<Void, Void, Boolean> {
+    private class AsyncLoadActivities extends AsyncTask<Void, Void, Boolean> {
 
         String errMsg = "";
 
@@ -106,7 +103,7 @@ public class CategoryActivity extends AppCompatActivity {
                         + "," + SQLiteDB.COLUMN_STORECATEGORY_final + "," + SQLiteDB.COLUMN_STORECATEGORY_status + "," + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_categoryid + " AS webCategid"
                         + " FROM " + SQLiteDB.TABLE_STORECATEGORY
                         + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
-                        + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = " + General.storeid
+                        + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
                         + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder);
 
                 cursStoreCategory.moveToFirst();
@@ -119,7 +116,7 @@ public class CategoryActivity extends AppCompatActivity {
                     String strCategStatus = "";
 
                     strCategStatus = tcrLib.GetStatus(categStatusno);
-                    scoreStatus = tcrLib.GetScoreStatus(categFinal);
+                    General.SCORE_STATUS scoreStatus = tcrLib.GetScoreStatus(categFinal);
 
                     int categorder = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryorder));
                     String category = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categorydesc)).trim().replace("\"", "");
@@ -132,9 +129,9 @@ public class CategoryActivity extends AppCompatActivity {
                 result = true;
             }
             catch (Exception ex) {
-                errMsg = ex.getMessage() != null ? ex.getMessage() : "Error in data.";
-                Log.e(TAG, errMsg);
-                General.errorLog.appendLog(errMsg, TAG);
+                errMsg = "Can't load categories.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
+                errorLog.appendLog(exErr, TAG);
             }
 
             return result;
@@ -144,7 +141,7 @@ public class CategoryActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             lstActivities.clear();
             lstActivities.addAll(arrActivityList);
-            adapter = new CategoryAdapter(CategoryActivity.this, lstActivities);
+            CategoryAdapter adapter = new CategoryAdapter(CategoryActivity.this, lstActivities);
             lvwActivity.setAdapter(adapter);
             adapter.notifyDataSetChanged();
             progressDL.dismiss();

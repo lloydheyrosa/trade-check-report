@@ -15,20 +15,20 @@ import com.android.pplusaudit2.R;
 /**
  * Created by ULTRABOOK on 9/30/2015.
  */
-public class DashboardAdapter extends BaseAdapter {
+class DashboardAdapter extends BaseAdapter {
 
     private Context mContext;
     private String[] menuValues;
     private Typeface menufontIcon;
 
-    public DashboardAdapter(Context context, String[] menuValues) {
+    DashboardAdapter(Context context, String[] menuValues) {
         this.mContext = context;
         this.menuValues = menuValues;
         this.menufontIcon = Typeface.createFromAsset(mContext.getAssets(), "fonts/fontawesome-webfont.ttf");
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(context, General.errlogFile));
     }
 
-    public class ViewHolder {
+    private class ViewHolder {
         //ImageView imgMenu;
         TextView tvwMenu;
         TextView tvwMenuDesc;
@@ -37,6 +37,10 @@ public class DashboardAdapter extends BaseAdapter {
 
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
+
+        if(General.isAdminMode && (position == 1 && position ==2) ) {
+            return convertView;
+        }
 
         final ViewHolder holder;
 

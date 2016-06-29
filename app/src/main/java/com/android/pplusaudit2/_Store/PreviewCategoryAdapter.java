@@ -23,14 +23,14 @@ import java.util.ArrayList;
 /**
  * Created by ULTRABOOK on 2/18/2016.
  */
-public class PreviewCategoryAdapter extends BaseAdapter {
+class PreviewCategoryAdapter extends BaseAdapter {
 
     private Context mContext;
     private SQLLibrary sqlLibrary;
     private TCRLib tcrLib;
     private ArrayList<Category> arrCategory;
 
-    public PreviewCategoryAdapter(Context ctx, ArrayList<Category> arrayList) {
+    PreviewCategoryAdapter(Context ctx, ArrayList<Category> arrayList) {
         this.mContext = ctx;
         this.sqlLibrary = new SQLLibrary(ctx);
         this.tcrLib = new TCRLib(ctx);
@@ -38,7 +38,7 @@ public class PreviewCategoryAdapter extends BaseAdapter {
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
     }
 
-    public class ViewHolder {
+    private class ViewHolder {
         TextView tvwPreviewCateg;
         TextView tvwPreviewCategStatus;
         TableLayout tblPreviewGroup;

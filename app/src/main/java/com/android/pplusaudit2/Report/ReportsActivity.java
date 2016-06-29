@@ -8,7 +8,6 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -17,6 +16,7 @@ import android.widget.ListView;
 import android.widget.Toast;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.Audit;
@@ -36,8 +36,9 @@ import java.util.ArrayList;
 
 public class ReportsActivity extends AppCompatActivity {
 
-    ProgressDialog progressDialog;
+    private ProgressDialog progressDialog;
     private String TAG;
+    private ErrorLog errorLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -49,6 +50,8 @@ public class ReportsActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
+
+        errorLog = new ErrorLog(General.errlogFile, this);
 
         final ArrayList<Reports> reportsArrayList = new ArrayList<>();
         reportsArrayList.add(new Reports(1, "USER AUDIT SUMMARY REPORT", "Audit summary report of user.", "\uf0c5"));
@@ -65,11 +68,11 @@ public class ReportsActivity extends AppCompatActivity {
         });
     }
 
-    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+    private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
         int reportID;
 
-        public CheckInternet(int reportID) {
+        CheckInternet(int reportID) {
             this.reportID = reportID;
         }
 
@@ -106,12 +109,12 @@ public class ReportsActivity extends AppCompatActivity {
         }
     }
 
-    public class FetchReportData extends AsyncTask<Void, Void, Boolean> {
+    private class FetchReportData extends AsyncTask<Void, Void, Boolean> {
         String response = null;
         int reportID;
         private String errorMsg;
 
-        public FetchReportData(int reportID) {
+        FetchReportData(int reportID) {
             this.reportID = reportID;
             General.arraylistAudits = new ArrayList<>();
         }
@@ -159,19 +162,19 @@ public class ReportsActivity extends AppCompatActivity {
                 ex.printStackTrace();
                 errorMsg = "Can't connect to web server. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (IOException ex) {
                 ex.printStackTrace();
                 errorMsg = "Slow or unstable internet connection. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (JSONException ex) {
                 ex.printStackTrace();
                 errorMsg = "Error in web response of server. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
 
             return result;
@@ -204,17 +207,17 @@ public class ReportsActivity extends AppCompatActivity {
     private boolean GetAudits(String response) throws JSONException {
         boolean res = false;
         if(response == null || response.trim().equals("")) {
-            return res;
+            return false;
         }
 
         JSONArray dataArray = new JSONArray(response);
-        if(dataArray.length() == 0) return res;
+        if(dataArray.length() == 0) return false;
 
         General.arraylistAudits.clear();
 
         for (int i = 0; i < dataArray.length(); i++) {
             JSONObject data = (JSONObject) dataArray.get(i);
-            General.arraylistAudits.add(new Audit(data.getInt("id"), data.getString("description")));
+            General.arraylistAudits.add(new Audit(data.getInt("audit_id"), data.getString("description")));
             res = true;
         }
 

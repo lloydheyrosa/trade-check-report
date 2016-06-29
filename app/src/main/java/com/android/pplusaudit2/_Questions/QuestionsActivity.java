@@ -23,10 +23,8 @@ import android.view.LayoutInflater;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CheckBox;
-import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageView;
@@ -40,6 +38,7 @@ import android.widget.TimePicker;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.Math.Expression;
 import com.android.pplusaudit2.MyMessageBox;
@@ -71,8 +70,7 @@ public class QuestionsActivity extends AppCompatActivity {
     //FOR CONDITIONAL
     private TableLayout tblFormsPerCondition = null;
     private HashMap<Integer, TableLayout> hmCondTableLayout;
-    private HashMap<Integer, String[]> hmformCondsid;
-    private HashMap<Integer, View> hmCondRadioButtons;
+    private HashMap<Integer, ArrayList<String>> hmformCondsid;
     private int ctrConditions;
     private HashMap<Integer, String> hmConditionalAnswers;
 
@@ -97,15 +95,12 @@ public class QuestionsActivity extends AppCompatActivity {
     private String imgFormtypeid;
     private String imgFilename;
 
-    private View mainLayout;
-
     private ProgressDialog saveProgress;
 
     private String SOSAnswer = "";
 
     // <INTEGER KEY = QUESTIONID, HASHMAP<INTEGER = VIEW ID, ANSWERCLASS>>
     private HashMap<Integer, HashMap<Integer, Pplus_AnswerClass>> hmlistAnswers;
-    private HashMap<Integer, String> hmFormulalists;
     private HashMap<Integer, String> hmExpectedAnswers;
     private HashMap<Integer, String> hmFormulalistsByFormid;
     private HashMap<Integer, EditText> hmCompForms;
@@ -119,8 +114,6 @@ public class QuestionsActivity extends AppCompatActivity {
     private HashMap<Integer, String> hmChildAnswers;
     private HashMap<Integer, CheckBox> hmMultiCheckConditionAns;
 
-    private Typeface mainTypeface;
-
     private RadioButton rbSelectedCondition = null;
 
     // CAMERA CAPTURE DATA
@@ -130,6 +123,7 @@ public class QuestionsActivity extends AppCompatActivity {
     private String CAMERA_COND_CHILDANSWER;
     private int CAMERA_COND_FORMTYPE_ID;
 
+    private ErrorLog errorLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -140,7 +134,9 @@ public class QuestionsActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
         TAG = QuestionsActivity.this.getLocalClassName();
-        General.errorLog.appendLog("Auditing.", TAG);
+        errorLog = new ErrorLog(General.errlogFile, this);
+
+        errorLog.appendLog("Auditing.", TAG);
 
         CONDITIONAL_MODE = 0;
         CAMERA_CONDFORM_ID = 0;
@@ -149,9 +145,8 @@ public class QuestionsActivity extends AppCompatActivity {
         CAMERA_COND_FORMTYPE_ID = 0;
 
         sqlLibrary = new SQLLibrary(this);
-        mainLayout = findViewById(R.id.lnrQuestions);
 
-        mainTypeface = Typeface.createFromAsset(this.getAssets(), General.typefacename);
+        Typeface mainTypeface = Typeface.createFromAsset(this.getAssets(), General.typefacename);
 
         tblQuestion = (TableLayout) findViewById(R.id.tblQuestions);
         final LinearLayout lnrHeader = (LinearLayout) this.findViewById(R.id.lnrHeader);
@@ -167,7 +162,6 @@ public class QuestionsActivity extends AppCompatActivity {
         arrConditionalQuestionid = new ArrayList<>();
         General.hmSignature = new HashMap<>();
         General.hmCondSignature = new HashMap<>();
-        hmFormulalists = new HashMap<>();
         hmExpectedAnswers = new HashMap<>();
 
         hmFormulalistsByFormid = new HashMap<>();
@@ -180,7 +174,6 @@ public class QuestionsActivity extends AppCompatActivity {
         hmChildAnswers = new HashMap<>();
         hmMultiCheckConditionAns = new HashMap<>();
         hmformCondsid = new HashMap<>();
-        hmCondRadioButtons = new HashMap<>();
         hmCondTableLayout = new HashMap<>();
         hmConditionalAnswers = new HashMap<>();
 
@@ -238,6 +231,7 @@ public class QuestionsActivity extends AppCompatActivity {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
                         //SAVE SURVEY
+                        errorLog.appendLog("Saving audit. User: " + General.userName, TAG);
                         new SaveSurvey().execute();
                     }
                 });
@@ -877,6 +871,10 @@ public class QuestionsActivity extends AppCompatActivity {
                     case "12": // 1CONDITIONALS
                         layoutrow = (LinearLayout) LayoutInflater.from(QuestionsActivity.this).inflate(R.layout.question_12_conditional, null);
                         //conditionalAnswers = "";
+
+                        arrQuestionid.add(nQuestionid);
+                        tblQuestion.addView(layoutrow);
+
                         TextView tvwCondprompt = (TextView) layoutrow.findViewById(R.id.tvwCondprompt);
                         tvwCondprompt.setTag(formtypeid + "," + nQuestionid);
                         tvwCondprompt.setText(strPrompt.trim().toUpperCase());
@@ -901,7 +899,8 @@ public class QuestionsActivity extends AppCompatActivity {
                             while (!cursConditional.isAfterLast()) {
 
                                 String strConditionPrompt = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_condition));
-                                final String strformConditionsId = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_conditionformsid));
+                                String strformConditionsId = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_conditionformsid));
+                                strformConditionsId = strformConditionsId.trim().equals("") ? null : strformConditionsId.trim();
                                 final int nCondOptionID = cursConditional.getInt(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_optionid));
 
                                 final RadioButton rb = new RadioButton(this);
@@ -912,99 +911,68 @@ public class QuestionsActivity extends AppCompatActivity {
                                 rb.setTag(ctrConditions);
                                 rb.setLayoutParams(rbCondLayout);
 
-                                LinearLayout lnrLines = (LinearLayout) layoutrow.findViewById(R.id.lnrCondlines);
-                                lnrLines.setBackgroundColor(getResources().getColor(R.color.colorAccentDark));
-
                                 // Get inner forms
-                                if(!strformConditionsId.equals("")) {
+                                ArrayList<String> arrChildFormids = new ArrayList<>();
+                                if(strformConditionsId != null)
+                                    arrChildFormids.addAll(Arrays.asList(strformConditionsId.split("\\^")));
 
-                                    hmformCondsid.put(nCondOptionID, strformConditionsId.split("\\^"));
+                                if(arrChildFormids.size() > 0)
+                                    hmformCondsid.put(nCondOptionID, arrChildFormids);
 
-                                    rb.setOnClickListener(new View.OnClickListener() {
-                                        Cursor cursformsperCond;
-                                        @Override
-                                        public void onClick(View v) {
+                                rb.setOnClickListener(new View.OnClickListener() {
+                                    Cursor cursformsperCond;
+                                    @Override
+                                    public void onClick(View v) {
 
-                                            int rbID = v.getId();
+                                        int rbID = v.getId();
 
-                                            RadioButton rbSub = (RadioButton) v;
+                                        RadioButton rbSub = (RadioButton) v;
+                                        rbSelectedCondition = rbSub;
+                                        int tblCount = (Integer) rbSub.getTag();
 
-                                            rbSelectedCondition = rbSub;
+                                        TableLayout tblCond = hmCondTableLayout.get(tblCount);
+                                        tblCond.removeAllViews();
 
-                                            int tblCount = (Integer) rbSub.getTag();
+                                        hmChildRequired.remove(nQuestionid);
+                                        hmlistAnswers.remove(nQuestionid);
+                                        RemoveChildAnswerFromArray(nQuestionid);
 
-                                            TableLayout tblCond = hmCondTableLayout.get(tblCount);
-                                            tblCond.removeAllViews();
+                                        final ArrayList<String> lstChildFormids = hmformCondsid.get(rbID);
 
-                                            hmChildRequired.remove(nQuestionid);
+                                        if(lstChildFormids != null && lstChildFormids.size() > 0) {
 
-                                            final String[] conditionFormid = hmformCondsid.get(rbID);
+                                            String rbAnswer = rbSub.getText().toString();
+                                            PutAnswers(nQuestionid, rbSub, rbAnswer, formtypeid);
 
-                                            if(conditionFormid != null) {
+                                            for (String formIDperCondition : lstChildFormids) {
 
-                                                hmlistAnswers.remove(nQuestionid);
-                                                String rbAnswer = rbSelectedCondition.getText().toString();
-                                                PutAnswers(nQuestionid, rbSelectedCondition, rbAnswer, formtypeid);
+                                                cursformsperCond = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + formIDperCondition + "'");
+                                                cursformsperCond.moveToFirst();
 
-                                                for (String formIDperCondition : conditionFormid) {
+                                                while (!cursformsperCond.isAfterLast()) {
 
-                                                    cursformsperCond = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + formIDperCondition + "'");
-                                                    cursformsperCond.moveToFirst();
+                                                    String strcondFormtypeid = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
+                                                    String strcondPrompt = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
+                                                    String strcondExpected = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_expected));
+                                                    int nCondRequired = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
+                                                    int nCondExempt = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_exempt));
 
-                                                    while (!cursformsperCond.isAfterLast()) {
-
-                                                        String strcondFormtypeid = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
-                                                        String strcondPrompt = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
-                                                        String strcondExpected = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_expected));
-                                                        int nCondRequired = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
-                                                        int nCondExempt = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_exempt));
-
-                                                        CreateConditionalSurveyForms(nQuestionid, strcondFormtypeid, formIDperCondition, strcondPrompt, strcondExpected, nCondRequired, nCondExempt, rbSub.getText().toString(), isAnswered, tblCount);
+                                                    CreateConditionalSurveyForms(nQuestionid, strcondFormtypeid, formIDperCondition, strcondPrompt, strcondExpected, nCondRequired, nCondExempt, rbSub.getText().toString(), isAnswered, tblCount);
 
                                                         // LOAD SIGNATURE IMAGE INSIDE CONDITIONAL
-                                                        LoadCondSignatures(Integer.parseInt(formIDperCondition), Integer.parseInt(strcondFormtypeid));
-                                                        cursformsperCond.moveToNext();
-                                                    }
+                                                    LoadCondSignatures(Integer.parseInt(formIDperCondition), Integer.parseInt(strcondFormtypeid));
+                                                    cursformsperCond.moveToNext();
                                                 }
-
-                                                cursformsperCond.close();
                                             }
+
+                                            cursformsperCond.close();
                                         }
-                                    });
-                                }
-                                else {
-                                    rb.setOnClickListener(new View.OnClickListener() {
-                                        @Override
-                                        public void onClick(View v) {
-
-                                            int id = v.getId();
-
-                                            RadioButton rbSub2 = (RadioButton) hmCondRadioButtons.get(id);
-                                            int i = (Integer) rbSub2.getTag();
-                                            TableLayout tbl = hmCondTableLayout.get(i);
-                                            tbl.removeAllViews();
-                                            hmlistAnswers.remove(nQuestionid);
+                                        else {
                                             String rbPrompt = rb.getText().toString().trim();
-                                            PutAnswers(nQuestionid, rbSub2, rbPrompt, formtypeid);
-                                            hmChildRequired.remove(nQuestionid);
-
+                                            PutAnswers(nQuestionid, rbSub, rbPrompt, formtypeid);
                                         }
-                                    });
-                                }
-
-                                hmCondRadioButtons.put(nCondOptionID, rb);
-
-                                rbgConditions.addView(rb);
-                                cursConditional.moveToNext();
-                            }
-
-                            cursConditional.moveToFirst();
-                            while (!cursConditional.isAfterLast()) {
-
-                                String strConditionPrompt = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_condition));
-                                final int nCondOptionID = cursConditional.getInt(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_optionid));
-
-                                RadioButton rb = (RadioButton) hmCondRadioButtons.get(nCondOptionID);
+                                    }
+                                });
 
                                 if(isAnswered == 1) {
                                     if(strConditionPrompt.toUpperCase().equals(formAnswer)) {
@@ -1024,15 +992,41 @@ public class QuestionsActivity extends AppCompatActivity {
                                         cursGetOptionid.close();
                                     }
                                 }
+
+                                rbgConditions.addView(rb);
                                 cursConditional.moveToNext();
                             }
+
+//                            cursConditional.moveToFirst();
+//                            while (!cursConditional.isAfterLast()) {
+//
+//                                String strConditionPrompt = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_condition));
+//                                final int nCondOptionID = cursConditional.getInt(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_optionid));
+//
+//                                RadioButton rb = (RadioButton) hmCondRadioButtons.get(nCondOptionID);
+//
+//                                if(isAnswered == 1) {
+//                                    if(strConditionPrompt.toUpperCase().equals(formAnswer)) {
+//                                        hmConditionalAnswers.put(ctrConditions, formAnswer);
+//                                        SetFormAnswer(formAnswer, nQuestionid, rb, formtypeid);
+//                                    }
+//                                }
+//                                else { // GET DEFAULT ANSWER IF AVAILABLE
+//                                    if(!strDefaultAnswer.equals("") && strDefaultAnswer.equals(String.valueOf(nCondOptionID))) {
+//                                        Cursor cursGetOptionid = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL, SQLiteDB.COLUMN_CONDITIONAL_optionid + " = '" + strDefaultAnswer + "'");
+//                                        cursGetOptionid.moveToFirst();
+//                                        if(cursGetOptionid.getCount() > 0) {
+//                                            String condDefAns = cursGetOptionid.getString(cursGetOptionid.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_condition));
+//                                            hmConditionalAnswers.put(ctrConditions, condDefAns);
+//                                            SetFormAnswer(condDefAns, nQuestionid, rb, formtypeid);
+//                                        }
+//                                        cursGetOptionid.close();
+//                                    }
+//                                }
+//                                cursConditional.moveToNext();
+//                            }
                             cursConditional.close();
                         }
-
-                        arrQuestionid.add(nQuestionid);
-//                        if(layoutrow.getParent() != null)
-//                            ((ViewGroup)layoutrow.getParent()).removeView(layoutrow);
-                        tblQuestion.addView(layoutrow);
                         break;
 
                     case "13": // 1LABEL HEADER
@@ -1058,47 +1052,36 @@ public class QuestionsActivity extends AppCompatActivity {
         System.gc();
     }
 
-    private void LoadConditionals(View v, int nQuestionid, String formtypeid, RadioButton rbMain, int isAnswered) {
+    private void RemoveChildAnswers(int questionID) {
+        Cursor cursChildAnswers = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_questionid + " = '" + String.valueOf(questionID) + "'");
+        if(cursChildAnswers.moveToFirst()) {
+            while (!cursChildAnswers.isAfterLast()) {
 
-        Cursor cursformsperCond = null;
+                int condformid = cursChildAnswers.getInt(cursChildAnswers.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalformid));
 
-        rbSelectedCondition = (RadioButton) v;
+                hmChildAnswers.remove(condformid);
 
-        int rbID = v.getId();
-        int tblCount = (Integer) v.getTag();
-
-        TableLayout tblCond = hmCondTableLayout.get(tblCount);
-        tblCond.removeAllViews();
-
-        hmChildRequired.remove(nQuestionid);
-
-        final String[] conditionFormid = hmformCondsid.get(rbID);
-
-        hmlistAnswers.remove(nQuestionid);
-        String rbAnswer = rbSelectedCondition.getText().toString();
-        PutAnswers(nQuestionid, rbSelectedCondition, rbAnswer, formtypeid);
-
-        for (String formIDperCondition : conditionFormid) {
-
-            cursformsperCond = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + formIDperCondition + "'");
-            cursformsperCond.moveToFirst();
-
-            while(!cursformsperCond.isAfterLast()) {
-
-                String strcondFormtypeid = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
-                String strcondPrompt = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
-                String strcondExpected = cursformsperCond.getString(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_expected));
-                int nCondRequired = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_required));
-                int nCondExempt = cursformsperCond.getInt(cursformsperCond.getColumnIndex(SQLiteDB.COLUMN_FORMS_exempt));
-
-                CreateConditionalSurveyForms(nQuestionid, strcondFormtypeid, formIDperCondition, strcondPrompt, strcondExpected, nCondRequired, nCondExempt, rbMain.getText().toString(), isAnswered, tblCount);
-
-                // LOAD SIGNATURE IMAGE INSIDE CONDITIONAL
-                LoadCondSignatures(Integer.parseInt(formIDperCondition), Integer.parseInt(strcondFormtypeid));
-                cursformsperCond.moveToNext();
+                cursChildAnswers.moveToNext();
             }
         }
-        cursformsperCond.close();
+        cursChildAnswers.close();
+
+        sqlLibrary.ExecSQLWrite("DELETE FROM " + SQLiteDB.TABLE_CONDITIONAL_ANSWERS + " WHERE " + SQLiteDB.COLUMN_CONDANS_questionid + " = '" + String.valueOf(questionID) + "'");
+    }
+
+    private void RemoveChildAnswerFromArray(int questionID) {
+        Cursor cursChildAnswers = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_questionid + " = '" + String.valueOf(questionID) + "'");
+        if(cursChildAnswers.moveToFirst()) {
+            while (!cursChildAnswers.isAfterLast()) {
+
+                int condformid = cursChildAnswers.getInt(cursChildAnswers.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalformid));
+
+                hmChildAnswers.remove(condformid);
+
+                cursChildAnswers.moveToNext();
+            }
+        }
+        cursChildAnswers.close();
     }
 
     private void LoadCondSignatures(int conformid, int formtypeid) {
@@ -1548,15 +1531,15 @@ public class QuestionsActivity extends AppCompatActivity {
                 answer.trim()
         };
 
-        int count = 0;
-        Cursor cursSave = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid + " = '" + formid + "'");
-        cursSave.moveToFirst();
-        count = cursSave.getCount();
-        cursSave.close();
-
-        if(count > 0)
-            sqlLibrary.UpdateRecord(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid, String.valueOf(formid), aFields, aValues);
-        else
+//        int count = 0;
+//        Cursor cursSave = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid + " = '" + formid + "'");
+//        cursSave.moveToFirst();
+//        count = cursSave.getCount();
+//        cursSave.close();
+//
+//        if(count > 0)
+//            sqlLibrary.UpdateRecord(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid, String.valueOf(formid), aFields, aValues);
+//        else
             sqlLibrary.AddRecord(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, aFields, aValues);
     }
 
@@ -1942,7 +1925,6 @@ public class QuestionsActivity extends AppCompatActivity {
                 cursFormula.moveToFirst();
 
                 final String stroriginalFormula = cursFormula.getString(cursFormula.getColumnIndex(SQLiteDB.COLUMN_COMPUTATIONAL_formula)).trim().replace("\"","");
-                hmFormulalists.put(condQuestionid, stroriginalFormula);
                 if(cursFormula.getCount() > 0) {
 
                     TableLayout tblComputational = (TableLayout) layoutrow.findViewById(R.id.tblComputational);
@@ -1993,29 +1975,33 @@ public class QuestionsActivity extends AppCompatActivity {
     }
 
     // SAVE SURVEY
-    public class SaveSurvey extends AsyncTask<Void, Void, String> {
-
+    private class SaveSurvey extends AsyncTask<Void, Void, Boolean> {
+        private String errmsg = "";
         @Override
         protected void onPreExecute() {
             saveProgress = ProgressDialog.show(QuestionsActivity.this, "", "Saving answers. Please wait.");
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected Boolean doInBackground(Void... params) {
+
+            boolean result = false;
 
 /*            if(hmlistAnswers.size() > 0) {*/
+
+            try {
 
                 HashMap<Integer, Pplus_AnswerClass> hmAns = new HashMap<>();
 
                 int expFormtypeid = 0;
 
-                for(int qid : arrQuestionid) {
+                for (int qid : arrQuestionid) {
 
                     hmAns = hmlistAnswers.get(qid); // get inner hashmap hmAns: <view id, answer class>
                     ArrayList<String> arrExpectedAns = new ArrayList<>(Arrays.asList(hmExpectedAnswers.get(qid).split("\\~"))); // get expected answer by questionid
 
                     // FIRST, CHANGE ALL QUESTION TO NOT ANSWERED
-                    if(hmAns != null) { // if question id is found
+                    if (hmAns != null) { // if question id is found
 
                         //CheckBox cbAnswered;
                         String answer = "";
@@ -2024,7 +2010,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         cursStoreQuestions.moveToFirst();
                         String storequestionid = cursStoreQuestions.getString(cursStoreQuestions.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_id));
 
-                            for (HashMap.Entry<Integer, Pplus_AnswerClass> entry : hmAns.entrySet()) {
+                        for (HashMap.Entry<Integer, Pplus_AnswerClass> entry : hmAns.entrySet()) {
                             //int key = entry.getKey();
                             final Pplus_AnswerClass answerValueClass = entry.getValue();
 
@@ -2034,7 +2020,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                     answer = answerValueClass.viewValue;
                                     File imageFile;
 
-                                    if(hmUriImagequestionfile.size() == 0) {
+                                    if (hmUriImagequestionfile.size() == 0) {
                                         break;
                                     }
 
@@ -2047,10 +2033,10 @@ public class QuestionsActivity extends AppCompatActivity {
                                             imageFile.delete();
                                         }
                                     } catch (IOException ex) {
-                                        String err = ex.getMessage() != null ? ex.getMessage() : "Image error.";
-                                        Log.d("IOException", err);
-                                        General.errorLog.appendLog(err, TAG);
-                                        return err;
+                                        errmsg = "Error in saving image captured. Please try again";
+                                        String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
+                                        errorLog.appendLog(exErr, TAG);
+                                        return false;
                                     }
 
                                     break;
@@ -2066,16 +2052,15 @@ public class QuestionsActivity extends AppCompatActivity {
                                     File destSignatureFile = new File(Settings.signatureFolder, answerValueClass.viewValue);
 
                                     try {
-                                        if(imageSignatureFile.exists()) {
+                                        if (imageSignatureFile.exists()) {
                                             Settings.CopyFile(imageSignatureFile, destSignatureFile);
                                             imageSignatureFile.delete();
                                         }
-                                    }
-                                    catch (final IOException ex) {
-                                        String err = ex.getMessage() != null ? ex.getMessage() : "Image signature error.";
-                                        Log.d("IOException", err);
-                                        General.errorLog.appendLog(err, TAG);
-                                        return err;
+                                    } catch (final IOException ex) {
+                                        errmsg = "Error in saving image signature. Please try again";
+                                        String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
+                                        errorLog.appendLog(exErr, TAG);
+                                        return false;
                                     }
 
                                     break;
@@ -2094,14 +2079,14 @@ public class QuestionsActivity extends AppCompatActivity {
                                         @Override
                                         public void run() {
 
-                                            if(hmPerfectStoreValue.size() > 0) {
+                                            if (hmPerfectStoreValue.size() > 0) {
                                                 for (HashMap.Entry<Integer, EditText> hmapEntry : hmPerfectStoreValue.entrySet()) {
                                                     EditText txtCurrent = hmapEntry.getValue();
                                                     String[] curTags = txtCurrent.getTag().toString().split(",");
                                                     String strVal = tcrLib.ValidateNumericValue(txtCurrent.getText().toString().trim());
 
                                                     if (curTags.length == 5) {
-                                                        if (curTags[3].replace(" ","").equals(TCRLib.SOS_PERFECT_STORE)) {
+                                                        if (curTags[3].replace(" ", "").equals(TCRLib.SOS_PERFECT_STORE)) {
                                                             double perc = Double.parseDouble(curTags[4]);
                                                             double totalAns = Double.parseDouble(strVal);
                                                             SOSAnswer = String.valueOf(totalAns) + "," + String.valueOf(perc);
@@ -2124,6 +2109,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
                                 case "12": // CONDITIONAL
                                     answer = answerValueClass.viewValue;
+                                    sqlLibrary.ExecSQLWrite("DELETE FROM " + SQLiteDB.TABLE_CONDITIONAL_ANSWERS + " WHERE " + SQLiteDB.COLUMN_CONDANS_questionid + " = '" + String.valueOf(answerValueClass.questionid) + "'");
                                     for (HashMap.Entry<Integer, String> childCondEntry : hmChildAnswers.entrySet()) {
                                         int childformid = childCondEntry.getKey();
                                         String[] childValues = childCondEntry.getValue().split("\\|");
@@ -2155,13 +2141,12 @@ public class QuestionsActivity extends AppCompatActivity {
 
                             case 9: // MULTI ITEM
                                 String[] cbAnswers = answer.split(",");
-                                if(cbAnswers.length > 0) {
-                                    for(String optionidAns : cbAnswers) {
+                                if (cbAnswers.length > 0) {
+                                    for (String optionidAns : cbAnswers) {
                                         String cbid = optionidAns.split("_")[0];
-                                        if(arrExpectedAns.contains(cbid)) {
+                                        if (arrExpectedAns.contains(cbid)) {
                                             questionInitStatus = 1;
-                                        }
-                                        else {
+                                        } else {
                                             questionInitStatus = 0;
                                             break;
                                         }
@@ -2194,8 +2179,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                 + "," + SQLiteDB.COLUMN_STOREQUESTION_initial + " = '" + questionInitStatus + "'"
                                 + "," + SQLiteDB.COLUMN_STOREQUESTION_final + " = '" + questionInitStatus + "'"
                                 + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_id + " = '" + storequestionid + "'");
-                    }
-                    else {
+                    } else {
                         sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STOREQUESTION
                                 + " SET " + SQLiteDB.COLUMN_STOREQUESTION_isAnswered + " = '0'"
                                 + "," + SQLiteDB.COLUMN_STOREQUESTION_answer + " = ''"
@@ -2206,24 +2190,31 @@ public class QuestionsActivity extends AppCompatActivity {
                     }
                 }
 
-            UpdateStoreCategoryGroup();
-            UpdateStoreCategory();
-            UpdateStoreStatus();
+                UpdateStoreCategoryGroup();
+                UpdateStoreCategory();
+                UpdateStoreStatus();
 
-            UpdatePerfectStoreCategory();
-            UpdatePerfectStore();
+                UpdatePerfectStoreCategory();
+                UpdatePerfectStore();
+                result = true;
+            }
+            catch (Exception ex) {
+                errmsg = "Error in saving audit. Please try again";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
+                errorLog.appendLog(exErr, TAG);
+            }
 
-            return null;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String strReturn) {
-            if(strReturn != null) {
-                messageBox.ShowMessage("Error", strReturn);
-                saveProgress.dismiss();
+        protected void onPostExecute(Boolean bResult) {
+            saveProgress.dismiss();
+            if(!bResult) {
+                messageBox.ShowMessage("Error in saving", errmsg);
                 return;
             }
-            saveProgress.dismiss();
+
             AlertDialog dl = new AlertDialog.Builder(QuestionsActivity.this).create();
             dl.setTitle("Saved");
             dl.setMessage("Survey are successfully saved! Tap OK to view your result.");
@@ -2235,12 +2226,14 @@ public class QuestionsActivity extends AppCompatActivity {
                     onBackPressed();
                 }
             });
+
+            errorLog.appendLog("Successfully saved audit. User: " + General.userName, TAG);
             dl.show();
         }
     }
 
     // UPDATE PERFECT STORE
-    private void UpdatePerfectStore() {
+    private void UpdatePerfectStore() throws Exception {
         double dTotalPerfectScore = 0.00;
         double dScorePerCategory = 0.00;
         int nStorePerfect = 0;
@@ -2252,7 +2245,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 + " ON " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid + " = " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id
                 + " JOIN " + SQLiteDB.TABLE_PERFECT_CATEGORY
                 + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_categoryid + " = " + SQLiteDB.TABLE_PERFECT_CATEGORY + "." + SQLiteDB.COLUMN_PCATEGORY_categoryid
-                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.storeid + "'");
+                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'");
         cursReqStore.moveToFirst();
         nReq = cursReqStore.getCount();
         dScorePerCategory = 100 / nReq;
@@ -2262,7 +2255,7 @@ public class QuestionsActivity extends AppCompatActivity {
             Cursor cursPassedCateg = sqlLibrary.RawQuerySelect("SELECT tblcategory.category_id AS categID FROM " + SQLiteDB.TABLE_STORECATEGORY
                     + " JOIN " + SQLiteDB.TABLE_CATEGORY
                     + " ON " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid + " = " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id
-                    + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.storeid + "'"
+                    + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
                     + " AND " + SQLiteDB.COLUMN_STORECATEGORYGROUP_final + " = '1'");
             cursPassedCateg.moveToFirst();
 
@@ -2295,13 +2288,13 @@ public class QuestionsActivity extends AppCompatActivity {
                     strPerfectStoreScore
             };
 
-            sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id, General.storeid, aUpdateFields, aUpdateValues);
+            sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id, String.valueOf(General.selectedStore.storeID), aUpdateFields, aUpdateValues);
         }
 
     }
 
     // UPDATE PERFECT STORE CATEGORY
-    private void UpdatePerfectStoreCategory() {
+    private void UpdatePerfectStoreCategory() throws Exception {
 
         int nCategoryPerfect = 0;
         int nReq = 0;
@@ -2353,20 +2346,20 @@ public class QuestionsActivity extends AppCompatActivity {
     }
 
     //UPDATE STORE STATUS
-    private void UpdateStoreStatus() {
+    private void UpdateStoreStatus() throws Exception {
 
         Cursor cursCountCorrect = sqlLibrary.RawQuerySelect("SELECT COUNT(*) AS countCorrect FROM " + SQLiteDB.TABLE_STORECATEGORY
-                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.storeid + "'"
+                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
                 + " AND " + SQLiteDB.COLUMN_STORECATEGORY_final + " = '1' ");
         cursCountCorrect.moveToFirst();
 
         Cursor cursCountComplete = sqlLibrary.RawQuerySelect("SELECT COUNT(*) AS countComplete FROM " + SQLiteDB.TABLE_STORECATEGORY
-                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.storeid + "'"
+                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
                 + " AND " + SQLiteDB.COLUMN_STORECATEGORY_status + " = '2'");
         cursCountComplete.moveToFirst();
 
         Cursor cursCountCategory = sqlLibrary.RawQuerySelect("SELECT COUNT(*) AS countCategory FROM " + SQLiteDB.TABLE_STORECATEGORY
-                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.storeid + "'");
+                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'");
         cursCountCategory.moveToFirst();
 
         int nTotalCategory = 0;
@@ -2402,7 +2395,7 @@ public class QuestionsActivity extends AppCompatActivity {
         // STORE CATEGORY
         Cursor cursStoreCategory = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + " FROM " + SQLiteDB.TABLE_STORECATEGORY
                 + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
-                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = " + General.storeid
+                + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
                 + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder);
         cursStoreCategory.moveToFirst();
 
@@ -2454,7 +2447,7 @@ public class QuestionsActivity extends AppCompatActivity {
                     nTotalCorrectPlano += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
                     nTotalQuestionsPlano += sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));;
                 }
-                cursNpi.close();
+                cursPlanogram.close();
 
                 cursStoreCategoryGroups.moveToNext();
             }
@@ -2465,9 +2458,9 @@ public class QuestionsActivity extends AppCompatActivity {
         cursStoreCategory.close();
 
         // TOTAL OSA COMPUTATION
-        double dTotalOsa = (Double.valueOf(nTotalCorrectOSA) / Double.valueOf(nTotalQuestionsOSA)) * 100;
-        double dTotalNpi = (Double.valueOf(nTotalCorrectNPI) / Double.valueOf(nTotalQuestionsNPI)) * 100;
-        double dTotalPlanogram = (Double.valueOf(nTotalCorrectPlano) / Double.valueOf(nTotalQuestionsPlano)) * 100;
+        double dTotalOsa = ((double) nTotalCorrectOSA / (double) nTotalQuestionsOSA) * 100;
+        double dTotalNpi = ((double) nTotalCorrectNPI / (double) nTotalQuestionsNPI) * 100;
+        double dTotalPlanogram = ((double) nTotalCorrectPlano / (double) nTotalQuestionsPlano) * 100;
 
         if(Double.isNaN(dTotalOsa) || Double.isInfinite(dTotalOsa)) dTotalOsa = 0.00;
         if(Double.isNaN(dTotalNpi) || Double.isInfinite(dTotalNpi)) dTotalNpi = 0.00;
@@ -2495,7 +2488,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 planogram
         };
 
-        sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id, General.storeid, aUpdateFields, aUpdateValues);
+        sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id, String.valueOf(General.selectedStore.storeID), aUpdateFields, aUpdateValues);
 
         cursCountCorrect.close();
         cursCountComplete.close();
@@ -2505,7 +2498,7 @@ public class QuestionsActivity extends AppCompatActivity {
     }
 
     //UPDATING STATUS AND GROUP STATUS OF STORE CATEGORY GROUP
-    private void UpdateStoreCategoryGroup() {
+    private void UpdateStoreCategoryGroup() throws Exception {
 
         Cursor cursTempQuestion = sqlLibrary.RawQuerySelect("SELECT COUNT(*) AS totexpectedans FROM " + SQLiteDB.TABLE_STOREQUESTION
                 + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
@@ -2571,7 +2564,7 @@ public class QuestionsActivity extends AppCompatActivity {
     }
 
     // UPDATE STORE CATEGORY STATUS
-    private void UpdateStoreCategory() {
+    private void UpdateStoreCategory() throws Exception {
         Cursor cursCorrectAns = sqlLibrary.RawQuerySelect("SELECT COUNT(*) AS groupCorrectAns FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
                                     + " WHERE " + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storeCategoryID
                                     + " AND " + SQLiteDB.COLUMN_STORECATEGORYGROUP_final + " = '1'");
@@ -2625,7 +2618,7 @@ public class QuestionsActivity extends AppCompatActivity {
     private String GetSOSTarget() {
         String strRet = "";
 
-        Cursor cursGetPercent = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SOSLOOKUP, SQLiteDB.COLUMN_SOSLOOKUP_storeid + " = '" + General.Temp_Storeid + "' AND " + SQLiteDB.COLUMN_SOSLOOKUP_categoryid + " = '" + categoryid + "'" );
+        Cursor cursGetPercent = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SOSLOOKUP, SQLiteDB.COLUMN_SOSLOOKUP_storeid + " = '" + General.selectedStore.webStoreID + "' AND " + SQLiteDB.COLUMN_SOSLOOKUP_categoryid + " = '" + categoryid + "'" );
         cursGetPercent.moveToFirst();
 
         if(cursGetPercent.getCount() > 0) {
@@ -2661,7 +2654,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
         if(cursOsalist.getCount() > 0) {
 
-            Cursor cursGetOsalookup = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALOOKUP, SQLiteDB.COLUMN_OSALOOKUP_storeid + " = " + General.Temp_Storeid + " AND " + SQLiteDB.COLUMN_OSALOOKUP_categoryid + " = " + categoryid);
+            Cursor cursGetOsalookup = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALOOKUP, SQLiteDB.COLUMN_OSALOOKUP_storeid + " = " + General.selectedStore.webStoreID + " AND " + SQLiteDB.COLUMN_OSALOOKUP_categoryid + " = " + categoryid);
             cursGetOsalookup.moveToFirst();
 
             if(cursGetOsalookup.getCount() > 0) {
@@ -2767,11 +2760,13 @@ public class QuestionsActivity extends AppCompatActivity {
         int condformid = 0;
         int condformtypeid = 0;
 
+
         if(cursChildanswer.getCount() > 0) {
             sAnswer = cursChildanswer.getString(cursChildanswer.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalanswer)).trim();
             condformid = cursChildanswer.getInt(cursChildanswer.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalformid));
             condformtypeid = cursChildanswer.getInt(cursChildanswer.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalformtypeid));
         }
+        else return;
 
         PutChildAnswer(condformid, qid, sAnswer, condformtypeid);
 
@@ -2818,8 +2813,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
             case "10": // SINGLE ITEM
                 RadioButton rbSetAnswer = (RadioButton) viewForm;
-                String rbid = sAnswer;
-                if(String.valueOf(rbSetAnswer.getId()).equals(rbid))
+                if(String.valueOf(rbSetAnswer.getId()).equals(sAnswer))
                     rbSetAnswer.setChecked(true);
 
                 break;

@@ -21,6 +21,7 @@ public class Settings {
     public static File signatureFolder;
     public static File imgFolder;
     public static File postingFolder;
+    public static File PjpFolder;
     private static final File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), General.QUESTION_IMAGE_CAPTURE);
 
     public static Uri uriSignatureTempPath;

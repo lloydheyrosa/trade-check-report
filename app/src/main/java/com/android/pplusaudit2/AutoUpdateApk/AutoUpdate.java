@@ -26,6 +26,7 @@ import android.util.Log;
 import android.widget.Toast;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 
@@ -96,11 +97,13 @@ public class AutoUpdate {
 
     private long downloadReference = 0;
     private DownloadManager downloadManager;
+    private ErrorLog errorLog;
 
     public AutoUpdate(Context ctx) {
         this.mContext = ctx;
         arr = new ArrayList<AsyncTask<Void, String, Boolean>>();
         SetUpVars(ctx);
+        errorLog = new ErrorLog(General.errlogFile, ctx);
 
         //set filter to only when download is complete and register broadcast receiver
         IntentFilter filter = new IntentFilter(DownloadManager.ACTION_DOWNLOAD_COMPLETE);
@@ -237,6 +240,7 @@ public class AutoUpdate {
         }
     }
 
+
     private BroadcastReceiver downloadReceiver = new BroadcastReceiver() {
         @Override
         public void onReceive(Context context, Intent intent) {
@@ -271,7 +275,7 @@ public class AutoUpdate {
             catch (Exception ex) {
                 String err = "Download failed. Please try to log again.";
                 String exceptionErr = ex.getMessage() != null ? ex.getMessage() : err;
-                General.errorLog.appendLog(exceptionErr, TAG);
+                errorLog.appendLog(exceptionErr, TAG);
             }
         }
     };
@@ -398,7 +402,7 @@ public class AutoUpdate {
             catch (IOException ex) {
                 String prompt = "Slow or unstable internet connection. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : prompt;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
 
             return result;
@@ -489,7 +493,7 @@ public class AutoUpdate {
             catch (IOException e) {
                 String prompt = "File not found. Please try again.";
                 String errmsg = e.getMessage() != null ? e.getMessage() : prompt;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
 
 //            if(response != null) {
@@ -573,6 +577,7 @@ public class AutoUpdate {
         request.setDestinationInExternalFilesDir(mContext, "APK Updates", strFilename);
 
         //Enqueue a new download and same the referenceId
+
         downloadReference = downloadManager.enqueue(request);
     }
 
@@ -608,7 +613,7 @@ public class AutoUpdate {
         catch (Exception ex) {
             String err = "Download failed. Please try to log again.";
             String exceptionErr = ex.getMessage() != null ? ex.getMessage() : err;
-            General.errorLog.appendLog(exceptionErr, TAG);
+            errorLog.appendLog(exceptionErr, TAG);
         }
 
         return strReturn;

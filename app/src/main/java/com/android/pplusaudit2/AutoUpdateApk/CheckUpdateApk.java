@@ -11,6 +11,7 @@ import android.os.Handler;
 import android.util.Log;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 
 import org.apache.http.NameValuePair;
@@ -43,6 +44,7 @@ public class CheckUpdateApk extends Observable {
     private String TAG;
     private BroadcastReceiver checkingReceiver;
     private Runnable periodicUpdate;
+    private ErrorLog errorLog;
 
     public CheckUpdateApk(Context ctx) {
         this.mContext = ctx;
@@ -50,6 +52,7 @@ public class CheckUpdateApk extends Observable {
         this.TAG = getClass().getSimpleName();
 
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
+        errorLog = new ErrorLog(General.errlogFile, ctx);
 
         checkingReceiver = new BroadcastReceiver() {
             @Override
@@ -163,7 +166,7 @@ public class CheckUpdateApk extends Observable {
             } catch (Exception ex) {
                 ex.printStackTrace();
                 messages = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable connection";
-                General.errorLog.appendLog(messages, TAG);
+                errorLog.appendLog(messages, TAG);
             }
             finally {
                 if(urlConnection != null)

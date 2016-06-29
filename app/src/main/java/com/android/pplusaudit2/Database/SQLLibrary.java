@@ -331,11 +331,11 @@ public class SQLLibrary {
         return ret;
     }
 
-    public String GetMultiItemAnswer(String answer) {
+    private String GetMultiItemAnswer(String answer) {
         String ret = "";
         String[] aAns = answer.split(",");
-        for (int i = 0; i < answer.length(); i++) {
-            if(i == (answer.length() - 1))
+        for (int i = 0; i < aAns.length; i++) {
+            if(i == (aAns.length - 1))
                 ret += aAns[i].trim();
             else
                 ret += aAns[i].trim() + "-";
@@ -343,7 +343,7 @@ public class SQLLibrary {
         return ret;
     }
 
-    public String GetSingleItemAnswer(int formid, int optionid) {
+    private String GetSingleItemAnswer(int formid, int optionid) {
         String sRet = "";
 
         Cursor cursSingle = GetDataCursor(SQLiteDB.TABLE_SINGLESELECT, SQLiteDB.COLUMN_SINGLESELECT_formid + " = '" + formid + "' AND " + SQLiteDB.COLUMN_SINGLESELECT_optionid + " = '" + optionid + "'");

@@ -35,7 +35,7 @@ class CategoryAdapter extends BaseAdapter {
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
     }
 
-    public class ViewHolder {
+    private class ViewHolder {
         TextView tvwActivity;
         TextView tvwCategoryStatus;
         TextView tvwCategoryScoreStatus;

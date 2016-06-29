@@ -92,7 +92,6 @@ public class MainActivity extends AppCompatActivity {
     private File osalookupDIR;
     private File soslistDIR;
     private File soslookupDIR;
-    private File imageListDIR;
     private File imageProductDIR;
     private File npiDIR;
     private File planogramDIR;
@@ -130,13 +129,15 @@ public class MainActivity extends AppCompatActivity {
 
     private String userCodeLogged = "";
     private int selectedTemplateID = -1;
+    private ErrorLog errorLog;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        PowerManager powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        PowerManager powerman = (PowerManager) getSystemService(POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
 
         final TextView tvwVersion = (TextView) findViewById(R.id.tvwVersion);
@@ -157,7 +158,6 @@ public class MainActivity extends AppCompatActivity {
 
         messageBox = new MyMessageBox(this);
         json = new JSON_pplus(this);
-        sqLiteDB = new SQLiteDB(this);
         sql = new SQLLibrary(this);
 
         arrStringTemplates = new ArrayList<>();
@@ -172,6 +172,8 @@ public class MainActivity extends AppCompatActivity {
 
         Settings.postingFolder = new File(appfolder, "Posted");
         Settings.postingFolder.mkdirs();
+        Settings.PjpFolder = new File(appfolder, "PJP");
+        Settings.PjpFolder.mkdirs();
         Settings.imgFolder = new File(appfolder, "Images");
         Settings.imgFolder.mkdirs();
         Settings.captureFolder = new File(appfolder, "Captured Image");
@@ -216,19 +218,22 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        General.sharedPref = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
-        boolean isLoggedIn = General.sharedPref.getBoolean(getString(R.string.pref_isLogged), false);
-        General.savedHashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
-        General.oldversionCode = General.sharedPref.getInt(getString(R.string.pref_oldvcode), General.versionCode);
-        General.dateLog = General.sharedPref.getString(getString(R.string.pref_date_log), General.getDateToday());
+        sharedPreferences = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
+        boolean isLoggedIn = sharedPreferences.getBoolean(getString(R.string.pref_isLogged), false);
+        General.savedHashKey = sharedPreferences.getString(getString(R.string.pref_hash), "");
+        General.oldversionCode = sharedPreferences.getInt(getString(R.string.pref_oldvcode), General.versionCode);
+        General.dateLog = sharedPreferences.getString(getString(R.string.pref_date_log), General.getDateToday());
+        General.isAdminMode = sharedPreferences.getBoolean(getString(R.string.pref_adminmode), false);
 
-        General.userName = General.sharedPref.getString(getString(R.string.pref_username), "");
-        General.userPassword = General.sharedPref.getString(getString(R.string.pref_password), "");
+        sqLiteDB = new SQLiteDB(this);
 
-        General.errorLog = new ErrorLog(General.errlogFile, this);
-        General.errorLog.appendLog("New application run.", TAG);
+        General.userName = sharedPreferences.getString(getString(R.string.pref_username), "");
+        General.userPassword = sharedPreferences.getString(getString(R.string.pref_password), "");
 
-        SharedPreferences.Editor spEdit = General.sharedPref.edit();
+        errorLog = new ErrorLog(General.errlogFile, this);
+        errorLog.appendLog("New application run.", TAG);
+
+        SharedPreferences.Editor spEdit = sharedPreferences.edit();
         spEdit.putInt(getString(R.string.pref_oldvcode), General.versionCode);
         spEdit.putString(getString(R.string.pref_date_log), General.getDateToday());
         spEdit.apply();
@@ -281,6 +286,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
             if(!bResult) {
+                wlStayAwake.release();
                 Toast.makeText(MainActivity.this, errmsg, Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -342,9 +348,9 @@ public class MainActivity extends AppCompatActivity {
 
                 result = true;
             } catch (Exception ex) {
-                ex.printStackTrace();
-                messages = ex.getMessage() != null ? ex.getMessage() : ex.getLocalizedMessage();
-                General.errorLog.appendLog(messages, TAG);
+                messages = "Slow or unstable internet connection.";
+                String exMsg = ex.getMessage() != null ? ex.getMessage() : messages;
+                errorLog.appendLog(exMsg, TAG);
             }
 
             return result;
@@ -354,7 +360,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
             if (!bResult) {
-                Toast.makeText(MainActivity.this, "Slow or unstable internet connection. Please try again.", Toast.LENGTH_LONG).show();
+                Toast.makeText(MainActivity.this, messages, Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -371,8 +377,8 @@ public class MainActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-        if(!wifiManager.isWifiEnabled()) wifiManager.setWifiEnabled(true);
+//        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
+//        if(!wifiManager.isWifiEnabled()) wifiManager.setWifiEnabled(true);
     }
 
     @Override
@@ -426,13 +432,13 @@ public class MainActivity extends AppCompatActivity {
                     }
                 } catch (MalformedURLException mue) {
                     errmsg = mue.getMessage() != null ? mue.getMessage() : "Can't connect to web server.";
-                    General.errorLog.appendLog(errmsg, TAG);
+                    errorLog.appendLog(errmsg, TAG);
                     Log.e("MalformedURLException", errmsg);
 
                     nRet = 3;
                 } catch (IOException ie) {
                     errmsg = ie.getMessage() != null ? ie.getMessage() : "Slow or unstable internet connection.";
-                    General.errorLog.appendLog(errmsg, TAG);
+                    errorLog.appendLog(errmsg, TAG);
                     Log.e("IOException", errmsg);
                     nRet = 3;
                 }
@@ -449,7 +455,7 @@ public class MainActivity extends AppCompatActivity {
             progressDL.dismiss();
             if(nReturn == 3) { // EXCEPTION ERROR
                 Toast.makeText(MainActivity.this, errmsg, Toast.LENGTH_SHORT).show();
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 return;
             }
             if(nReturn == 0) { // WEB SERVER IS DOWN
@@ -472,7 +478,6 @@ public class MainActivity extends AppCompatActivity {
             }
 
             hashLogged = "";
-            General.isAdminMode = false;
             selectedTemplateID = 0;
             new AsyncGetUser().execute();
         }
@@ -486,7 +491,7 @@ public class MainActivity extends AppCompatActivity {
         String name;
 
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(MainActivity.this, "", "Verifying user account....", true);
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Verifying user account.", true);
             InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
             imm.hideSoftInputFromWindow(mainLayout.getWindowToken(), 0);
         }
@@ -527,6 +532,7 @@ public class MainActivity extends AppCompatActivity {
                             arrTemplateId.clear();
                             arrStringTemplates.clear();
                             General.isAdminMode = true;
+                            sharedPreferences.edit().putBoolean(getString(R.string.pref_adminmode), true).apply();
                             for (int i = 0; i < jsonArray.length(); i++) {
                                 JSONObject jsonTemplate = jsonArray.getJSONObject(i);
 
@@ -545,19 +551,19 @@ public class MainActivity extends AppCompatActivity {
             }
             catch(UnknownHostException e) {
                 errmsg = e.getMessage() != null ? e.getMessage() : "Web Host not available. Please check connection.";
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 e.printStackTrace();
                 Log.e(TAG, errmsg, e);
             }
             catch(IOException e) {
                 errmsg = e.getMessage() != null ? e.getMessage() : "Slow or unstable internet connection. Please try again.";
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 e.printStackTrace();
                 Log.e(TAG, errmsg);
             }
             catch (JSONException e) {
                 errmsg = e.getMessage() != null ? e.getMessage() : "Error in data.";
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 e.printStackTrace();
                 Log.e(TAG, e.getMessage(), e);
             }
@@ -572,16 +578,16 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            SharedPreferences.Editor spEditor = General.sharedPref.edit();
+            SharedPreferences.Editor spEditor = sharedPreferences.edit();
 
             General.usercode = usercode;
             General.userFullName = name;
 
             Cursor cursUser = sql.GetDataCursor(SQLiteDB.TABLE_USER);
-
             if(cursUser.moveToFirst()) {
                 userCodeLogged = cursUser.getString(cursUser.getColumnIndex("code"));
             }
+            cursUser.close();
 
             General.userName = username.trim();
             General.userPassword = password.trim();
@@ -793,7 +799,7 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DOWNLOADING FILE
-    public class AsyncDownloadFile extends AsyncTask<Void, String, Boolean> {
+    private class AsyncDownloadFile extends AsyncTask<Void, String, Boolean> {
         String errmsg = "";
         @Override
         protected void onPreExecute() {
@@ -821,9 +827,9 @@ public class MainActivity extends AppCompatActivity {
                 for (String type : General.ARRAY_FILE_LISTS) {
 
                     if(General.isAdminMode)
-                        urlDownloadperFile = urlDownload + "&type=" + type + "&audit=" + String.valueOf(selectedTemplateID);
+                        urlDownloadperFile = urlDownload + "&type=" + type + "&audit=" + String.valueOf(selectedTemplateID) + "&version=" + String.valueOf(General.versionCode);
                     else
-                        urlDownloadperFile = urlDownload + "&type=" + type;
+                        urlDownloadperFile = urlDownload + "&type=" + type + "&version=" + String.valueOf(General.versionCode);
 
                     URL url = new URL(urlDownloadperFile);
                     HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
@@ -869,7 +875,6 @@ public class MainActivity extends AppCompatActivity {
                         if(type.equals(General.OSA_LOOKUP)) osalookupDIR = new File(dlpath, fileName);
                         if(type.equals(General.SOS_LIST)) soslistDIR = new File(dlpath, fileName);
                         if(type.equals(General.SOS_LOOKUP)) soslookupDIR = new File(dlpath, fileName);
-                        if(type.equals(General.IMG_LIST)) imageListDIR = new File(dlpath, fileName);
                         if(type.equals(General.NPI_LIST)) npiDIR = new File(dlpath, fileName);
                         if(type.equals(General.PLANOGRAM_LIST)) planogramDIR = new File(dlpath, fileName);
                         if(type.equals(General.PERFECT_CATEGORY_LIST)) pcategoryDIR = new File(dlpath, fileName);
@@ -899,13 +904,13 @@ public class MainActivity extends AppCompatActivity {
                 result = true;
             }
             catch(IllegalStateException ex) {
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 errmsg = ex.getMessage() != null ? ex.getMessage() : "Error in data.";
                 Log.e(TAG, errmsg);
                 ex.printStackTrace();
             }
             catch (Exception ex) {
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 errmsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
                 Log.e(TAG, errmsg);
                 ex.printStackTrace();
@@ -934,14 +939,14 @@ public class MainActivity extends AppCompatActivity {
         SQLiteDatabase dbase;
         String errmsg = "";
         String presentFile = "";
+        int numOfRows = 0;
 
         @Override
         protected void onPreExecute() {
             dbase = sqLiteDB.getWritableDatabase();
             progressDL = new ProgressDialog(MainActivity.this);
-            progressDL.setTitle("Loading");
             progressDL.setMessage("Storing downloaded data.. Please wait.");
-            progressDL.setProgressStyle(progressDL.STYLE_HORIZONTAL);
+            progressDL.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
             progressDL.setCancelable(false);
             progressDL.show();
         }
@@ -959,172 +964,143 @@ public class MainActivity extends AppCompatActivity {
             if(storeDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(storeDIR));
-                    while (lnReader.readLine() != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(categoryDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(categoryDIR));
-                    while (lnReader.readLine() != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(groupDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(groupDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(questionDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(questionDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(formsDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(formsDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(formtypesDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(formtypesDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(singleselectDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(singleselectDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(multiselectDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(multiselectDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(computationalDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(computationalDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(conditionalDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(conditionalDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(secondarylookupDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(secondarylookupDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(secondarylistDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(secondarylistDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(osalistDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(osalistDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(osalookupDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(osalookupDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(soslistDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(soslistDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(soslookupDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(soslookupDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(imageListDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(imageListDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(npiDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(npiDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(planogramDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(planogramDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(pcategoryDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(pcategoryDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
             if(pgroupDIR.exists()) {
                 try{
                     lnReader = new LineNumberReader(new FileReader(pgroupDIR));
-                    while ((lnReader.readLine()) != null) { }
-                    nMaxprogress += lnReader.getLineNumber();
+                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
                 }
                 catch (IOException ie) { DebugLog.log(ie.getMessage()); }
             }
-
 
             progressDL.setMax(nMaxprogress);
 
@@ -1157,7 +1133,9 @@ public class MainActivity extends AppCompatActivity {
                             SQLiteDB.COLUMN_STORE_distributorcode,
                             SQLiteDB.COLUMN_STORE_distributor,
                             SQLiteDB.COLUMN_STORE_templatecode,
-                            SQLiteDB.COLUMN_STORE_auditid
+                            SQLiteDB.COLUMN_STORE_auditid,
+                            SQLiteDB.COLUMN_STORE_area,
+                            SQLiteDB.COLUMN_STORE_templatetype
                     };
 
                     String sqlinsertStore = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORE, afields);
@@ -1166,7 +1144,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(storeDIR));
 
                     String line;
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1177,11 +1156,17 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementStore.execute();
 
-                        publishProgress("Saving Store data.." + values[1].trim());
+                        ctr++;
+                        publishProgress("Saving store data.");
                     }
 
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Stores data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1207,8 +1192,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(categoryDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1219,10 +1204,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementCategory.execute();
 
-                        publishProgress("Saving Category data.." + values[1].trim());
+                        ctr++;
+                        publishProgress("Saving Category data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Category data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1250,7 +1241,8 @@ public class MainActivity extends AppCompatActivity {
 
                     String line;
 
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1261,10 +1253,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementGroup.execute();
 
-                        publishProgress("Saving Group data.." + values[1].trim());
+                        ctr++;
+                        publishProgress("Saving Group data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Groups data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // QUESTIONS
@@ -1295,8 +1293,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(questionDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] valuesquestion = line.trim().split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1); // split with comma delimeter, not including inside the ""
@@ -1307,12 +1305,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementQuestions.execute();
 
-                        //sql.AddRecord(SQLiteDB.TABLE_QUESTION, afields, avalues);
-
-                        publishProgress("Saving questions data.. " + valuesquestion[4]);
+                        ctr++;
+                        publishProgress("Saving questions data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Questions data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // FORMS
@@ -1340,8 +1342,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader brForms = new BufferedReader(new FileReader(formsDIR));
 
                     String line;
-
-                    line = brForms.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(brForms.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = brForms.readLine()) != null) {
                         String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1352,10 +1354,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementForms.execute();
 
-                        publishProgress("Saving forms data..");
+                        ctr++;
+                        publishProgress("Saving forms data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Forms data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1377,8 +1385,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader brFormtypes = new BufferedReader(new FileReader(formtypesDIR));
 
                     String line;
-
-                    line = brFormtypes.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(brFormtypes.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = brFormtypes.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1389,10 +1397,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementFormtypes.execute();
 
-                        publishProgress("Saving form types..");
+                        ctr++;
+                        publishProgress("Saving form types.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Form types data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // SINGLE SELECT
@@ -1414,7 +1428,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bSingleselect = new BufferedReader(new FileReader(singleselectDIR));
                     String line;
 
-                    line = bSingleselect.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bSingleselect.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bSingleselect.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1426,10 +1441,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementSingle.execute();
 
-                        publishProgress("Saving single select data..");
+                        ctr++;
+                        publishProgress("Saving single select data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Single select data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // MULTI SELECT
@@ -1450,7 +1471,9 @@ public class MainActivity extends AppCompatActivity {
 
                     BufferedReader brMultiSelect = new BufferedReader(new FileReader(multiselectDIR));
                     String line;
-                    line = brMultiSelect.readLine();
+
+                    numOfRows = Integer.valueOf(General.cleanString(brMultiSelect.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = brMultiSelect.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1461,10 +1484,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementMulti.execute();
 
-                        publishProgress("Saving multi select data..");
+                        ctr++;
+                        publishProgress("Saving multi select data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Multi select data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // COMPUTATIONAL
@@ -1484,7 +1513,9 @@ public class MainActivity extends AppCompatActivity {
 
                     BufferedReader brComputational = new BufferedReader(new FileReader(computationalDIR));
                     String line;
-                    line = brComputational.readLine();
+
+                    numOfRows = Integer.valueOf(General.cleanString(brComputational.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = brComputational.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1495,10 +1526,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementComp.execute();
 
-                        publishProgress("Saving computational data..");
+                        ctr++;
+                        publishProgress("Saving computational data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Computational data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // CONDITIONAL
@@ -1520,7 +1557,8 @@ public class MainActivity extends AppCompatActivity {
 
                     BufferedReader brConditional = new BufferedReader(new FileReader(conditionalDIR));
                     String line;
-                    line = brConditional.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(brConditional.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = brConditional.readLine()) != null) {
                         final String[] values = line.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)", -1);
@@ -1531,10 +1569,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementCond.execute();
 
-                        publishProgress("Saving conditional data..");
+                        ctr++;
+                        publishProgress("Saving conditional data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Conditional data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1556,7 +1600,8 @@ public class MainActivity extends AppCompatActivity {
 
                     String line;
 
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1568,10 +1613,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementKeyList.execute();
 
-                        publishProgress("Saving Secondary Keylist data..");
+                        ctr++;
+                        publishProgress("Saving Secondary Keylist data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Secondary keylists not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // SECONDARY DISPLAY
@@ -1594,7 +1645,8 @@ public class MainActivity extends AppCompatActivity {
 
                     String line;
 
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1606,10 +1658,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementSecDisp.execute();
 
-                        publishProgress("Saving Secondary display data..");
+                        ctr++;
+                        publishProgress("Saving Secondary display data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Secondary display data not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1630,8 +1688,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(osalistDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1642,10 +1700,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementOsalist.execute();
 
-                        publishProgress("Saving OSA Lists data..");
+                        ctr++;
+                        publishProgress("Saving OSA Lists data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "OSA lists not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1670,12 +1734,11 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(osalookupDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
-
 
                         sqlstatementOsalookup.clearBindings();
                         for (int i = 0; i < afields.length; i++) {
@@ -1683,10 +1746,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementOsalookup.execute();
 
-                        publishProgress("Saving OSA lookup data..");
+                        ctr++;
+                        publishProgress("Saving OSA lookup data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "OSA lookup lists not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1707,8 +1776,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(soslistDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1719,10 +1788,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementSoslist.execute();
 
-                        publishProgress("Saving SOS Lists data..");
+                        ctr++;
+                        publishProgress("Saving SOS Lists data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "SOS lists not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1748,8 +1823,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(soslookupDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1761,45 +1836,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqlstatementSoslookup.execute();
 
-                        publishProgress("Saving SOS lookup data..");
+                        ctr++;
+                        publishProgress("Saving SOS lookup data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
-                }
 
-                // IMAGE LISTS
-                if(imageListDIR.exists()) {
-                    sql.TruncateTable(SQLiteDB.TABLE_PICTURES);
-
-                    presentFile = imageListDIR.getPath();
-
-                    String[] afields = {
-                            SQLiteDB.COLUMN_PICTURES_name
-                    };
-
-                    String sqlinsertPictures = sql.createInsertBulkQuery(SQLiteDB.TABLE_PICTURES, afields);
-                    SQLiteStatement sqlstatementPictures = dbase.compileStatement(sqlinsertPictures); // insert into tblsample (fields1,fields2)
-                    dbase.beginTransaction();
-
-                    BufferedReader bReader = new BufferedReader(new FileReader(imageListDIR));
-
-                    String line;
-
-                    line = bReader.readLine();
-
-                    while ((line = bReader.readLine()) != null) {
-                        final String[] values = line.split(",");
-
-                        sqlstatementPictures.clearBindings();
-                        for (int i = 0; i < afields.length; i++) {
-                            sqlstatementPictures.bindString((i+1), values[i].trim().replace("\"",""));
-                        }
-                        sqlstatementPictures.execute();
-
-                        publishProgress("Saving brand images data..");
+                    if(ctr != numOfRows) {
+                        errmsg = "SOS lookup lists not downloaded completely. Please log again";
+                        return false;
                     }
-                    dbase.setTransactionSuccessful();
-                    dbase.endTransaction();
                 }
 
                 // NPI LIST
@@ -1819,8 +1865,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(npiDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1831,10 +1877,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqLiteStatement.execute();
 
-                        publishProgress("Saving NPI Lists data..");
+                        ctr++;
+                        publishProgress("Saving NPI Lists data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "NPI list not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // PLANOGRAM LIST
@@ -1854,8 +1906,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(planogramDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1866,10 +1918,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqLiteStatement.execute();
 
-                        publishProgress("Saving Planogram Lists data..");
+                        ctr++;
+                        publishProgress("Saving Planogram Lists data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Planogram list not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 // PERFECT CATEGORY LIST
@@ -1889,8 +1947,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(pcategoryDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1901,10 +1959,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqLiteStatement.execute();
 
-                        publishProgress("Saving Perfect Category Lists data..");
+                        ctr++;
+                        publishProgress("Saving Perfect Category Lists data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Perfect category list not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
 
@@ -1925,8 +1989,8 @@ public class MainActivity extends AppCompatActivity {
                     BufferedReader bReader = new BufferedReader(new FileReader(pgroupDIR));
 
                     String line;
-
-                    line = bReader.readLine();
+                    numOfRows = Integer.valueOf(General.cleanString(bReader.readLine().trim())); // num of rows
+                    int ctr = 0;
 
                     while ((line = bReader.readLine()) != null) {
                         final String[] values = line.split(",");
@@ -1937,10 +2001,16 @@ public class MainActivity extends AppCompatActivity {
                         }
                         sqLiteStatement.execute();
 
-                        publishProgress("Saving Perfect Group Lists data..");
+                        ctr++;
+                        publishProgress("Saving Perfect Group Lists data.");
                     }
                     dbase.setTransactionSuccessful();
                     dbase.endTransaction();
+
+                    if(ctr != numOfRows) {
+                        errmsg = "Perfect group list not downloaded completely. Please log again";
+                        return false;
+                    }
                 }
 
                 result = true;
@@ -1948,22 +2018,25 @@ public class MainActivity extends AppCompatActivity {
             catch (FileNotFoundException fex)
             {
                 fex.printStackTrace();
-                Log.e("Exception", fex.getMessage());
-                errmsg = fex.getMessage() + ", file not found.\nFILE: " + presentFile;
+                errmsg = "file not found. Please log again.\nFILE: " + presentFile;
+                String exErr = fex.getMessage() != null ? fex.getMessage() : errmsg;
+                errorLog.appendLog(exErr, TAG);
                 dbase.setTransactionSuccessful();
                 dbase.endTransaction();
             }
             catch (IOException iex) {
                 iex.printStackTrace();
-                Log.e("Exception", iex.getMessage());
-                errmsg = iex.getMessage() + "\nFILE: " + presentFile;
+                errmsg = "Data file error. Please log again.\nFILE: " + presentFile;
+                String exErr = iex.getMessage() != null ? iex.getMessage() : errmsg;
+                errorLog.appendLog(exErr, TAG);
                 dbase.setTransactionSuccessful();
                 dbase.endTransaction();
             }
             catch (Exception ex) {
                 ex.printStackTrace();
-                Log.e("Exception", ex.getMessage());
-                errmsg = ex.getMessage() + ", Some files are corrupted.\nFILE: " + presentFile;
+                errmsg = "Some data are corrupted. Please log again.\nFILE: " + presentFile;
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
+                errorLog.appendLog(exErr, TAG);
                 dbase.setTransactionSuccessful();
                 dbase.endTransaction();
             }
@@ -1980,7 +2053,7 @@ public class MainActivity extends AppCompatActivity {
             if(dbase.isOpen()) dbase.close();
 
             if(!bResult) {
-                alertDialog.setTitle("Exception error");
+                alertDialog.setTitle("Data error");
                 alertDialog.setMessage(errmsg);
                 alertDialog.setCancelable(false);
                 alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
@@ -1994,7 +2067,7 @@ public class MainActivity extends AppCompatActivity {
                 return;
             }
 
-            SharedPreferences.Editor spEditor = General.sharedPref.edit();
+            SharedPreferences.Editor spEditor = sharedPreferences.edit();
             spEditor.putBoolean(getString(R.string.pref_isLogged), true).apply();
             spEditor.putString(getString(R.string.pref_hash), hashLogged).apply();
 
@@ -2015,7 +2088,7 @@ public class MainActivity extends AppCompatActivity {
         }
     }
 
-    public class PostErrorReport extends AsyncTask<Void, Void, Boolean> {
+    private class PostErrorReport extends AsyncTask<Void, Void, Boolean> {
         String errMsg = "";
         String response = "";
         @Override
@@ -2029,9 +2102,9 @@ public class MainActivity extends AppCompatActivity {
 
             String urlSend = General.mainURL + "/api/uploadtrace";
 
-            if(!General.errorLog.fileLog.exists()) {
+            if(!errorLog.fileLog.exists()) {
                 errMsg = "No errors to send.";
-                return result;
+                return false;
             }
 
             String attachmentName = "data";
@@ -2042,11 +2115,11 @@ public class MainActivity extends AppCompatActivity {
 
             int bytesRead, bytesAvailable, bufferSize;
             byte[] buffer;
-            int maxBufferSize = 1*1024*1024;
+            int maxBufferSize = 1024 * 1024;
 
             try {
 
-                FileInputStream fileInputStream = new FileInputStream(General.errorLog.fileLog); // text file to upload
+                FileInputStream fileInputStream = new FileInputStream(errorLog.fileLog); // text file to upload
                 HttpURLConnection httpUrlConnection = null;
                 URL url = new URL(urlSend); // url to post
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
@@ -2114,12 +2187,12 @@ public class MainActivity extends AppCompatActivity {
             catch (IOException ex) {
                 errMsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
                 Log.e(TAG, errMsg);
-                General.errorLog.appendLog(errMsg, TAG);
+                errorLog.appendLog(errMsg, TAG);
             }
             catch (JSONException ex) {
                 errMsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
                 Log.e(TAG, errMsg);
-                General.errorLog.appendLog(errMsg, TAG);
+                errorLog.appendLog(errMsg, TAG);
             }
 
             return result;
@@ -2134,7 +2207,7 @@ public class MainActivity extends AppCompatActivity {
             }
 
             Toast.makeText(MainActivity.this, response, Toast.LENGTH_SHORT).show();
-            General.errorLog.fileLog.delete();
+            errorLog.fileLog.delete();
         }
     }
 

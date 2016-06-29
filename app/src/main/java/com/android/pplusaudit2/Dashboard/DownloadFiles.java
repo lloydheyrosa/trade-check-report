@@ -7,6 +7,7 @@ import android.os.AsyncTask;
 import android.util.Log;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 
 import java.io.File;
@@ -18,46 +19,47 @@ import java.net.URL;
 /**
  * Created by ULTRABOOK on 6/1/2016.
  */
-public class DownloadFiles extends AsyncTask<Void, String, Boolean> {
+class DownloadFiles extends AsyncTask<Void, String, Boolean> {
 
     public static Context mContext;
-    ProgressDialog progressDialog;
-    String errmsg = "";
-    File dlpath;
-    String urlDownload;
-    private String urlDownloadperFile;
-    String TAG = "";
-    int BUFFER_SIZE = 4096;
+    private ProgressDialog progressDialog;
+    private String errmsg = "";
+    private File dlpath;
+    private String urlDownload;
+    private String TAG = "";
+    private int BUFFER_SIZE = 4096;
 
-    public static File storeDIR;
-    public static File categoryDIR;
-    public static File groupDIR;
-    public static File questionDIR;
-    public static File formsDIR;
-    public static File formtypesDIR;
-    public static File singleselectDIR;
-    public static File multiselectDIR;
-    public static File computationalDIR;
-    public static File conditionalDIR;
-    public static File secondarylookupDIR;
-    public static File secondarylistDIR;
-    public static File osalistDIR;
-    public static File osalookupDIR;
-    public static File soslistDIR;
-    public static File soslookupDIR;
-    public static File imageListDIR;
-    public static File npiDIR;
-    public static File planogramDIR;
-    public static File pcategoryDIR;
-    public static File pgroupDIR;
+    static File storeDIR;
+    static File categoryDIR;
+    static File groupDIR;
+    static File questionDIR;
+    static File formsDIR;
+    static File formtypesDIR;
+    static File singleselectDIR;
+    static File multiselectDIR;
+    static File computationalDIR;
+    static File conditionalDIR;
+    static File secondarylookupDIR;
+    static File secondarylistDIR;
+    static File osalistDIR;
+    static File osalookupDIR;
+    static File soslistDIR;
+    static File soslookupDIR;
+    static File imageListDIR;
+    static File npiDIR;
+    static File planogramDIR;
+    static File pcategoryDIR;
+    static File pgroupDIR;
+    private ErrorLog errorLog;
 
-    public DownloadFiles(Context mContext, String userCode) {
+    DownloadFiles(Context mContext, String userCode) {
         this.mContext = mContext;
         File appfolder = new File(mContext.getExternalFilesDir(null),"");
         dlpath =  new File(appfolder, "Downloads");
         dlpath.mkdirs();
         urlDownload = General.mainURL + "/api/download?id=" + userCode;
         TAG = mContext.getClass().getSimpleName();
+        errorLog = new ErrorLog(General.errlogFile, mContext);
     }
 
     @Override
@@ -84,7 +86,7 @@ public class DownloadFiles extends AsyncTask<Void, String, Boolean> {
         try{
             for (String type : General.ARRAY_FILE_LISTS) {
 
-                urlDownloadperFile = urlDownload + "&type=" + type;
+                String urlDownloadperFile = urlDownload + "&type=" + type;
 
                 URL url = new URL(urlDownloadperFile);
                 HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
@@ -160,15 +162,15 @@ public class DownloadFiles extends AsyncTask<Void, String, Boolean> {
             result = true;
         }
         catch(IllegalStateException ex) {
-            General.errorLog.appendLog(errmsg, TAG);
-            errmsg = ex.getMessage() != null ? ex.getMessage() : "Error in data.";
-            Log.e(TAG, errmsg);
+            errmsg = "Error in data.";
+            String exmsg = ex.getMessage() != null ? ex.getMessage() : errmsg;
+            errorLog.appendLog(exmsg, TAG);
             ex.printStackTrace();
         }
         catch (Exception ex) {
-            General.errorLog.appendLog(errmsg, TAG);
-            errmsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
-            Log.e(TAG, errmsg);
+            errmsg = "Slow or unstable internet connection";
+            String exmsg = ex.getMessage() != null ? ex.getMessage() : errmsg;
+            errorLog.appendLog(exmsg, TAG);
             ex.printStackTrace();
         }
 

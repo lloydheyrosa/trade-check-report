@@ -12,10 +12,12 @@ import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ListView;
 import android.widget.TextView;
+import android.widget.Toast;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.R;
@@ -32,21 +34,18 @@ public class GroupActivity extends AppCompatActivity {
     private ArrayList<Group> arrGroupList = new ArrayList<Group>();
     private ArrayList<Group> lstGroups = new ArrayList<Group>();
 
-    SQLLibrary sqlLibrary;
-    TCRLib tcrLib;
-    MyMessageBox messageBox;
+    private SQLLibrary sqlLibrary;
+    private TCRLib tcrLib;
+    private MyMessageBox messageBox;
 
-    General.SCORE_STATUS scoreStatus;
+    private String storeCategoryId;
+    private String categoryid;
 
-    String storeCategoryId;
-    String categoryname;
-    String categoryid;
-
-    ListView lvwGroup;
-    GroupAdapter adapter;
-    String TAG = "";
+    private ListView lvwGroup;
+    private String TAG = "";
 
     private ProgressDialog progressGroupDL;
+    private ErrorLog errorLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,6 +57,8 @@ public class GroupActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
         TAG = GroupActivity.this.getLocalClassName();
 
+        errorLog = new ErrorLog(General.errlogFile, this);
+
         sqlLibrary = new SQLLibrary(this);
         messageBox = new MyMessageBox(this);
         tcrLib = new TCRLib(this);
@@ -65,7 +66,7 @@ public class GroupActivity extends AppCompatActivity {
         Bundle extras = getIntent().getExtras();
         if (extras != null) {
             storeCategoryId = extras.getString("STORE_CATEGORY_ID").trim();
-            categoryname = extras.getString("CATEGORY_NAME").trim();
+            String categoryname = extras.getString("CATEGORY_NAME").trim();
             categoryid = extras.getString("CATEGORY_ID").trim();
             getSupportActionBar().setTitle(categoryname.toUpperCase());
         }
@@ -73,7 +74,9 @@ public class GroupActivity extends AppCompatActivity {
         lvwGroup = (ListView) findViewById(R.id.lvwGroup);
     }
 
-    public class AsyncLoadGroups extends AsyncTask<Void, Void, String> {
+    private class AsyncLoadGroups extends AsyncTask<Void, Void, Boolean> {
+
+        private String errMsg;
 
         @Override
         protected void onPreExecute() {
@@ -82,60 +85,77 @@ public class GroupActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected Boolean doInBackground(Void... params) {
 
-            Cursor cursorGroup = sqlLibrary.RawQuerySelect("SELECT tblstorecateggroup.id, tblgroup.groupdesc, " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
-                    + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status
-                    + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
-                    + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
-                    + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storeCategoryId
-                    + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
+            boolean result = false;
 
-            cursorGroup.moveToFirst();
+            try {
 
-            while (!cursorGroup.isAfterLast()) {
+                Cursor cursorGroup = sqlLibrary.RawQuerySelect("SELECT tblstorecateggroup.id, tblgroup.groupdesc, " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                        + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status
+                        + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
+                        + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
+                        + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storeCategoryId
+                        + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
 
-                int storeCategoryGroupID = cursorGroup.getInt(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+                cursorGroup.moveToFirst();
 
-                if(!sqlLibrary.HasQuestionsPerGroup(storeCategoryGroupID)) {
-                    String[] aFields = new String[] {
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_status,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_initial,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_final
-                    };
-                    String[] aValues = new String[] {
-                            "2",
-                            "1",
-                            "1"
-                    };
-                    sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_id, String.valueOf(storeCategoryGroupID), aFields, aValues);
+                while (!cursorGroup.isAfterLast()) {
+
+                    int storeCategoryGroupID = cursorGroup.getInt(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+
+                    if (!sqlLibrary.HasQuestionsPerGroup(storeCategoryGroupID)) {
+                        String[] aFields = new String[]{
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_status,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_initial,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                        };
+                        String[] aValues = new String[]{
+                                "2",
+                                "1",
+                                "1"
+                        };
+                        sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_id, String.valueOf(storeCategoryGroupID), aFields, aValues);
+                        cursorGroup.moveToNext();
+                        continue;
+                    }
+
+                    String grpFinalAnswer = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_final));
+                    String grpStatusno = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_status));
+                    String grpStatus = "";
+
+                    grpStatus = tcrLib.GetStatus(grpStatusno);
+                    General.SCORE_STATUS scoreStatus = tcrLib.GetScoreStatus(grpFinalAnswer);
+
+                    String desc = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupdesc)).trim().replace("\"", "").toUpperCase();
+
+                    arrGroupList.add(new Group(storeCategoryGroupID, desc, String.valueOf(storeCategoryGroupID), grpStatus, scoreStatus));
                     cursorGroup.moveToNext();
-                    continue;
                 }
 
-                String grpFinalAnswer = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_final));
-                String grpStatusno = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_status));
-                String grpStatus = "";
-
-                grpStatus = tcrLib.GetStatus(grpStatusno);
-                scoreStatus = tcrLib.GetScoreStatus(grpFinalAnswer);
-
-                String desc = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupdesc)).trim().replace("\"", "").toUpperCase();
-
-                arrGroupList.add(new Group(storeCategoryGroupID, desc, String.valueOf(storeCategoryGroupID), grpStatus, scoreStatus));
-                cursorGroup.moveToNext();
+                cursorGroup.close();
+                result = true;
+            }
+            catch (Exception ex) {
+                errMsg = "Can't load groups.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
+                errorLog.appendLog(exErr, TAG);
             }
 
-            cursorGroup.close();
-            return null;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(Boolean bResult) {
+
+            if(!bResult) {
+                Toast.makeText(GroupActivity.this, errMsg, Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             lstGroups.clear();
             lstGroups.addAll(arrGroupList);
-            adapter = new GroupAdapter(GroupActivity.this, lstGroups);
+            GroupAdapter adapter = new GroupAdapter(GroupActivity.this, lstGroups);
             lvwGroup.setAdapter(adapter);
             adapter.notifyDataSetChanged();
 

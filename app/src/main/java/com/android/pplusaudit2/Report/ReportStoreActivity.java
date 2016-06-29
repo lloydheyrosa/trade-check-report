@@ -66,7 +66,7 @@ public class ReportStoreActivity extends AppCompatActivity {
         });
     }
 
-    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+    private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
 
         @Override
@@ -102,7 +102,7 @@ public class ReportStoreActivity extends AppCompatActivity {
         }
     }
 
-    public class GetStoreReports extends AsyncTask<Void, Void, Boolean> {
+    private class GetStoreReports extends AsyncTask<Void, Void, Boolean> {
         String errormsg = "";
         @Override
         protected void onPreExecute() {
@@ -135,7 +135,7 @@ public class ReportStoreActivity extends AppCompatActivity {
                     String msg = new JSONObject(response).getString("msg");
                     errormsg = msg;
                     arrStoreReports.clear();
-                    return result;
+                    return false;
                 }
 
                 if (!response.trim().equals("")) {
@@ -155,7 +155,7 @@ public class ReportStoreActivity extends AppCompatActivity {
                         storeReport.area = jsonObject.getString("area");
                         storeReport.regionCode = jsonObject.getString("region");
                         storeReport.storeName = jsonObject.getString("store_name");
-                        storeReport.perfectStore = jsonObject.getDouble("perfect_store");
+                        storeReport.perfectStore = jsonObject.getDouble("perfect_percentage");
                         storeReport.osa = jsonObject.getDouble("osa");
                         storeReport.npi = jsonObject.getDouble("npi");
                         storeReport.planogram = jsonObject.getDouble("planogram");

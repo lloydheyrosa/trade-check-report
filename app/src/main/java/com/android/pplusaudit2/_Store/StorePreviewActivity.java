@@ -23,8 +23,11 @@ import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.Debug.DebugLog;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
+import com.android.pplusaudit2.PJP_Compliance.Compliance;
+import com.android.pplusaudit2.PJP_Compliance.PjpActivity;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Settings;
 import com.android.pplusaudit2.TCRLib;
@@ -104,6 +107,8 @@ public class StorePreviewActivity extends AppCompatActivity {
 
     ArrayList<Category> arrCategories;
     private String TAG;
+    private ErrorLog errorLog;
+    private ArrayList<Compliance> complianceArrayList;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -118,8 +123,11 @@ public class StorePreviewActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
+        errorLog = new ErrorLog(General.errlogFile, this);
 
         getSupportActionBar().setTitle("AUDIT SUMMARY");
+
+        complianceArrayList = new ArrayList<>();
 
         fontIcon = Typeface.createFromAsset(getAssets(), General.typefacename);
         powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
@@ -238,7 +246,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         });
     }
 
-    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+    private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
 
         @Override
@@ -274,7 +282,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         }
     }
 
-    public boolean CheckDateValidation(String dtFrom, String dtTo) {
+    private boolean CheckDateValidation(String dtFrom, String dtTo) {
         boolean result = false;
         try {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd", Locale.getDefault());
@@ -306,7 +314,244 @@ public class StorePreviewActivity extends AppCompatActivity {
         return res;
     }
 
-    public class LoadAuditSummary extends AsyncTask<Void, Void, Boolean> {
+    private class LoadCompliances extends AsyncTask<Void, Void, Boolean> {
+        private String errMsg;
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(StorePreviewActivity.this, "", "Loading compliances.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            try {
+                complianceArrayList.clear();
+
+                Cursor cursorCompliance = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_PJPCOMP, SQLiteDB.COLUMN_PJPCOMP_storeid + " = '" + General.selectedStore.storeID + "'");
+                if (cursorCompliance.moveToFirst()) {
+                    while (!cursorCompliance.isAfterLast()) {
+
+                        int id = cursorCompliance.getInt(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_id));
+                        String usercode = cursorCompliance.getString(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_usercode));
+                        int storeid = cursorCompliance.getInt(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_storeid));
+                        String date = cursorCompliance.getString(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_date));
+                        String time = cursorCompliance.getString(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_time));
+                        String longitude = cursorCompliance.getString(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_longitude));
+                        String latitude = cursorCompliance.getString(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_latitude));
+                        String address = cursorCompliance.getString(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_address));
+                        boolean posted = cursorCompliance.getInt(cursorCompliance.getColumnIndex(SQLiteDB.COLUMN_PJPCOMP_posted)) == 1;
+
+                        Compliance compliance = new Compliance(id, usercode, storeid, General.selectedStore.webStoreID, date, time, General.userFullName, longitude, latitude, posted);
+                        compliance.address = address.trim();
+
+                        complianceArrayList.add(compliance);
+                        cursorCompliance.moveToNext();
+                    }
+                    result = true;
+                }
+                else errMsg = "No compliance found.";
+                cursorCompliance.close();
+            }
+            catch (Exception ex) {
+                errMsg = "Can't load compliance.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
+                errorLog.appendLog(exErr, TAG);
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            progressDL.dismiss();
+        }
+    }
+
+    private class PostCheckedPjp extends AsyncTask<Void, Void, Boolean> {
+        private String errMsg;
+        private String response;
+        private String strFileName;
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(StorePreviewActivity.this, "", "Posting PJP compliance record. Please wait.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            strFileName = General.usercode + "_" + String.valueOf(General.selectedStore.auditID) + "_" + General.getDateToday().trim().replace("/", "") + ".csv";
+            File fileCheckIns = new File(Settings.PjpFolder, strFileName);
+
+            try {
+
+                if(fileCheckIns.exists()) fileCheckIns.delete();
+
+                FileWriter fileWriter = new FileWriter(fileCheckIns);
+                String strBody = "";
+
+                    if(complianceArrayList.size() > 0) {
+
+                        for (Compliance compliancePerStore : complianceArrayList) {
+
+                            if(compliancePerStore.isPosted) continue;
+
+                            strBody += General.usercode + "|";
+                            strBody += String.valueOf(General.selectedStore.auditID) + "|";
+                            strBody += General.selectedStore.account + "|";
+                            strBody += General.selectedStore.customerCode + "|";
+                            strBody += General.selectedStore.customer + "|";
+                            strBody += General.selectedStore.area + "|";
+                            strBody += General.selectedStore.regionCode + "|";
+                            strBody += General.selectedStore.region + "|";
+                            strBody += General.selectedStore.distributorCode + "|";
+                            strBody += General.selectedStore.distributor + "|";
+                            strBody += General.selectedStore.storeCode + "|";
+                            strBody += General.selectedStore.storeName + "|";
+                            strBody += compliancePerStore.date.trim() + "-" + compliancePerStore.time.trim() + "|";
+                            strBody += String.valueOf(compliancePerStore.latitude) + "|";
+                            strBody += String.valueOf(compliancePerStore.longitude);
+                            strBody += "\n";
+                        }
+                    }
+
+                fileWriter.append(strBody);
+                fileWriter.flush();
+                fileWriter.close();
+
+                String attachmentName = "data";
+                String attachmentFileName;
+                String crlf = "\r\n";
+                String twoHyphens = "--";
+                String boundary =  "*****";
+
+                response = "";
+
+                int bytesRead, bytesAvailable, bufferSize;
+                byte[] buffer;
+                int maxBufferSize = 1024 * 1024;
+
+                HttpURLConnection httpUrlConnection = null;
+
+                FileInputStream fileInputStream = new FileInputStream(fileCheckIns); // text file to upload
+
+                URL url = new URL(General.URL_UPLOAD_CHECKIN); // url to post
+                httpUrlConnection = (HttpURLConnection) url.openConnection();
+                httpUrlConnection.setUseCaches(false);
+                httpUrlConnection.setDoOutput(true);
+
+                httpUrlConnection.setRequestMethod("POST");
+                httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
+                httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
+                httpUrlConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
+
+                DataOutputStream request = new DataOutputStream(
+                        httpUrlConnection.getOutputStream());
+
+                request.writeBytes(twoHyphens + boundary + crlf);
+                request.writeBytes("Content-Disposition: form-data; name=\"" +
+                        attachmentName + "\";filename=\"" + strFileName + "\"" + crlf);
+                request.writeBytes(crlf);
+
+                bytesAvailable = fileInputStream.available();
+                bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                buffer = new byte[bufferSize];
+
+                // Read file
+                bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+
+                while (bytesRead > 0)
+                {
+                    request.write(buffer, 0, bufferSize);
+                    bytesAvailable = fileInputStream.available();
+                    bufferSize = Math.min(bytesAvailable, maxBufferSize);
+                    bytesRead = fileInputStream.read(buffer, 0, bufferSize);
+                }
+
+                request.writeBytes(crlf);
+                request.writeBytes(twoHyphens + boundary + twoHyphens + crlf);
+                request.flush();
+                request.close();
+
+                InputStream responseStream = new
+                        BufferedInputStream(httpUrlConnection.getInputStream());
+
+                BufferedReader responseStreamReader =
+                        new BufferedReader(new InputStreamReader(responseStream));
+
+                String line = "";
+                StringBuilder stringBuilder = new StringBuilder();
+
+                while ((line = responseStreamReader.readLine()) != null) {
+                    stringBuilder.append(line).append("\n");
+                }
+                responseStreamReader.close();
+
+                response = stringBuilder.toString();
+                responseStream.close();
+
+                JSONObject jsonObject = new JSONObject(response);
+                if(!jsonObject.isNull("msg")) {
+                    int status = jsonObject.getInt("status");
+                    String msg = jsonObject.getString("msg");
+
+                    if(status == 0) {
+                        response = msg.trim();
+                        SetCompliancesToPosted();
+                        result = true;
+                    }
+                    else {
+                        errMsg = msg.trim();
+                    }
+                }
+            }
+            catch (IOException ex) {
+                errMsg = "Slow or unstable internet connection. Please try again.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
+                errorLog.appendLog(exErr, TAG);
+            }
+            catch (JSONException ex) {
+                ex.printStackTrace();
+                errMsg = "Error in web response of server. Please try again";
+                String errmsg = ex.getMessage() != null ? ex.getMessage() : errMsg;
+                errorLog.appendLog(errmsg, TAG);
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean bResult) {
+            progressDL.dismiss();
+            if(wlStayAwake.isHeld()) wlStayAwake.release();
+            if(!bResult) {
+                Toast.makeText(StorePreviewActivity.this, errMsg, Toast.LENGTH_LONG).show();
+                return;
+            }
+
+            SetPostingSuccessful(response);
+        }
+    }
+
+    private void SetCompliancesToPosted() {
+            if (complianceArrayList.size() > 0) {
+                for (Compliance compliancePerStore : complianceArrayList) {
+
+                    if(compliancePerStore.isPosted) continue;
+
+                    sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_PJPCOMP
+                            + " SET " + SQLiteDB.COLUMN_PJPCOMP_posted + " = '1'"
+                            + " WHERE " + SQLiteDB.COLUMN_PJPCOMP_storeid + " = '" + General.selectedStore.storeID + "'"
+                            + " AND " + SQLiteDB.COLUMN_PJPCOMP_id + " = '" + compliancePerStore.complianceID + "'");
+
+                }
+            }
+    }
+
+    private class LoadAuditSummary extends AsyncTask<Void, Void, Boolean> {
 
         private String errmsg;
 
@@ -547,12 +792,15 @@ public class StorePreviewActivity extends AppCompatActivity {
                 Toast.makeText(StorePreviewActivity.this, errmsg, Toast.LENGTH_LONG).show();
                 return;
             }
+
+            new LoadCompliances().execute();
+
             lvwPreview.setAdapter(new PreviewCategoryAdapter(StorePreviewActivity.this, arrCategories));
             lvwPreview.setSmoothScrollbarEnabled(true);
         }
     }
 
-    public class AsyncGenerateTextFile extends AsyncTask<Void, Void, Boolean> {
+    private class AsyncGenerateTextFile extends AsyncTask<Void, Void, Boolean> {
 
         private String errorMsg;
 
@@ -587,6 +835,7 @@ public class StorePreviewActivity extends AppCompatActivity {
                     String distributor = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
                     String templateCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatecode));
                     String auditId = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_auditid));
+                    String area = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_area));
 
                     sBody += General.usercode + "|"
                             + auditId + "|"
@@ -604,7 +853,8 @@ public class StorePreviewActivity extends AppCompatActivity {
                             + storeFinalValue + "|"
                             + strOsa + "|"
                             + strNpi + "|"
-                            + strPlanogram;
+                            + strPlanogram + "|"
+                            + area;
 
                     sBody += "\n";
                     sBody += strDetailsBody;
@@ -619,7 +869,7 @@ public class StorePreviewActivity extends AppCompatActivity {
                 ex.printStackTrace();
                 errorMsg = "Error in generating CSV. Please check error log.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
 
             return result;
@@ -638,7 +888,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         }
     }
 
-    public class AsyncPostImages extends AsyncTask<Integer, Integer, Boolean> {
+    private class AsyncPostImages extends AsyncTask<Integer, Integer, Boolean> {
 
         private Integer maxnum = 0;
         private String response;
@@ -646,7 +896,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         private ArrayList<File> aFileImage;
         private String errorMsg;
 
-        public AsyncPostImages(Integer nMax, ArrayList<String> arrStrFilename, ArrayList<File> arrfilePic) {
+        AsyncPostImages(Integer nMax, ArrayList<String> arrStrFilename, ArrayList<File> arrfilePic) {
             this.maxnum = nMax;
             this.aStrFilename = arrStrFilename;
             this.aFileImage = arrfilePic;
@@ -675,7 +925,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
             int bytesRead, bytesAvailable, bufferSize;
             byte[] buffer;
-            int maxBufferSize = 1*1024*1024;
+            int maxBufferSize = 1024 * 1024;
 
             HttpURLConnection httpUrlConnection = null;
 
@@ -763,13 +1013,13 @@ public class StorePreviewActivity extends AppCompatActivity {
                 ex.printStackTrace();
                 errorMsg = "Slow or unstable internet connection. Please try again";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (JSONException ex) {
                 ex.printStackTrace();
                 errorMsg = "Error in web response from server. Please try again";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             finally {
                 if(httpUrlConnection != null)
@@ -787,11 +1037,12 @@ public class StorePreviewActivity extends AppCompatActivity {
                 return;
             }
 
-            SetPostingSuccessful(response);
+            new PostCheckedPjp().execute();
+
         }
     }
 
-    public void SetPostingSuccessful(String msg) {
+    private void SetPostingSuccessful(String msg) {
         sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STORE
                 + " SET " + SQLiteDB.COLUMN_STORE_posted + " = '1', "
                 + SQLiteDB.COLUMN_STORE_postingdate + " = '" + General.getDateToday() + "', " + SQLiteDB.COLUMN_STORE_postingtime + " = '" + General.getTimeToday() + "'  WHERE " + SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
@@ -811,7 +1062,7 @@ public class StorePreviewActivity extends AppCompatActivity {
     }
 
     // send file
-    public class AsyncPostFiles extends AsyncTask<Void, Void, Boolean> {
+    private class AsyncPostFiles extends AsyncTask<Void, Void, Boolean> {
 
         private final File fileToSend;
         private final String postingURL;
@@ -820,7 +1071,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         private String response;
         private String auditID;
 
-        public AsyncPostFiles(File filepath, String strFilename, String url) {
+        AsyncPostFiles(File filepath, String strFilename, String url) {
             this.fileToSend = filepath;
             this.postingURL = url.trim();
             this.strFilename = strFilename;
@@ -844,7 +1095,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
             int bytesRead, bytesAvailable, bufferSize;
             byte[] buffer;
-            int maxBufferSize = 1*1024*1024;
+            int maxBufferSize = 1024 * 1024;
 
             HttpURLConnection httpUrlConnection = null;
 
@@ -926,25 +1177,25 @@ public class StorePreviewActivity extends AppCompatActivity {
                 ex.printStackTrace();
                 errorMsg = "Error in web response of server. Please try again";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (final MalformedURLException ex) {
                 ex.printStackTrace();
                 errorMsg = "Can't connect to web server. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (final ProtocolException ex) {
                 ex.printStackTrace();
                 errorMsg = "Error in web protocol. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (final IOException ex) {
                 ex.printStackTrace();
                 errorMsg = "Slow or unstable internet connection. Please try again";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             finally {
                 if(httpUrlConnection != null)
@@ -970,7 +1221,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         }
     }
 
-    public class AsyncPostFile2 extends AsyncTask<Void, Void, Boolean> {
+    private class AsyncPostFile2 extends AsyncTask<Void, Void, Boolean> {
 
         private final File fileToSend;
         private final String postingURL;
@@ -978,7 +1229,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         String response = "";
         private String errorMsg;
 
-        public AsyncPostFile2(File filepath, String strFilename, String url) {
+        AsyncPostFile2(File filepath, String strFilename, String url) {
             this.fileToSend = filepath;
             this.postingURL = url.trim();
             this.strFilename = strFilename;
@@ -1003,7 +1254,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
             int bytesRead, bytesAvailable, bufferSize;
             byte[] buffer;
-            int maxBufferSize = 1*1024*1024;
+            int maxBufferSize = 1024 * 1024;
             HttpURLConnection httpUrlConnection = null;
 
             try {
@@ -1083,25 +1334,25 @@ public class StorePreviewActivity extends AppCompatActivity {
                 ex.printStackTrace();
                 errorMsg = "Error in web response of server. Please try again";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (final MalformedURLException ex) {
                 ex.printStackTrace();
                 errorMsg = "Can't connect to web server. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (final ProtocolException ex) {
                 ex.printStackTrace();
                 errorMsg = "Error in web protocol. Please try again.";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             catch (final IOException ex) {
                 ex.printStackTrace();
                 errorMsg = "Slow or unstable internet connection. Please try again";
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
             }
             finally {
                 if(httpUrlConnection != null)
@@ -1114,7 +1365,6 @@ public class StorePreviewActivity extends AppCompatActivity {
         @Override
         protected void onPostExecute(Boolean aBoolean) {
             progressDL.dismiss();
-            if(wlStayAwake.isHeld()) wlStayAwake.release();
             if(!aBoolean) {
                 General.messageBox(StorePreviewActivity.this, "Unsuccessful posting", errorMsg);
                 return;
@@ -1175,7 +1425,9 @@ public class StorePreviewActivity extends AppCompatActivity {
             if(aFileImages.size() > 0) {
                 new AsyncPostImages(totalImages, aStrFilenames, aFileImages).execute();
             }
-            else SetPostingSuccessful("Audit posted.");
+            else {
+                new PostCheckedPjp().execute();
+            }
         }
     }
 

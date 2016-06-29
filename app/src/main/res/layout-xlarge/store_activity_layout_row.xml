@@ -53,20 +53,22 @@
     <Button
         android:id="@+id/btnPreview"
         android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_height="50dp"
         android:layout_weight="1"
         style="@style/button_design"
         android:text="PREVIEW"
+        android:layout_gravity="center"
         android:background="@drawable/btn_accent"
         android:onClick="previewOnClickEvent"/>
 
     <Button
         android:id="@+id/btnAudit"
         android:layout_width="0dp"
-        android:layout_height="match_parent"
+        android:layout_height="50dp"
         android:layout_weight="1"
         style="@style/button_design"
         android:text="AUDIT"
+        android:layout_gravity="center"
         android:background="@drawable/btn_primary"
         android:onClick="auditOnClickEvent"/>
 

@@ -112,9 +112,9 @@ public class StoreAdapter extends BaseAdapter {
             }
         });
 
-        holder.tvwStore.setTag(storeClassResult.get(position).Audittemplateid + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
-        holder.btnPreview.setTag(storeClassResult.get(position).Audittemplateid + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
-        holder.btnAudit.setTag(storeClassResult.get(position).Audittemplateid + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
+        holder.tvwStore.setTag(storeClassResult.get(position).auditTemplateId + "," + storeid + "," + storeClassResult.get(position).finalValue + "," + storeClassResult.get(position).storeName);
+        holder.btnPreview.setTag(storeClassResult.get(position));
+        holder.btnAudit.setTag(storeClassResult.get(position));
 
 
 /*        holder.tvwScoreStore.setText(String.valueOf(arrStoreList.get(position).totalAnswerStore) + " / " + String.valueOf(arrStoreList.get(position).totalQuestionStore));

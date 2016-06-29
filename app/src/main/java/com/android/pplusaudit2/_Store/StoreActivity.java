@@ -14,15 +14,13 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.ListView;
-import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
-import com.android.pplusaudit2.Json.JSON_pplus;
-import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.TCRLib;
 import com.android.pplusaudit2._Category.CategoryActivity;
@@ -38,31 +36,17 @@ public class StoreActivity extends AppCompatActivity {
     private ArrayList<Stores> arrStoreList = new ArrayList<Stores>();
     private ArrayList<Stores> lstStores = new ArrayList<Stores>();
 
-    private String urlGetStores = "http://tcr.chasetech.com/api/user/stores?";
+    private SQLLibrary sql;
+    private SQLiteDB sqLiteDB;
 
-    MyMessageBox messageBox;
-    JSON_pplus json;
-
-    SQLLibrary sql;
-    SQLiteDB sqLiteDB;
-
-    String storeid;
-    TextView tvwStore;
-    int templateid;
-
-    String storename;
-
-    int storeGradeMatrix;
-
-    PowerManager powerman;
-    PowerManager.WakeLock wlStayAwake;
-
-    //String storeid2;
+    private PowerManager.WakeLock wlStayAwake;
 
     private ProgressDialog progressDL;
     private SearchView searchView;
-    ListView lvwStore;
-    StoreAdapter adapter;
+    private ListView lvwStore;
+    private StoreAdapter adapter;
+    private String TAG;
+    private ErrorLog errorLog;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,13 +57,17 @@ public class StoreActivity extends AppCompatActivity {
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
         overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
 
+        errorLog = new ErrorLog(General.errlogFile, this);
+
+        TAG = StoreActivity.this.getLocalClassName();
+
         getSupportActionBar().setTitle("STORES");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
 
         searchView = (SearchView) findViewById(R.id.svStore);
 
-        powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        PowerManager powerman = (PowerManager) getSystemService(POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
         wlStayAwake.acquire();
         sql = new SQLLibrary(this);
@@ -97,10 +85,11 @@ public class StoreActivity extends AppCompatActivity {
     }
 
     // LOAD STORE SCORES
-    public class LoadStores extends AsyncTask<Void, Void, String> {
+    private class LoadStores extends AsyncTask<Void, Void, Boolean> {
 
         ArrayList<Stores> arrPendings;
         ArrayList<Stores> arrPosted;
+        String errmsg = "";
 
         @Override
         protected void onPreExecute() {
@@ -111,47 +100,82 @@ public class StoreActivity extends AppCompatActivity {
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected Boolean doInBackground(Void... params) {
 
-            Cursor cursorStore = sql.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STORE + " ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC");
-            int nstoreid;
-            int templateid;
-            String templatename;
-            boolean isAudited = false;
-            boolean isPosted = false;
+            boolean result = false;
 
-            cursorStore.moveToFirst();
-            while(!cursorStore.isAfterLast()) {
-                nstoreid = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_id));
+            try {
 
-                String storeCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode));
-                String webStoreid = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storeid));
+                Cursor cursorStore = sql.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STORE + " ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC");
+                int nstoreid;
+                int templateid;
+                String templatename;
+                boolean isAudited = false;
+                boolean isPosted = false;
 
-                String storename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim().replace("\"", "");
-                templateid = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_audittempid));
-                templatename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim().replace("\"", "");
-                isAudited = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_status)) > 0;
-                int finalValue = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
-                isPosted = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_posted)) == 1;
+                cursorStore.moveToFirst();
+                while (!cursorStore.isAfterLast()) {
+                    nstoreid = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_id));
 
-                Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted);
+                    String storeCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode));
+                    String webStoreid = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storeid));
 
-                if(isAudited && !isPosted)
-                    arrPendings.add(store);
-                else if(isAudited && isPosted)
-                    arrPosted.add(store);
-                else
-                    arrStoreList.add(store);
+                    String storename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim().replace("\"", "");
+                    templateid = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_audittempid));
+                    templatename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim().replace("\"", "");
+                    isAudited = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_status)) > 0;
+                    int finalValue = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
+                    isPosted = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_posted)) == 1;
+                    int gMatrixId = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_gradematrixid));
+                    int auditID = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_auditid));
+                    String account = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_account));
+                    String customerCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_customercode));
+                    String customer = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_customer));
+                    String area = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_area));
+                    String regionCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_regioncode));
+                    String region = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_region));
+                    String distCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
+                    String dist = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
 
-                cursorStore.moveToNext();
+                    Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted, gMatrixId);
+                    store.auditID = auditID;
+                    store.account = account;
+                    store.customerCode = customerCode;
+                    store.customer = customer;
+                    store.area = area;
+                    store.regionCode = regionCode;
+                    store.region = region;
+                    store.distributorCode = distCode;
+                    store.distributor = dist;
+
+                    if (isAudited && !isPosted)
+                        arrPendings.add(store);
+                    else if (isAudited && isPosted)
+                        arrPosted.add(store);
+                    else
+                        arrStoreList.add(store);
+
+                    cursorStore.moveToNext();
+                }
+                cursorStore.close();
+                result = true;
             }
-            cursorStore.close();
+            catch (Exception ex) {
+                errmsg = "Can't load stores.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
+                errorLog.appendLog(exErr, TAG);
+            }
 
-            return null;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String s) {
+        protected void onPostExecute(Boolean bResult) {
+            if(!bResult) {
+                progressDL.dismiss();
+                Toast.makeText(StoreActivity.this, errmsg, Toast.LENGTH_SHORT).show();
+                return;
+            }
 
             lstStores.clear();
 
@@ -194,25 +218,9 @@ public class StoreActivity extends AppCompatActivity {
     // AUDIT BUTTON CLICK
     public void auditOnClickEvent(View v) {
 
-        String[] storetempid = v.getTag().toString().split(",");
+        Stores stores = (Stores) v.getTag();
 
-        storename = storetempid[3].trim();
-        templateid = Integer.parseInt(storetempid[0]);
-        storeid = storetempid[1];
-        General.storeid = storeid;
-
-        Cursor cursStoreid = sql.GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = " + storeid);
-        cursStoreid.moveToFirst();
-
-        if(cursStoreid.getCount() == 0) {
-            Toast.makeText(StoreActivity.this, "No store found.", Toast.LENGTH_SHORT).show();
-            return;
-        }
-
-        General.Temp_Storeid = cursStoreid.getInt(cursStoreid.getColumnIndex(SQLiteDB.COLUMN_STORE_storeid));
-        General.auditTemplateID = String.valueOf(templateid);
-        storeGradeMatrix = cursStoreid.getInt(cursStoreid.getColumnIndex(SQLiteDB.COLUMN_STORE_gradematrixid));
-        cursStoreid.close();
+        General.selectedStore = stores;
 
         new AsyncGetStoreTemplate().execute();
     }
@@ -220,13 +228,12 @@ public class StoreActivity extends AppCompatActivity {
     // PREVIEW BUTTON CLICK
     public void previewOnClickEvent(View v) {
 
-        String[] storetempid = v.getTag().toString().split(",");
-        storename = String.valueOf(storetempid[3]);
-        storeid = storetempid[1];
-        General.storeid = storeid;
+        Stores storeSelected = (Stores) v.getTag();
+
+        General.selectedStore = storeSelected;
 
         Intent intentPreview = new Intent(StoreActivity.this, StorePreviewActivity.class);
-        intentPreview.putExtra("STORE_ID", storeid);
+        intentPreview.putExtra("STORE_ID", String.valueOf(storeSelected.storeID));
         startActivity(intentPreview);
     }
 
@@ -258,192 +265,200 @@ public class StoreActivity extends AppCompatActivity {
     }
 
     // TASK: LOAD STORE TEMPLATE
-    public class AsyncGetStoreTemplate extends AsyncTask<Void, Void, String> {
+    private class AsyncGetStoreTemplate extends AsyncTask<Void, Void, Boolean> {
+
+        private String errMsg;
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(StoreActivity.this, "", "Getting store template...Please wait", true);
+            progressDL = ProgressDialog.show(StoreActivity.this, "", "Getting store template. Please wait", true);
         }
 
         @Override
-        protected String doInBackground(Void... params) {
+        protected Boolean doInBackground(Void... params) {
 
-            // STORE QUESTIONS
-            Cursor curs = sql.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = " + storeid);
-            curs.moveToFirst();
-            if(curs.getCount() > 0) {
-                return null;
-            }
-            else {
-                General.arrBrandSelected = new ArrayList<String>();
-                General.arrBrandSelected.clear();
+            Boolean result = false;
 
-                // GET SECONDRY KEYLIST
-                Cursor cursKeylist = sql.GetDataCursor(SQLiteDB.TABLE_SECONDARYKEYLIST);
-                cursKeylist.moveToFirst();
-                General.arrKeylist = new ArrayList<String>();
-                while (!cursKeylist.isAfterLast()) {
+            try {
 
-                    General.arrKeylist.add(cursKeylist.getString(cursKeylist.getColumnIndex(SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid)));
-                    cursKeylist.moveToNext();
-                }
+                // STORE QUESTIONS
+                Cursor curs = sql.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'");
+                curs.moveToFirst();
+                if (curs.getCount() > 0) {
+                    return true;
+                } else {
+                    General.arrBrandSelected = new ArrayList<String>();
+                    General.arrBrandSelected.clear();
 
-                SQLiteDatabase dbaseStoreQ = sqLiteDB.getWritableDatabase();
+                    // GET SECONDRY KEYLIST
+                    Cursor cursKeylist = sql.GetDataCursor(SQLiteDB.TABLE_SECONDARYKEYLIST);
+                    cursKeylist.moveToFirst();
+                    General.arrKeylist = new ArrayList<String>();
+                    while (!cursKeylist.isAfterLast()) {
 
-                // GET STORE CATEGORIES
-                Cursor cursCategoryOfStore = sql.GetDataCursor(SQLiteDB.TABLE_CATEGORY, SQLiteDB.COLUMN_CATEGORY_audittempid + " = '" + General.auditTemplateID + "'");
-                cursCategoryOfStore.moveToFirst();
-
-                String[] afieldsStoreCategories = {
-                        SQLiteDB.COLUMN_STORECATEGORY_storeid,
-                        SQLiteDB.COLUMN_STORECATEGORY_categoryid,
-                        SQLiteDB.COLUMN_STORECATEGORY_initial,
-                        SQLiteDB.COLUMN_STORECATEGORY_exempt,
-                        SQLiteDB.COLUMN_STORECATEGORY_final,
-                        SQLiteDB.COLUMN_STORECATEGORY_status
-                };
-
-                String sqlinsertStoreCategories = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORECATEGORY, afieldsStoreCategories);
-                SQLiteStatement sqlstatementStoreCategories = dbaseStoreQ.compileStatement(sqlinsertStoreCategories);
-                dbaseStoreQ.beginTransaction();
-
-                // INSERT CATEGORIES PER STORE
-                if (cursCategoryOfStore.getCount() > 0) {
-
-                    cursCategoryOfStore.moveToFirst();
-                    while (!cursCategoryOfStore.isAfterLast()) {
-                        sqlstatementStoreCategories.clearBindings();
-                        sqlstatementStoreCategories.bindString(1, storeid);
-                        sqlstatementStoreCategories.bindString(2, cursCategoryOfStore.getString(cursCategoryOfStore.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_id)));
-                        sqlstatementStoreCategories.bindString(3, "0");
-                        sqlstatementStoreCategories.bindString(4, "0");
-                        sqlstatementStoreCategories.bindString(5, "");
-                        sqlstatementStoreCategories.bindString(6, "0");
-                        sqlstatementStoreCategories.execute();
-                        cursCategoryOfStore.moveToNext();
+                        General.arrKeylist.add(cursKeylist.getString(cursKeylist.getColumnIndex(SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid)));
+                        cursKeylist.moveToNext();
                     }
-                }
 
-                dbaseStoreQ.setTransactionSuccessful();
-                dbaseStoreQ.endTransaction();
+                    SQLiteDatabase dbaseStoreQ = sqLiteDB.getWritableDatabase();
 
-                // GET GROUP BY CATEGORIES
-                Cursor cursCategories = sql.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + storeid + "'");
-                cursCategories.moveToFirst();
-                while (!cursCategories.isAfterLast()) {
+                    // GET STORE CATEGORIES
+                    Cursor cursCategoryOfStore = sql.GetDataCursor(SQLiteDB.TABLE_CATEGORY, SQLiteDB.COLUMN_CATEGORY_audittempid + " = '" + General.selectedStore.auditTemplateId + "'");
+                    cursCategoryOfStore.moveToFirst();
 
-                    String storecategoryid = cursCategories.getString(cursCategories.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
-                    String categoryid = cursCategories.getString(cursCategories.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_categoryid));
-
-                    String[] aFieldsStorecateggroup = {
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_initial,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_final,
-                            SQLiteDB.COLUMN_STORECATEGORYGROUP_status
+                    String[] afieldsStoreCategories = {
+                            SQLiteDB.COLUMN_STORECATEGORY_storeid,
+                            SQLiteDB.COLUMN_STORECATEGORY_categoryid,
+                            SQLiteDB.COLUMN_STORECATEGORY_initial,
+                            SQLiteDB.COLUMN_STORECATEGORY_exempt,
+                            SQLiteDB.COLUMN_STORECATEGORY_final,
+                            SQLiteDB.COLUMN_STORECATEGORY_status
                     };
 
-                    Cursor cursGroupPerCategories = sql.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_GROUP_id + "," + SQLiteDB.COLUMN_GROUP_groupid
-                            + " FROM " + SQLiteDB.TABLE_GROUP
-                            + " WHERE " + SQLiteDB.COLUMN_GROUP_categoryid + " = '" + categoryid + "'"
-                            + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
-                    cursGroupPerCategories.moveToFirst();
-
-                    String sqlinsertStoreCategGroup = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORECATEGORYGROUP, aFieldsStorecateggroup);
-                    SQLiteStatement sqlstatementStoreCategGroup = dbaseStoreQ.compileStatement(sqlinsertStoreCategGroup);
+                    String sqlinsertStoreCategories = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORECATEGORY, afieldsStoreCategories);
+                    SQLiteStatement sqlstatementStoreCategories = dbaseStoreQ.compileStatement(sqlinsertStoreCategories);
                     dbaseStoreQ.beginTransaction();
 
-                    while (!cursGroupPerCategories.isAfterLast()) {
+                    // INSERT CATEGORIES PER STORE
+                    if (cursCategoryOfStore.getCount() > 0) {
 
-                        String groupid = cursGroupPerCategories.getString(cursGroupPerCategories.getColumnIndex(SQLiteDB.COLUMN_GROUP_id));
-
-                        sqlstatementStoreCategGroup.clearBindings();
-                        sqlstatementStoreCategGroup.bindString(1, storecategoryid);
-                        sqlstatementStoreCategGroup.bindString(2, groupid);
-                        sqlstatementStoreCategGroup.bindString(3, "0");
-                        sqlstatementStoreCategGroup.bindString(4, "0");
-                        sqlstatementStoreCategGroup.bindString(5, "");
-                        sqlstatementStoreCategGroup.bindString(6, "0"); //0 - pending, 1 - partial, 2 - complete
-                        sqlstatementStoreCategGroup.execute();
-
-                        cursGroupPerCategories.moveToNext();
+                        cursCategoryOfStore.moveToFirst();
+                        while (!cursCategoryOfStore.isAfterLast()) {
+                            sqlstatementStoreCategories.clearBindings();
+                            sqlstatementStoreCategories.bindString(1, String.valueOf(General.selectedStore.storeID));
+                            sqlstatementStoreCategories.bindString(2, cursCategoryOfStore.getString(cursCategoryOfStore.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_id)));
+                            sqlstatementStoreCategories.bindString(3, "0");
+                            sqlstatementStoreCategories.bindString(4, "0");
+                            sqlstatementStoreCategories.bindString(5, "");
+                            sqlstatementStoreCategories.bindString(6, "0");
+                            sqlstatementStoreCategories.execute();
+                            cursCategoryOfStore.moveToNext();
+                        }
                     }
 
                     dbaseStoreQ.setTransactionSuccessful();
                     dbaseStoreQ.endTransaction();
 
-                    // GET QUESTION PER GROUP
-                    Cursor cursGroup = sql.GetDataCursor(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = '" + storecategoryid + "'");
-                    /*Cursor cursGroup = sql.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
-                                                            + " JOIN " + SQLiteDB.TABLE_GROUP
-                                                            + " ON " + SQLiteDB.TABLE_GROUP  + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
-                                                            + " JOIN " + SQLiteDB.TABLE_CATEGORY
-                                                            + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_categoryid
-                                                            + " GROUP BY tblstorecateggroup.id");*/
-                    cursGroup.moveToFirst();
+                    // GET GROUP BY CATEGORIES
+                    Cursor cursCategories = sql.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'");
+                    cursCategories.moveToFirst();
+                    while (!cursCategories.isAfterLast()) {
 
-                    while(!cursGroup.isAfterLast()) {
+                        String storecategoryid = cursCategories.getString(cursCategories.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
+                        String categoryid = cursCategories.getString(cursCategories.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_categoryid));
 
-                        String storeCategoryGroupID = cursGroup.getString(cursGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
-                        String storegroupID = cursGroup.getString(cursGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid));
-
-                        //String strTempcategoryid = cursGroup.getString(cursGroup.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryid));
-                        //String strTempGroupId = cursGroup.getString(cursGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupid));
-
-                        Cursor cursTempGroup = sql.GetDataCursor(SQLiteDB.TABLE_GROUP, SQLiteDB.COLUMN_GROUP_id + " = '" + storegroupID + "'");
-                        cursTempGroup.moveToFirst();
-
-                        String strGroupCategoryid = cursTempGroup.getString(cursTempGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_categoryid));
-                        String strTempGroupId = cursTempGroup.getString(cursTempGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupid));
-
-                        Cursor cursTempCategory = sql.GetDataCursor(SQLiteDB.TABLE_CATEGORY, SQLiteDB.COLUMN_CATEGORY_id + " = '" + strGroupCategoryid + "'");
-                        cursTempCategory.moveToFirst();
-                        String strTempcategoryid = cursTempCategory.getString(cursTempCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryid));
-
-                        // SECONDARY DISPLAY
-                        General.arrBrandSelected.clear();
-                        Cursor cursBrand = sql.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_SECONDARYDISP_brand
-                                    + " FROM " + SQLiteDB.TABLE_SECONDARYDISP
-                                    + " WHERE " + SQLiteDB.COLUMN_SECONDARYDISP_storeid + " = " + General.Temp_Storeid
-                                    + " AND " + SQLiteDB.COLUMN_SECONDARYDISP_categoryid + " = " + strTempcategoryid);
-
-                        cursBrand.moveToFirst();
-
-                        while (!cursBrand.isAfterLast()) {
-
-                            General.arrBrandSelected.add(cursBrand.getString(cursBrand.getColumnIndex(SQLiteDB.COLUMN_SECONDARYDISP_brand)));
-                            cursBrand.moveToNext();
-                        }
-                        cursBrand.close();
-
-                        // GET QUESTIONS PER GROUP
-                        Cursor cursQuestionsPerGroup = sql.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_QUESTION_prompt + "," + SQLiteDB.COLUMN_QUESTION_id + "," + SQLiteDB.COLUMN_QUESTION_groupid + "," + SQLiteDB.COLUMN_QUESTION_questionid
-                                + " FROM " + SQLiteDB.TABLE_QUESTION
-                                + " WHERE " + SQLiteDB.COLUMN_QUESTION_groupid + " = '" + storegroupID + "'"
-                                + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
-                        cursQuestionsPerGroup.moveToFirst();
-
-                        String[] aFieldsStorequestion = {
-                                SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid,
-                                SQLiteDB.COLUMN_STOREQUESTION_questionid,
-                                SQLiteDB.COLUMN_STOREQUESTION_isAnswered,
-                                SQLiteDB.COLUMN_STOREQUESTION_initial,
-                                SQLiteDB.COLUMN_STOREQUESTION_exempt,
-                                SQLiteDB.COLUMN_STOREQUESTION_final
+                        String[] aFieldsStorecateggroup = {
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_initial,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_final,
+                                SQLiteDB.COLUMN_STORECATEGORYGROUP_status
                         };
 
-                        String sqlinsertStoreQuestions = sql.createInsertBulkQuery(SQLiteDB.TABLE_STOREQUESTION, aFieldsStorequestion);
-                        SQLiteStatement sqlstatementStoreQuestions = dbaseStoreQ.compileStatement(sqlinsertStoreQuestions);
+                        Cursor cursGroupPerCategories = sql.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_GROUP_id + "," + SQLiteDB.COLUMN_GROUP_groupid
+                                + " FROM " + SQLiteDB.TABLE_GROUP
+                                + " WHERE " + SQLiteDB.COLUMN_GROUP_categoryid + " = '" + categoryid + "'"
+                                + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
+                        cursGroupPerCategories.moveToFirst();
+
+                        String sqlinsertStoreCategGroup = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORECATEGORYGROUP, aFieldsStorecateggroup);
+                        SQLiteStatement sqlstatementStoreCategGroup = dbaseStoreQ.compileStatement(sqlinsertStoreCategGroup);
                         dbaseStoreQ.beginTransaction();
 
-                        while (!cursQuestionsPerGroup.isAfterLast()) {
+                        while (!cursGroupPerCategories.isAfterLast()) {
 
-                            String questionid = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_id));
-                            String strQuestionPrompt = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt));
+                            String groupid = cursGroupPerCategories.getString(cursGroupPerCategories.getColumnIndex(SQLiteDB.COLUMN_GROUP_id));
 
-                            if(General.arrKeylist.contains(strTempGroupId)) {
-                                if(General.arrBrandSelected.contains(strQuestionPrompt)) {
+                            sqlstatementStoreCategGroup.clearBindings();
+                            sqlstatementStoreCategGroup.bindString(1, storecategoryid);
+                            sqlstatementStoreCategGroup.bindString(2, groupid);
+                            sqlstatementStoreCategGroup.bindString(3, "0");
+                            sqlstatementStoreCategGroup.bindString(4, "0");
+                            sqlstatementStoreCategGroup.bindString(5, "");
+                            sqlstatementStoreCategGroup.bindString(6, "0"); //0 - pending, 1 - partial, 2 - complete
+                            sqlstatementStoreCategGroup.execute();
+
+                            cursGroupPerCategories.moveToNext();
+                        }
+
+                        dbaseStoreQ.setTransactionSuccessful();
+                        dbaseStoreQ.endTransaction();
+
+                        // GET QUESTION PER GROUP
+                        Cursor cursGroup = sql.GetDataCursor(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = '" + storecategoryid + "'");
+
+                        cursGroup.moveToFirst();
+
+                        while (!cursGroup.isAfterLast()) {
+
+                            String storeCategoryGroupID = cursGroup.getString(cursGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+                            String storegroupID = cursGroup.getString(cursGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid));
+
+                            Cursor cursTempGroup = sql.GetDataCursor(SQLiteDB.TABLE_GROUP, SQLiteDB.COLUMN_GROUP_id + " = '" + storegroupID + "'");
+                            cursTempGroup.moveToFirst();
+
+                            String strGroupCategoryid = cursTempGroup.getString(cursTempGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_categoryid));
+                            String strTempGroupId = cursTempGroup.getString(cursTempGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupid));
+
+                            Cursor cursTempCategory = sql.GetDataCursor(SQLiteDB.TABLE_CATEGORY, SQLiteDB.COLUMN_CATEGORY_id + " = '" + strGroupCategoryid + "'");
+                            cursTempCategory.moveToFirst();
+                            String strTempcategoryid = cursTempCategory.getString(cursTempCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryid));
+
+                            // SECONDARY DISPLAY
+                            General.arrBrandSelected.clear();
+                            Cursor cursBrand = sql.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_SECONDARYDISP_brand
+                                    + " FROM " + SQLiteDB.TABLE_SECONDARYDISP
+                                    + " WHERE " + SQLiteDB.COLUMN_SECONDARYDISP_storeid + " = " + General.selectedStore.webStoreID
+                                    + " AND " + SQLiteDB.COLUMN_SECONDARYDISP_categoryid + " = " + strTempcategoryid);
+
+                            cursBrand.moveToFirst();
+
+                            while (!cursBrand.isAfterLast()) {
+
+                                General.arrBrandSelected.add(cursBrand.getString(cursBrand.getColumnIndex(SQLiteDB.COLUMN_SECONDARYDISP_brand)));
+                                cursBrand.moveToNext();
+                            }
+                            cursBrand.close();
+
+                            // GET QUESTIONS PER GROUP
+                            Cursor cursQuestionsPerGroup = sql.RawQuerySelect("SELECT " + SQLiteDB.COLUMN_QUESTION_prompt + "," + SQLiteDB.COLUMN_QUESTION_id + "," + SQLiteDB.COLUMN_QUESTION_groupid + "," + SQLiteDB.COLUMN_QUESTION_questionid
+                                    + " FROM " + SQLiteDB.TABLE_QUESTION
+                                    + " WHERE " + SQLiteDB.COLUMN_QUESTION_groupid + " = '" + storegroupID + "'"
+                                    + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
+                            cursQuestionsPerGroup.moveToFirst();
+
+                            String[] aFieldsStorequestion = {
+                                    SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid,
+                                    SQLiteDB.COLUMN_STOREQUESTION_questionid,
+                                    SQLiteDB.COLUMN_STOREQUESTION_isAnswered,
+                                    SQLiteDB.COLUMN_STOREQUESTION_initial,
+                                    SQLiteDB.COLUMN_STOREQUESTION_exempt,
+                                    SQLiteDB.COLUMN_STOREQUESTION_final
+                            };
+
+                            String sqlinsertStoreQuestions = sql.createInsertBulkQuery(SQLiteDB.TABLE_STOREQUESTION, aFieldsStorequestion);
+                            SQLiteStatement sqlstatementStoreQuestions = dbaseStoreQ.compileStatement(sqlinsertStoreQuestions);
+                            dbaseStoreQ.beginTransaction();
+
+                            while (!cursQuestionsPerGroup.isAfterLast()) {
+
+                                String questionid = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_id));
+                                String strQuestionPrompt = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt));
+
+                                if (General.arrKeylist.contains(strTempGroupId)) {
+                                    if (General.arrBrandSelected.contains(strQuestionPrompt)) {
+                                        sqlstatementStoreQuestions.clearBindings();
+                                        sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);
+                                        sqlstatementStoreQuestions.bindString(2, questionid);
+                                        sqlstatementStoreQuestions.bindString(3, "0");
+                                        sqlstatementStoreQuestions.bindString(4, "0");
+                                        sqlstatementStoreQuestions.bindString(5, "0");
+                                        sqlstatementStoreQuestions.bindString(6, "0");
+                                        sqlstatementStoreQuestions.execute();
+                                    }
+                                } else {
+
                                     sqlstatementStoreQuestions.clearBindings();
                                     sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);
                                     sqlstatementStoreQuestions.bindString(2, questionid);
@@ -453,78 +468,44 @@ public class StoreActivity extends AppCompatActivity {
                                     sqlstatementStoreQuestions.bindString(6, "0");
                                     sqlstatementStoreQuestions.execute();
                                 }
-                            }
-                            else {
 
-                                sqlstatementStoreQuestions.clearBindings();
-                                sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);
-                                sqlstatementStoreQuestions.bindString(2, questionid);
-                                sqlstatementStoreQuestions.bindString(3, "0");
-                                sqlstatementStoreQuestions.bindString(4, "0");
-                                sqlstatementStoreQuestions.bindString(5, "0");
-                                sqlstatementStoreQuestions.bindString(6, "0");
-                                sqlstatementStoreQuestions.execute();
+                                cursQuestionsPerGroup.moveToNext();
                             }
 
-                            cursQuestionsPerGroup.moveToNext();
+                            dbaseStoreQ.setTransactionSuccessful();
+                            dbaseStoreQ.endTransaction();
+
+                            cursGroup.moveToNext();
                         }
 
-                        dbaseStoreQ.setTransactionSuccessful();
-                        dbaseStoreQ.endTransaction();
-
-                        cursGroup.moveToNext();
+                        cursCategories.moveToNext();
                     }
 
-                    cursCategories.moveToNext();
+                    dbaseStoreQ.close();
                 }
-
-                dbaseStoreQ.close();
-
-
-                /*final Cursor cursQuestionsbystore = sql.GetStoreQuestions(SQLiteDB.COLUMN_QUESTION_audittempid + " = " + templateid, dbaseStoreQ, sqLiteDB);
-                cursQuestionsbystore.moveToFirst();
-                String[] afieldsStoreQuestion = {
-                        SQLiteDB.COLUMN_STOREQUESTION_questionid,
-                        SQLiteDB.COLUMN_STOREQUESTION_isAnswered
-                };
-
-                String sqlinsertStoreQuestions = sql.createInsertBulkQuery(SQLiteDB.TABLE_STOREQUESTION, afieldsStoreQuestion);
-                SQLiteStatement sqlstatementStoreQuestion = dbaseStoreQ.compileStatement(sqlinsertStoreQuestions);
-                dbaseStoreQ.beginTransaction();
-
-                if (cursQuestionsbystore.getCount() > 0) {
-
-                    cursQuestionsbystore.moveToFirst();
-                    while (!cursQuestionsbystore.isAfterLast()) {
-
-                        sqlstatementStoreQuestion.clearBindings();
-                        sqlstatementStoreQuestion.bindString(1, storeid);
-                        sqlstatementStoreQuestion.bindString(2, cursQuestionsbystore.getString(cursQuestionsbystore.getColumnIndex("questionid")));
-                        sqlstatementStoreQuestion.bindString(3, "0");
-                        sqlstatementStoreQuestion.execute();
-
-                        cursQuestionsbystore.moveToNext();
-                    }
-                }
-
-                dbaseStoreQ.setTransactionSuccessful();
-                dbaseStoreQ.endTransaction();
-                dbaseStoreQ.close();*/
-
-                //sql.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_storeid, storeid, new String[]{SQLiteDB.COLUMN_STORE_status}, new String[]{ "1" });
+                result = true;
+            }
+            catch (Exception ex) {
+                errMsg = "Can't load store templates.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
+                errorLog.appendLog(exErr, TAG);
             }
 
-            return null;
+            return result;
         }
 
         @Override
-        protected void onPostExecute(String s) {
-
+        protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
+            if(!bResult) {
+                Toast.makeText(StoreActivity.this, errMsg, Toast.LENGTH_LONG).show();
+                return;
+            }
+
             Intent intentActivity = new Intent(StoreActivity.this, CategoryActivity.class);
-            intentActivity.putExtra("STORE_ID", storeid);
-            intentActivity.putExtra("STORE_NAME", storename);
-            intentActivity.putExtra("GRADE_MATRIX", storeGradeMatrix);
+            intentActivity.putExtra("STORE_ID", String.valueOf(General.selectedStore.storeID));
+            intentActivity.putExtra("STORE_NAME", String.valueOf(General.selectedStore.storeName));
+            intentActivity.putExtra("GRADE_MATRIX", General.selectedStore.gradeMatrixId);
             startActivity(intentActivity);
         }
 
@@ -557,8 +538,7 @@ public class StoreActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if(id == android.R.id.home) {
-            finish();
-            overridePendingTransition(R.anim.hold, R.anim.slide_in_right);
+            onBackPressed();
             return true;
         }
 

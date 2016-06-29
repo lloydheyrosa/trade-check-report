@@ -68,6 +68,7 @@ public class DashboardActivity extends AppCompatActivity {
     private ProgressDialog progressDL;
     private String TAG = "";
     private String urlDownload = "";
+    private ErrorLog errorLog;
 
     private enum MENU_MODE {
         CHECK_NEW_UPDATE,
@@ -79,6 +80,7 @@ public class DashboardActivity extends AppCompatActivity {
     private CheckUpdateApk checkUpdateApk;
     private PowerManager powerman;
     static PowerManager.WakeLock wlStayAwake;
+    private SharedPreferences sharedPreferences;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -102,12 +104,13 @@ public class DashboardActivity extends AppCompatActivity {
 
         TAG = DashboardActivity.this.getLocalClassName();
 
-        General.sharedPref = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
-        General.savedHashKey = General.sharedPref.getString(getString(R.string.pref_hash), "");
-        General.oldversionCode = General.sharedPref.getInt(getString(R.string.pref_oldvcode), General.versionCode);
-        General.dateLog = General.sharedPref.getString(getString(R.string.pref_date_log), General.getDateToday());
+        sharedPreferences = getSharedPreferences(getString(R.string.tcr_sharedpref), Context.MODE_PRIVATE);
+        General.savedHashKey = sharedPreferences.getString(getString(R.string.pref_hash), "");
+        General.oldversionCode = sharedPreferences.getInt(getString(R.string.pref_oldvcode), General.versionCode);
+        General.dateLog = sharedPreferences.getString(getString(R.string.pref_date_log), General.getDateToday());
+        General.isAdminMode = sharedPreferences.getBoolean(getString(R.string.pref_adminmode), false);
 
-        SharedPreferences.Editor spEdit = General.sharedPref.edit();
+        SharedPreferences.Editor spEdit = sharedPreferences.edit();
         spEdit.putInt(getString(R.string.pref_oldvcode), General.versionCode);
         spEdit.putString(getString(R.string.pref_date_log), General.getDateToday());
         spEdit.apply();
@@ -158,11 +161,11 @@ public class DashboardActivity extends AppCompatActivity {
         });
         // SET UP AUTO UPDATE OF APK
         //new AutoUpdateApk(this);
-        General.errorLog = new ErrorLog(General.errlogFile, this);
+        errorLog = new ErrorLog(General.errlogFile, this);
         General.mainAutoUpdate = new AutoUpdate(this);
         checkUpdateApk = new CheckUpdateApk(this);
 
-        General.errorLog.appendLog("Dashboard run. User: " + General.userFullName, TAG);
+        errorLog.appendLog("Dashboard run. User: " + General.userFullName, TAG);
     }
 
     private class LoadStores extends AsyncTask<Void, Void, Void> {
@@ -223,7 +226,7 @@ public class DashboardActivity extends AppCompatActivity {
                         public void onClick(DialogInterface dialog, int which) {
                             dialog.dismiss();
 
-                            SharedPreferences.Editor spEditor = General.sharedPref.edit();
+                            SharedPreferences.Editor spEditor = sharedPreferences.edit();
                             spEditor.putBoolean(getString(R.string.pref_isLogged), false);
                             spEditor.apply();
 
@@ -382,7 +385,7 @@ public class DashboardActivity extends AppCompatActivity {
 
             String urlSend = General.mainURL + "/api/uploadtrace";
 
-            if(!General.errorLog.fileLog.exists()) {
+            if(!errorLog.fileLog.exists()) {
                 errMsg = "No errors to send.";
                 return result;
             }
@@ -399,7 +402,7 @@ public class DashboardActivity extends AppCompatActivity {
 
             try {
 
-                FileInputStream fileInputStream = new FileInputStream(General.errorLog.fileLog); // text file to upload
+                FileInputStream fileInputStream = new FileInputStream(errorLog.fileLog); // text file to upload
                 HttpURLConnection httpUrlConnection = null;
                 URL url = new URL(urlSend); // url to post
                 httpUrlConnection = (HttpURLConnection) url.openConnection();
@@ -467,12 +470,12 @@ public class DashboardActivity extends AppCompatActivity {
             catch (IOException ex) {
                 errMsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
                 Log.e(TAG, errMsg);
-                General.errorLog.appendLog(errMsg, TAG);
+                errorLog.appendLog(errMsg, TAG);
             }
             catch (JSONException ex) {
                 errMsg = ex.getMessage() != null ? ex.getMessage() : "Slow or unstable internet connection.";
                 Log.e(TAG, errMsg);
-                General.errorLog.appendLog(errMsg, TAG);
+                errorLog.appendLog(errMsg, TAG);
             }
 
             return result;
@@ -487,11 +490,11 @@ public class DashboardActivity extends AppCompatActivity {
             }
 
             Toast.makeText(DashboardActivity.this, response, Toast.LENGTH_SHORT).show();
-            General.errorLog.fileLog.delete();
+            errorLog.fileLog.delete();
         }
     }
 
-    public class CheckInternet extends AsyncTask<Void, Void, Boolean> {
+    private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
 
         @Override
@@ -542,7 +545,7 @@ public class DashboardActivity extends AppCompatActivity {
 
 
     // GET USER FROM WEB
-    public class AsyncGetUser extends AsyncTask<Void, Void, Boolean> {
+    private class AsyncGetUser extends AsyncTask<Void, Void, Boolean> {
 
         String errmsg = "";
         String usercode;
@@ -589,19 +592,19 @@ public class DashboardActivity extends AppCompatActivity {
             }
             catch(UnknownHostException e) {
                 errmsg = e.getMessage() != null ? e.getMessage() : "Web Host not available. Please check connection.";
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 e.printStackTrace();
                 Log.e(TAG, errmsg, e);
             }
             catch(IOException e) {
                 errmsg = e.getMessage() != null ? e.getMessage() : "Slow or unstable internet connection. Please try again.";
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 e.printStackTrace();
                 Log.e(TAG, errmsg);
             }
             catch (JSONException e) {
                 errmsg = e.getMessage() != null ? e.getMessage() : "Error in data.";
-                General.errorLog.appendLog(errmsg, TAG);
+                errorLog.appendLog(errmsg, TAG);
                 e.printStackTrace();
                 Log.e(TAG, e.getMessage(), e);
             }
@@ -616,7 +619,7 @@ public class DashboardActivity extends AppCompatActivity {
                 return;
             }
 
-            SharedPreferences.Editor spEditor = General.sharedPref.edit();
+            SharedPreferences.Editor spEditor = sharedPreferences.edit();
 
             General.usercode = usercode;
             General.userFullName = name;
