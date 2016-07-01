@@ -183,10 +183,20 @@ public class General {
             "\uf011"
     };
 
+    public static String[] mainIconsFont_admin = new String[] {
+            "\uf059",
+            "\uf011"
+    };
+
     public static String[] Menu = {
             "Audit:Audit and answer a survey from selected store.",
             "PJP Compliance:Start in checking in stores for auditing.",
             "Reports:Generate a report for references.",
+            "Log out:Log out user."
+    };
+
+    public static String[] Menu_admin = {
+            "Audit:Audit and answer a survey from selected store.",
             "Log out:Log out user."
     };
 

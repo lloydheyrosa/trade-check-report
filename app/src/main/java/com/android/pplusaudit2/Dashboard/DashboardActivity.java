@@ -78,7 +78,6 @@ public class DashboardActivity extends AppCompatActivity {
 
     private MENU_MODE menuMode;
     private CheckUpdateApk checkUpdateApk;
-    private PowerManager powerman;
     static PowerManager.WakeLock wlStayAwake;
     private SharedPreferences sharedPreferences;
 
@@ -88,7 +87,7 @@ public class DashboardActivity extends AppCompatActivity {
         setContentView(R.layout.dashboard_activity_layout);
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
 
-        powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        PowerManager powerman = (PowerManager) getSystemService(POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
 
         General.deviceID = android.provider.Settings.Secure.getString(getContentResolver(), android.provider.Settings.Secure.ANDROID_ID);
@@ -97,6 +96,7 @@ public class DashboardActivity extends AppCompatActivity {
 
         General.versionName = "Trade Check Report v." + General.getVersionName(this);
         General.versionCode = General.getVersionCode(this);
+
         try {
             getSupportActionBar().setTitle(General.versionName);
         }
@@ -125,11 +125,40 @@ public class DashboardActivity extends AppCompatActivity {
 
         //MAIN MENU
         final ListView lvwMenu = (ListView) this.findViewById(R.id.lvwDashBoard);
-        lvwMenu.setAdapter(new DashboardAdapter(this, General.mainIconsFont));
+        DashboardAdapter dashboardAdapter = new DashboardAdapter(this, General.mainIconsFont);
+        if(General.isAdminMode)
+            dashboardAdapter = new DashboardAdapter(this, General.mainIconsFont_admin);
+
+        lvwMenu.setAdapter(dashboardAdapter);
 
         lvwMenu.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
+                if(General.isAdminMode) {
+
+                    switch (position)
+                    {
+                        case 0: // AUDIT
+                            Cursor cursorStores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
+                            if(cursorStores.getCount() <= 0) {
+                                messageBox.ShowMessage("Unavailable", "Store records are empty. Please re-download the files.");
+                            }
+                            else {
+                                Intent intentStore = new Intent(DashboardActivity.this, StoreActivity.class);
+                                startActivity(intentStore);
+                            }
+
+                            break;
+                        case 1: // LOG OUT
+                            new LoadStores().execute();
+                            break;
+                        default:
+                            break;
+                    }
+
+                    return;
+                }
 
                 switch (position)
                 {
@@ -312,7 +341,6 @@ public class DashboardActivity extends AppCompatActivity {
             if (hasUpdate) {
                 General.mainAutoUpdate.StartAutoUpdate();
                 Toast.makeText(DashboardActivity.this, "An update has been released, please update system.", Toast.LENGTH_LONG).show();
-                return;
             }
             else {
                 Toast.makeText(DashboardActivity.this, "No new updates available.", Toast.LENGTH_SHORT).show();

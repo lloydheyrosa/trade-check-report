@@ -546,7 +546,11 @@ public class MainActivity extends AppCompatActivity {
                         }
                         else errmsg = "No templates found for admin mode.";
                     }
-                    else result = true;
+                    else {
+                        sharedPreferences.edit().putBoolean(getString(R.string.pref_adminmode), false).apply();
+                        General.isAdminMode = false;
+                        result = true;
+                    }
                 }
             }
             catch(UnknownHostException e) {
@@ -894,6 +898,7 @@ public class MainActivity extends AppCompatActivity {
 
                         outputStream.close();
                         inputStream.close();
+                        errorLog.appendLog("Download success for " + type, TAG);
 
                     } else {
                         errmsg = "Error in downloading files.\nResponse code: " + String.valueOf(responseCode);
@@ -1167,6 +1172,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Stores data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1214,6 +1220,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Category data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1263,6 +1270,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Groups data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // QUESTIONS
@@ -1315,6 +1323,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Questions data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // FORMS
@@ -1364,6 +1373,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Forms data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1407,6 +1417,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Form types data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // SINGLE SELECT
@@ -1451,6 +1462,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Single select data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // MULTI SELECT
@@ -1494,6 +1506,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Multi select data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // COMPUTATIONAL
@@ -1536,6 +1549,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Computational data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // CONDITIONAL
@@ -1579,6 +1593,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Conditional data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1623,6 +1638,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Secondary keylists not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // SECONDARY DISPLAY
@@ -1668,6 +1684,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Secondary display data not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1710,6 +1727,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "OSA lists not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1756,6 +1774,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "OSA lookup lists not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1798,6 +1817,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "SOS lists not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -1846,6 +1866,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "SOS lookup lists not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // NPI LIST
@@ -1887,6 +1908,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "NPI list not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // PLANOGRAM LIST
@@ -1928,6 +1950,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Planogram list not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 // PERFECT CATEGORY LIST
@@ -1969,6 +1992,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Perfect category list not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
 
@@ -2011,6 +2035,7 @@ public class MainActivity extends AppCompatActivity {
                         errmsg = "Perfect group list not downloaded completely. Please log again";
                         return false;
                     }
+                    errorLog.appendLog("Data saved for " + presentFile, TAG);
                 }
 
                 result = true;

@@ -38,10 +38,6 @@ class DashboardAdapter extends BaseAdapter {
     @Override
     public View getView(int position, View convertView, ViewGroup parent) {
 
-        if(General.isAdminMode && (position == 1 && position ==2) ) {
-            return convertView;
-        }
-
         final ViewHolder holder;
 
         if(convertView == null) {
@@ -61,9 +57,17 @@ class DashboardAdapter extends BaseAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
+        String strMenu = General.Menu[position].split(":")[0].toUpperCase();
+        String strMenuDesc = General.Menu[position].split(":")[1].toUpperCase();
+
+        if(General.isAdminMode) {
+            strMenu = General.Menu_admin[position].split(":")[0].toUpperCase();
+            strMenuDesc = General.Menu_admin[position].split(":")[1].toUpperCase();
+        }
+
         //holder.imgMenu.setImageResource(menuValues[position]);
-        holder.tvwMenu.setText(General.Menu[position].split(":")[0].toUpperCase());
-        holder.tvwMenuDesc.setText(General.Menu[position].split(":")[1]);
+        holder.tvwMenu.setText(strMenu);
+        holder.tvwMenuDesc.setText(strMenuDesc);
 
         holder.tvwImageMenu.setTypeface(menufontIcon);
         holder.tvwImageMenu.setText(menuValues[position]);
