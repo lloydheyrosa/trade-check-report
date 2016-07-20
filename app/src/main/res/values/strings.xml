@@ -31,4 +31,7 @@
     <string name="pref_username">USER_NAME</string>
     <string name="pref_password">PASS_WORD</string>
     <string name="pref_adminmode">ADMIN_MODE</string>
+    <string name="action_filterby_area">Filter by area</string>
+    <string name="action_filterby_remarks">Filter by remarks</string>
+    <string name="action_filterby_showall">Show all</string>
 </resources>

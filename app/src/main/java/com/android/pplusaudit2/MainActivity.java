@@ -1144,7 +1144,8 @@ public class MainActivity extends AppCompatActivity {
                             SQLiteDB.COLUMN_STORE_templatecode,
                             SQLiteDB.COLUMN_STORE_auditid,
                             SQLiteDB.COLUMN_STORE_area,
-                            SQLiteDB.COLUMN_STORE_templatetype
+                            SQLiteDB.COLUMN_STORE_templatetype,
+                            SQLiteDB.COLUMN_STORE_remarks
                     };
 
                     String sqlinsertStore = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORE, afields);
@@ -1161,7 +1162,7 @@ public class MainActivity extends AppCompatActivity {
 
                         sqlstatementStore.clearBindings();
                         for (int i = 0; i < afields.length; i++) {
-                            sqlstatementStore.bindString((i+1), values[i].trim().replace("\"",""));
+                            sqlstatementStore.bindString((i+1), values[i].trim().replace("\"","").toUpperCase());
                         }
                         sqlstatementStore.execute();
 

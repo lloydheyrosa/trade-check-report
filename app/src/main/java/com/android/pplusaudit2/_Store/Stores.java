@@ -23,6 +23,7 @@ public class Stores {
     public String timeChecked = "";
     public String addressChecked = "";
     public final int gradeMatrixId;
+    public String remarks = "";
 
     public int auditID = 0;
     public String account = "";

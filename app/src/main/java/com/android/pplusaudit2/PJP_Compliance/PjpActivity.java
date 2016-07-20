@@ -472,6 +472,7 @@ public class PjpActivity extends AppCompatActivity {
                         String region = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_region));
                         String distCode = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
                         String dist = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
+                        String remarks = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_remarks));
 
                         Stores newStore = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted, gMatrixId);
                         newStore.auditID = auditID;
@@ -483,6 +484,7 @@ public class PjpActivity extends AppCompatActivity {
                         newStore.region = region;
                         newStore.distributorCode = distCode;
                         newStore.distributor = dist;
+                        newStore.remarks = remarks;
 
                         Cursor cursorCompliance = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_PJPCOMP, SQLiteDB.COLUMN_PJPCOMP_storeid + " = '" + nstoreid + "' AND " + SQLiteDB.COLUMN_PJPCOMP_usercode + " = '" + General.usercode + "' ORDER BY " + SQLiteDB.COLUMN_PJPCOMP_id);
                         if (cursorCompliance.moveToFirst()) {
