@@ -226,6 +226,7 @@ public class StoreActivity extends AppCompatActivity {
     }
 
     // PREVIEW BUTTON CLICK
+    // PREVIEW BUTTON CLICK
     public void previewOnClickEvent(View v) {
 
         Stores storeSelected = (Stores) v.getTag();
@@ -293,10 +294,10 @@ public class StoreActivity extends AppCompatActivity {
                     // GET SECONDRY KEYLIST
                     Cursor cursKeylist = sql.GetDataCursor(SQLiteDB.TABLE_SECONDARYKEYLIST);
                     cursKeylist.moveToFirst();
-                    General.arrKeylist = new ArrayList<String>();
+                    General.arrSecondaryKeylist = new ArrayList<String>();
                     while (!cursKeylist.isAfterLast()) {
 
-                        General.arrKeylist.add(cursKeylist.getString(cursKeylist.getColumnIndex(SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid)));
+                        General.arrSecondaryKeylist.add(cursKeylist.getString(cursKeylist.getColumnIndex(SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid)));
                         cursKeylist.moveToNext();
                     }
 
@@ -446,7 +447,7 @@ public class StoreActivity extends AppCompatActivity {
                                 String questionid = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_id));
                                 String strQuestionPrompt = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt));
 
-                                if (General.arrKeylist.contains(strTempGroupId)) {
+                                if (General.arrSecondaryKeylist.contains(strTempGroupId)) {
                                     if (General.arrBrandSelected.contains(strQuestionPrompt)) {
                                         sqlstatementStoreQuestions.clearBindings();
                                         sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);

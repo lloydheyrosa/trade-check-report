@@ -53,7 +53,7 @@ public class General {
 
     public static String typefacename = "fonts/fontawesome-webfont.ttf";
 
-    public static ArrayList<String> arrKeylist;
+    public static ArrayList<String> arrSecondaryKeylist;
     public static ArrayList<String> arrBrandSelected;
 
     public static String STATUS_PENDING = "PENDING";

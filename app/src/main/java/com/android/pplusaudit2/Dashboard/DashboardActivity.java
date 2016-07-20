@@ -135,7 +135,7 @@ public class DashboardActivity extends AppCompatActivity {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
 
-                if(General.isAdminMode) {
+                if(General.isAdminMode) { // ADMIN MODULES
 
                     switch (position)
                     {
@@ -148,7 +148,6 @@ public class DashboardActivity extends AppCompatActivity {
                                 Intent intentStore = new Intent(DashboardActivity.this, StoreActivity.class);
                                 startActivity(intentStore);
                             }
-
                             break;
                         case 1: // LOG OUT
                             new LoadStores().execute();
@@ -156,35 +155,32 @@ public class DashboardActivity extends AppCompatActivity {
                         default:
                             break;
                     }
-
-                    return;
                 }
+                else {
 
-                switch (position)
-                {
-                    case 0: // AUDIT
-                        Cursor cursorStores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
-                        if(cursorStores.getCount() <= 0) {
-                            messageBox.ShowMessage("Unavailable", "Store records are empty. Please re-download the files.");
-                        }
-                        else {
-                            Intent intentStore = new Intent(DashboardActivity.this, StoreActivity.class);
-                            startActivity(intentStore);
-                        }
-
-                        break;
-                    case 1: // PJP COMPLIANCE
-                        Intent intentPjp = new Intent(DashboardActivity.this, PjpActivity.class);
-                        startActivity(intentPjp);
-                        break;
-                    case 2: // REPORTS
-                        Intent intentReport = new Intent(DashboardActivity.this, ReportsActivity.class);
-                        startActivity(intentReport);
-                        break;
-                    case 3: // LOGOUT
-                        new LoadStores().execute();
-                    default:
-                        break;
+                    switch (position) {
+                        case 0: // AUDIT
+                            Cursor cursorStores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
+                            if (cursorStores.getCount() <= 0) {
+                                messageBox.ShowMessage("Unavailable", "Store records are empty. Please re-download the files.");
+                            } else {
+                                Intent intentStore = new Intent(DashboardActivity.this, StoreActivity.class);
+                                startActivity(intentStore);
+                            }
+                            break;
+                        case 1: // PJP COMPLIANCE
+                            Intent intentPjp = new Intent(DashboardActivity.this, PjpActivity.class);
+                            startActivity(intentPjp);
+                            break;
+                        case 2: // REPORTS
+                            Intent intentReport = new Intent(DashboardActivity.this, ReportsActivity.class);
+                            startActivity(intentReport);
+                            break;
+                        case 3: // LOGOUT
+                            new LoadStores().execute();
+                        default:
+                            break;
+                    }
                 }
             }
         });

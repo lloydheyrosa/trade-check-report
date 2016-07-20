@@ -525,31 +525,36 @@ public class MainActivity extends AppCompatActivity {
                     name = data.getString("name").trim();
                     hashLogged = data.getString("hash").trim();
                     String roleName = data.getString("role_name");
+                    int nActive = data.getInt("active");
 
-                    if(roleName.trim().toLowerCase().equals("admin")) {
-                        JSONArray jsonArray = data.getJSONArray("audits");
-                        if(jsonArray.length() > 0) {
-                            arrTemplateId.clear();
-                            arrStringTemplates.clear();
-                            General.isAdminMode = true;
-                            sharedPreferences.edit().putBoolean(getString(R.string.pref_adminmode), true).apply();
-                            for (int i = 0; i < jsonArray.length(); i++) {
-                                JSONObject jsonTemplate = jsonArray.getJSONObject(i);
+                    if(nActive == 0) {
+                        errmsg = "User: " + name + " is deactivated.";
+                    }
+                    else { // ACTIVE USERS WILL LOG
 
-                                int id = jsonTemplate.getInt("id");
-                                String strDesc = jsonTemplate.getString("description").trim();
+                        if (roleName.trim().toLowerCase().equals("admin")) {
+                            JSONArray jsonArray = data.getJSONArray("audits");
+                            if (jsonArray.length() > 0) {
+                                arrTemplateId.clear();
+                                arrStringTemplates.clear();
+                                General.isAdminMode = true;
+                                sharedPreferences.edit().putBoolean(getString(R.string.pref_adminmode), true).apply();
+                                for (int i = 0; i < jsonArray.length(); i++) {
+                                    JSONObject jsonTemplate = jsonArray.getJSONObject(i);
 
-                                arrTemplateId.add(id);
-                                arrStringTemplates.add(strDesc);
-                            }
+                                    int id = jsonTemplate.getInt("id");
+                                    String strDesc = jsonTemplate.getString("description").trim();
+
+                                    arrTemplateId.add(id);
+                                    arrStringTemplates.add(strDesc);
+                                }
+                                result = true;
+                            } else errmsg = "No templates found for admin mode.";
+                        } else {
+                            sharedPreferences.edit().putBoolean(getString(R.string.pref_adminmode), false).apply();
+                            General.isAdminMode = false;
                             result = true;
                         }
-                        else errmsg = "No templates found for admin mode.";
-                    }
-                    else {
-                        sharedPreferences.edit().putBoolean(getString(R.string.pref_adminmode), false).apply();
-                        General.isAdminMode = false;
-                        result = true;
                     }
                 }
             }
@@ -599,7 +604,6 @@ public class MainActivity extends AppCompatActivity {
             Log.e("HASH", General.savedHashKey + " = " + hashLogged);
             spEditor.putString(getString(R.string.pref_username), General.userName);
             spEditor.putString(getString(R.string.pref_password), General.userPassword);
-            //spEditor.putBoolean(getString(R.string.pref_isLogged), true);
             spEditor.apply();
 
             if(General.isAdminMode) {

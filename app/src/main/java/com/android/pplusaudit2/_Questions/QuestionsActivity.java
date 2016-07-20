@@ -294,6 +294,17 @@ public class QuestionsActivity extends AppCompatActivity {
 
                 final int nQuestionid = cursorQuestions.getInt(cursorQuestions.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_id));
 
+            String[] aPrompts = null;
+            if(strPrompt.contains("<nl>")) {
+                aPrompts = strPrompt.split("<nl>");
+                if(aPrompts != null) {
+                    strPrompt = "";
+                    for (String aStrings : aPrompts) {
+                        strPrompt += aStrings + "\n";
+                    }
+                }
+            }
+
                 String strBrandImage = "";
                 if(!strImgBrand.isEmpty())
                     strBrandImage = strImgBrand.split("\\.")[0];
@@ -825,7 +836,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                 EditText txtAnswFormula = null;
 
                                 // if referenced computational form id with bang (!)
-                                if(formIdHasBang) {
+                                if(formIdHasBang && hmNumericComputational.containsKey(compFormId)) {
                                     txtAnswFormula = hmNumericComputational.get(compFormId);
                                 }
                                 else
@@ -836,7 +847,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                 TextWatcher twComputational = new TextWatcherComputational(txtAnswFormula, txtTotComp, formtypeid);
                                 tvwFormulaPrompt.setText(strPromptFormula.trim());
 
-                                txtAnswFormula.setTag(nQuestionid + ",0");
+                                txtAnswFormula.setTag(nQuestionid + ",0," + strPromptFormula);
                                 txtAnswFormula.setId(Integer.parseInt(compFormId));
 
                                 if (isAnswered == 1)

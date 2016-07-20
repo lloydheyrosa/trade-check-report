@@ -21,8 +21,7 @@
         android:layout_height="match_parent"
         android:text="ADD PHOTO"
         style="@style/button_design"
-        android:background="@drawable/btn_primary"
-        />
+        android:background="@drawable/btn_primary" />
 
     <ImageView
         android:id="@+id/imgCapture"

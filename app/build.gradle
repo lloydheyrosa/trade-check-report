@@ -8,8 +8,8 @@ android {
         applicationId "com.android.pplusaudit2"
         minSdkVersion 17
         targetSdkVersion 23
-        versionCode 31
-        versionName "7.6.18"
+        versionCode 32
+        versionName "7.6.20"
     }
     buildTypes {
         release {
