@@ -34,4 +34,5 @@
     <string name="action_filterby_area">Filter by area</string>
     <string name="action_filterby_remarks">Filter by remarks</string>
     <string name="action_filterby_showall">Show all</string>
+    <string name="action_set_filter">Set filter by</string>
 </resources>

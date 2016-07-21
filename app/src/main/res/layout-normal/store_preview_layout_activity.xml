@@ -312,8 +312,7 @@
             android:layout_weight="1"
             android:text="POST AUDIT"
             style="@style/ButtonTextBlue_normal"
-            android:background="@drawable/btn_primary"
-            />
+            android:background="@drawable/btn_primary" />
 
     </LinearLayout>
 

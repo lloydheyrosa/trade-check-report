@@ -2,6 +2,7 @@ package com.android.pplusaudit2._Store;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -9,6 +10,7 @@ import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.view.Menu;
@@ -16,6 +18,7 @@ import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
 import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
@@ -54,6 +57,7 @@ public class StoreActivity extends AppCompatActivity {
     private String TAG;
     private ErrorLog errorLog;
     private FilterItemAdapter adapterFilterItem;
+    private String strSelectedFilterArea;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -98,11 +102,13 @@ public class StoreActivity extends AppCompatActivity {
         private String errMessage = "";
         private String strQuery = "";
         private String strFieldName = "";
+        private int nFilterCode = 0;
         private ArrayList<FilterItem> arrayList = new ArrayList<>();
 
-        LoadFilter(String strQuery, String strFieldName) {
+        LoadFilter(int filterCode, String strQuery, String strFieldName) {
             this.strQuery = strQuery;
             this.strFieldName = strFieldName;
+            this.nFilterCode = filterCode;
         }
 
         @Override
@@ -118,12 +124,19 @@ public class StoreActivity extends AppCompatActivity {
 
                 Cursor cursFilterItems = sql.RawQuerySelect(this.strQuery);
 
+                int ctr = 0;
+                arrayList.clear();
+
                 if(cursFilterItems.moveToFirst()) {
-                    arrayList.clear();
-                    int ctr = 0;
                     while (!cursFilterItems.isAfterLast()) {
-                        ctr++;
                         String strDesc = cursFilterItems.getString(cursFilterItems.getColumnIndex(this.strFieldName)).trim().toUpperCase();
+
+                        if(strDesc.equals("")) {
+                            cursFilterItems.moveToNext();
+                            continue;
+                        }
+
+                        ctr++;
                         arrayList.add(new FilterItem(ctr, strDesc));
                         cursFilterItems.moveToNext();
                     }
@@ -159,7 +172,19 @@ public class StoreActivity extends AppCompatActivity {
 
             ListView lvwFilters = (ListView) filterDialog.findViewById(R.id.lvwFilters);
             TextView tvwFilterTitle = (TextView) filterDialog.findViewById(R.id.tvwFilterTitle);
-            tvwFilterTitle.setText("SELECT " + this.strFieldName.toUpperCase());
+            Button btnBack = (Button) filterDialog.findViewById(R.id.btnFilterBack);
+
+            btnBack.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    filterDialog.dismiss();
+                }
+            });
+
+            String promptMessage = "SELECT " + this.strFieldName.toUpperCase();
+            if(arrFilterItems.size() == 0)
+                promptMessage = "No filter found.";
+            tvwFilterTitle.setText(promptMessage);
 
             adapterFilterItem = new FilterItemAdapter(StoreActivity.this, arrFilterItems);
             lvwFilters.setAdapter(adapterFilterItem);
@@ -169,7 +194,10 @@ public class StoreActivity extends AppCompatActivity {
                 @Override
                 public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
                     filterDialog.dismiss();
-                    new LoadStores(1, arrFilterItems.get(position).filterItemDesc).execute();
+                    if(nFilterCode == 1) {
+                        strSelectedFilterArea = arrFilterItems.get(position).filterItemDesc;
+                    }
+                    new LoadStores(nFilterCode, arrFilterItems.get(position)).execute();
                 }
             });
 
@@ -180,16 +208,16 @@ public class StoreActivity extends AppCompatActivity {
     // LOAD STORE SCORES
     private class LoadStores extends AsyncTask<Void, Void, Boolean> {
 
-        private String filterValue;
+        private FilterItem filterItem;
         private ArrayList<Stores> arrPendings;
         private ArrayList<Stores> arrPosted;
         private String errmsg = "";
 
         private int filterCode = 0;
 
-        public LoadStores(int filterCode, String strValue) {
+        public LoadStores(int filterCode, FilterItem filterItem) {
             this.filterCode = filterCode;
-            this.filterValue = strValue;
+            this.filterItem = filterItem;
         }
 
         public LoadStores() {
@@ -215,10 +243,10 @@ public class StoreActivity extends AppCompatActivity {
 
                 switch (filterCode) {
                     case 1: // filter by selected area
-                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + filterValue + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
+                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + filterItem.filterItemDesc + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
                         break;
-                    case 2: // filter by selected remarks
-                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_remarks + " = '" + filterValue + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
+                    case 2: // filter by selected area and remarks
+                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_remarks + " = '" + filterItem.filterItemDesc + " AND " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
                         break;
                     default:
                         break;
@@ -327,11 +355,33 @@ public class StoreActivity extends AppCompatActivity {
                     adapter.filter(newText.trim().toLowerCase(Locale.getDefault()));
                     return false;
                 }
-
             });
 
             searchView.setQuery(searchView.getQuery(), true);
             progressDL.dismiss();
+
+            if(filterItem != null) {
+                if (filterCode == 1) {
+                    String strQuery = "SELECT " + SQLiteDB.COLUMN_STORE_remarks + " FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' GROUP BY " + SQLiteDB.COLUMN_STORE_remarks;
+                    new LoadFilter(2, strQuery, SQLiteDB.COLUMN_STORE_remarks).execute();
+                    return;
+                }
+            }
+
+            int nUnposteds = arrPendings.size();
+            if(nUnposteds > 0) {
+                new AlertDialog.Builder(StoreActivity.this)
+                        .setCancelable(false)
+                        .setTitle("Audits")
+                        .setMessage("You have " + String.valueOf(nUnposteds) + " unposted audits on stores. Please post it before the posting date expiration.")
+                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .create().show();
+            }
         }
     }
 
@@ -594,7 +644,6 @@ public class StoreActivity extends AppCompatActivity {
                             dbaseStoreQ.endTransaction();
                             cursGroup.moveToNext();
                         }
-
                         cursCategories.moveToNext();
                     }
                     dbaseStoreQ.close();
@@ -624,7 +673,6 @@ public class StoreActivity extends AppCompatActivity {
             intentActivity.putExtra("GRADE_MATRIX", General.selectedStore.gradeMatrixId);
             startActivity(intentActivity);
         }
-
     }
 
     @Override
@@ -642,7 +690,7 @@ public class StoreActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.stores_menu, menu);
         return true;
     }
 
@@ -654,13 +702,9 @@ public class StoreActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         switch (id) {
-            case R.id.action_filterby_area:
+            case R.id.action_set_filter:
                 String strQuery = "SELECT " + SQLiteDB.COLUMN_STORE_area + " FROM " + SQLiteDB.TABLE_STORE + " GROUP BY " + SQLiteDB.COLUMN_STORE_area;
-                new LoadFilter(strQuery, SQLiteDB.COLUMN_STORE_area).execute();
-                break;
-            case R.id.action_filterby_remarks:
-                String strQuery2 = "SELECT " + SQLiteDB.COLUMN_STORE_remarks + " FROM " + SQLiteDB.TABLE_STORE + " GROUP BY " + SQLiteDB.COLUMN_STORE_remarks;
-                new LoadFilter(strQuery2, SQLiteDB.COLUMN_STORE_remarks).execute();
+                new LoadFilter(1, strQuery, SQLiteDB.COLUMN_STORE_area).execute();
                 break;
             case R.id.action_filterby_showall:
                 new LoadStores().execute();

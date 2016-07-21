@@ -20,10 +20,18 @@
     <ListView
         android:id="@+id/lvwFilters"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1"
         android:divider="#ffd6d6d6"
         android:dividerHeight="5dp"
         android:listSelector="@drawable/style_listview_design"/>
 
+    <Button
+        android:id="@+id/btnFilterBack"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="CANCEL"
+        style="@style/ButtonTextBlue_normal"
+        android:background="@drawable/btn_primary" />
 
 </LinearLayout>
