@@ -137,8 +137,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                 if(General.isAdminMode) { // ADMIN MODULES
 
-                    switch (position)
-                    {
+                    switch (position) {
                         case 0: // AUDIT
                             Cursor cursorStores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
                             if(cursorStores.getCount() <= 0) {
