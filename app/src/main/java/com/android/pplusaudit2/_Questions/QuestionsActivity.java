@@ -1998,8 +1998,6 @@ public class QuestionsActivity extends AppCompatActivity {
 
             boolean result = false;
 
-/*            if(hmlistAnswers.size() > 0) {*/
-
             try {
 
                 HashMap<Integer, Pplus_AnswerClass> hmAns = new HashMap<>();
@@ -2022,7 +2020,6 @@ public class QuestionsActivity extends AppCompatActivity {
                         String storequestionid = cursStoreQuestions.getString(cursStoreQuestions.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_id));
 
                         for (HashMap.Entry<Integer, Pplus_AnswerClass> entry : hmAns.entrySet()) {
-                            //int key = entry.getKey();
                             final Pplus_AnswerClass answerValueClass = entry.getValue();
 
                             switch (answerValueClass.formtypeid) {

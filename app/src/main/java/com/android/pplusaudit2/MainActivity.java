@@ -970,150 +970,150 @@ public class MainActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... params) {
             boolean result = false;
 
-            if(storeDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(storeDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(categoryDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(categoryDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(groupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(groupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(questionDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(questionDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(formsDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(formsDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(formtypesDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(formtypesDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(singleselectDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(singleselectDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(multiselectDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(multiselectDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(computationalDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(computationalDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(conditionalDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(conditionalDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(secondarylookupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(secondarylookupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(secondarylistDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(secondarylistDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(osalistDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(osalistDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(osalookupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(osalookupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(soslistDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(soslistDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(soslookupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(soslookupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(npiDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(npiDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(planogramDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(planogramDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(pcategoryDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(pcategoryDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(pgroupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(pgroupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-
-            progressDL.setMax(nMaxprogress);
-
             try {
+
+                if(storeDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(storeDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(categoryDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(categoryDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(groupDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(groupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(questionDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(questionDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(formsDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(formsDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(formtypesDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(formtypesDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(singleselectDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(singleselectDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(multiselectDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(multiselectDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(computationalDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(computationalDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(conditionalDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(conditionalDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(secondarylookupDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(secondarylookupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(secondarylistDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(secondarylistDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(osalistDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(osalistDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(osalookupDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(osalookupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(soslistDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(soslistDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(soslookupDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(soslookupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(npiDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(npiDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(planogramDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(planogramDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(pcategoryDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(pcategoryDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(pgroupDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(pgroupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+
+                progressDL.setMax(nMaxprogress);
 
                 // STORES
                 if(storeDIR.exists()) {

@@ -193,6 +193,7 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private class LoadStores extends AsyncTask<Void, Void, Void> {
+
         @Override
         protected void onPreExecute() {
             progressDL = ProgressDialog.show(DashboardActivity.this, "", "Logging out.");

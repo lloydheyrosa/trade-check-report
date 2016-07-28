@@ -69,9 +69,7 @@ public class StoreActivity extends AppCompatActivity {
         overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
 
         errorLog = new ErrorLog(General.errlogFile, this);
-
         TAG = StoreActivity.this.getLocalClassName();
-
         arrFilterItems = new ArrayList<>();
 
         getSupportActionBar().setTitle("STORES");
@@ -102,13 +100,15 @@ public class StoreActivity extends AppCompatActivity {
         private String errMessage = "";
         private String strQuery = "";
         private String strFieldName = "";
+        private String strFilterTitle = "";
         private int nFilterCode = 0;
         private ArrayList<FilterItem> arrayList = new ArrayList<>();
 
-        LoadFilter(int filterCode, String strQuery, String strFieldName) {
+        LoadFilter(int filterCode, String strQuery, String strFieldName, String strOtherName) {
             this.strQuery = strQuery;
             this.strFieldName = strFieldName;
             this.nFilterCode = filterCode;
+            this.strFilterTitle = strOtherName;
         }
 
         @Override
@@ -181,7 +181,7 @@ public class StoreActivity extends AppCompatActivity {
                 }
             });
 
-            String promptMessage = "SELECT " + this.strFieldName.toUpperCase();
+            String promptMessage = "SELECT " + this.strFilterTitle.toUpperCase();
             if(arrFilterItems.size() == 0)
                 promptMessage = "No filter found.";
             tvwFilterTitle.setText(promptMessage);
@@ -197,6 +197,7 @@ public class StoreActivity extends AppCompatActivity {
                     if(nFilterCode == 1) {
                         strSelectedFilterArea = arrFilterItems.get(position).filterItemDesc;
                     }
+
                     new LoadStores(nFilterCode, arrFilterItems.get(position)).execute();
                 }
             });
@@ -220,7 +221,7 @@ public class StoreActivity extends AppCompatActivity {
             this.filterItem = filterItem;
         }
 
-        public LoadStores() {
+        LoadStores() {
             this.filterCode = 0;
         }
 
@@ -246,7 +247,7 @@ public class StoreActivity extends AppCompatActivity {
                         strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + filterItem.filterItemDesc + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
                         break;
                     case 2: // filter by selected area and remarks
-                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_remarks + " = '" + filterItem.filterItemDesc + " AND " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
+                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_remarks + " = '" + filterItem.filterItemDesc + "' AND " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
                         break;
                     default:
                         break;
@@ -363,7 +364,7 @@ public class StoreActivity extends AppCompatActivity {
             if(filterItem != null) {
                 if (filterCode == 1) {
                     String strQuery = "SELECT " + SQLiteDB.COLUMN_STORE_remarks + " FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' GROUP BY " + SQLiteDB.COLUMN_STORE_remarks;
-                    new LoadFilter(2, strQuery, SQLiteDB.COLUMN_STORE_remarks).execute();
+                    new LoadFilter(2, strQuery, SQLiteDB.COLUMN_STORE_remarks, "territory").execute();
                     return;
                 }
             }
@@ -704,7 +705,7 @@ public class StoreActivity extends AppCompatActivity {
         switch (id) {
             case R.id.action_set_filter:
                 String strQuery = "SELECT " + SQLiteDB.COLUMN_STORE_area + " FROM " + SQLiteDB.TABLE_STORE + " GROUP BY " + SQLiteDB.COLUMN_STORE_area;
-                new LoadFilter(1, strQuery, SQLiteDB.COLUMN_STORE_area).execute();
+                new LoadFilter(1, strQuery, SQLiteDB.COLUMN_STORE_area, "Area").execute();
                 break;
             case R.id.action_filterby_showall:
                 new LoadStores().execute();
