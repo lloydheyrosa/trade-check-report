@@ -216,7 +216,7 @@ public class StoreActivity extends AppCompatActivity {
 
         private int filterCode = 0;
 
-        public LoadStores(int filterCode, FilterItem filterItem) {
+        LoadStores(int filterCode, FilterItem filterItem) {
             this.filterCode = filterCode;
             this.filterItem = filterItem;
         }

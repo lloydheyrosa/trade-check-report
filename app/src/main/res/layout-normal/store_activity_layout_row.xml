@@ -28,15 +28,38 @@
 
         <TextView
             android:id="@+id/tvwTemplatename"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
             android:paddingStart="20dp"
             android:paddingLeft="20dp"
-            android:textStyle="italic"
-            android:textColor="@color/secondary_text"
+            android:fontFamily="sans-serif-light"
+            android:textColor="@color/primary_text"
             android:text="PG ANABU"
             android:textSize="15sp" />
+
+        <!--<TextView-->
+            <!--android:id="@+id/tvwArea"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:paddingStart="20dp"-->
+            <!--android:paddingLeft="20dp"-->
+            <!--android:textStyle="italic"-->
+            <!--android:fontFamily="sans-serif-light"-->
+            <!--android:textColor="@color/primary_text"-->
+            <!--android:text="AREA"-->
+            <!--android:textSize="15sp" />-->
+
+        <!--<TextView-->
+            <!--android:id="@+id/tvwTerritory"-->
+            <!--android:layout_width="match_parent"-->
+            <!--android:layout_height="wrap_content"-->
+            <!--android:paddingStart="20dp"-->
+            <!--android:paddingLeft="20dp"-->
+            <!--android:textStyle="italic"-->
+            <!--android:fontFamily="sans-serif-light"-->
+            <!--android:textColor="@color/primary_text"-->
+            <!--android:text="TERRIROTRY"-->
+            <!--android:textSize="15sp" />-->
 
         <TextView
             android:id="@+id/tvwPostingDatetime"
