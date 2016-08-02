@@ -22,6 +22,7 @@ import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.TCRLib;
+import com.android.pplusaudit2._Category.CategoryActivity;
 import com.android.pplusaudit2._Questions.QuestionsActivity;
 
 import java.util.ArrayList;
@@ -78,6 +79,16 @@ public class GroupActivity extends AppCompatActivity {
 
         private String errMsg;
 
+        int orderMode = 0;
+
+        AsyncLoadGroups() {
+            this.orderMode = 0;
+        }
+
+        AsyncLoadGroups(int orderMode) {
+            this.orderMode = orderMode;
+        }
+
         @Override
         protected void onPreExecute() {
             progressGroupDL = ProgressDialog.show(GroupActivity.this, "", "Getting group scores...");
@@ -91,13 +102,23 @@ public class GroupActivity extends AppCompatActivity {
 
             try {
 
-                Cursor cursorGroup = sqlLibrary.RawQuerySelect("SELECT tblstorecateggroup.id, tblgroup.groupdesc, " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                String strQuery = "SELECT tblstorecateggroup.id, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
                         + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status
                         + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
                         + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
                         + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storeCategoryId
-                        + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
+                        + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder;
 
+                if(this.orderMode == 1) {
+                    strQuery = "SELECT tblstorecateggroup.id, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                            + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status
+                            + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
+                            + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
+                            + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storeCategoryId
+                            + " ORDER BY " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc;
+                }
+
+                Cursor cursorGroup = sqlLibrary.RawQuerySelect(strQuery);
                 cursorGroup.moveToFirst();
 
                 while (!cursorGroup.isAfterLast()) {
@@ -105,16 +126,19 @@ public class GroupActivity extends AppCompatActivity {
                     int storeCategoryGroupID = cursorGroup.getInt(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
 
                     if (!sqlLibrary.HasQuestionsPerGroup(storeCategoryGroupID)) {
-                        String[] aFields = new String[]{
+
+                        String[] aFields = new String[] {
                                 SQLiteDB.COLUMN_STORECATEGORYGROUP_status,
                                 SQLiteDB.COLUMN_STORECATEGORYGROUP_initial,
                                 SQLiteDB.COLUMN_STORECATEGORYGROUP_final
                         };
+
                         String[] aValues = new String[]{
                                 "2",
                                 "1",
                                 "1"
                         };
+
                         sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORECATEGORYGROUP, SQLiteDB.COLUMN_STORECATEGORYGROUP_id, String.valueOf(storeCategoryGroupID), aFields, aValues);
                         cursorGroup.moveToNext();
                         continue;
@@ -158,7 +182,6 @@ public class GroupActivity extends AppCompatActivity {
             GroupAdapter adapter = new GroupAdapter(GroupActivity.this, lstGroups);
             lvwGroup.setAdapter(adapter);
             adapter.notifyDataSetChanged();
-
             progressGroupDL.dismiss();
 
             lvwGroup.setOnItemClickListener(new AdapterView.OnItemClickListener() {
@@ -209,11 +232,27 @@ public class GroupActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if(id == android.R.id.home) {
-            onBackPressed();
-            return true;
+        switch (id) {
+            case android.R.id.home:
+                onBackPressed();
+                break;
+            case R.id.action_sort_by_alphabetically:
+                new AsyncLoadGroups(1).execute();
+                break;
+            case R.id.action_sort_by_template:
+                new AsyncLoadGroups().execute();
+                break;
+            default:
+                break;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.category_and_group_menu, menu);
+        return true;
     }
 }

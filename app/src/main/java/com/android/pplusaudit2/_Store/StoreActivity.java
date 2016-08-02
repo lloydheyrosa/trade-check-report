@@ -677,12 +677,6 @@ public class StoreActivity extends AppCompatActivity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        //new LoadStores().execute();
-    }
-
-    @Override
     protected void onStart() {
         super.onStart();
         new LoadStores().execute();

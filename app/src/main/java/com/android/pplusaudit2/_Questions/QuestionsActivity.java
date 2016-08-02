@@ -34,6 +34,7 @@ import android.widget.RadioGroup;
 import android.widget.TableLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
+import android.widget.Toast;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
@@ -2032,19 +2033,23 @@ public class QuestionsActivity extends AppCompatActivity {
                                         break;
                                     }
 
-                                    imageFile = new File(hmUriImagequestionfile.get(answerValueClass.viewValue).getPath());
-                                    File destFile = new File(Settings.captureFolder, answerValueClass.viewValue);
+                                    Uri imgUriPath = hmUriImagequestionfile.get(answerValueClass.viewValue);
+                                    if(imgUriPath != null) {
 
-                                    try {
-                                        if (imageFile.exists()) {
-                                            Settings.CopyFile(imageFile, destFile);
-                                            imageFile.delete();
+                                        imageFile = new File(imgUriPath.getPath());
+                                        File destFile = new File(Settings.captureFolder, answerValueClass.viewValue);
+
+                                        try {
+                                            if (imageFile.exists()) {
+                                                Settings.CopyFile(imageFile, destFile);
+                                                imageFile.delete();
+                                            }
+                                        } catch (IOException ex) {
+                                            errmsg = "Error in saving image captured. Please try again";
+                                            String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
+                                            errorLog.appendLog(exErr, TAG);
+                                            return false;
                                         }
-                                    } catch (IOException ex) {
-                                        errmsg = "Error in saving image captured. Please try again";
-                                        String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
-                                        errorLog.appendLog(exErr, TAG);
-                                        return false;
                                     }
 
                                     break;
@@ -2298,7 +2303,6 @@ public class QuestionsActivity extends AppCompatActivity {
 
             sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id, String.valueOf(General.selectedStore.storeID), aUpdateFields, aUpdateValues);
         }
-
     }
 
     // UPDATE PERFECT STORE CATEGORY
@@ -2678,85 +2682,117 @@ public class QuestionsActivity extends AppCompatActivity {
     // SET FORM ANSWER
     private void SetFormAnswer(String sAnswer, int nqid, View viewForm, String sformtypeid) {
 
-        PutAnswers(nqid, viewForm, sAnswer, sformtypeid);
+        try {
 
-        switch (sformtypeid) {
+            PutAnswers(nqid, viewForm, sAnswer, sformtypeid);
 
-            case "2": // IMAGE CAPTURE
-                ImageView imgvw = (ImageView) viewForm;
-                File imgFile = new  File(Settings.captureFolder, sAnswer);
+            switch (sformtypeid) {
 
-                if(imgFile.exists()) {
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
+                case "2": // IMAGE CAPTURE
+                    ImageView imgvw = (ImageView) viewForm;
+                    File imgFile = new File(Settings.captureFolder, sAnswer);
 
-                    Bitmap bitmapMaster = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-                    imgvw.setImageBitmap(bitmapMaster);
-                }
-                break;
+                    if (imgFile.exists()) {
+                        Bitmap bitmapMaster = SetImageOptions(imgFile);
+                        imgvw.setImageBitmap(bitmapMaster);
+                    }
+                    break;
 
-            case "3":
-                EditText txtNum = (EditText) viewForm;
-                txtNum.setText(tcrLib.ValidateNumericValue(sAnswer.trim()));
-                break;
+                case "3":
+                    EditText txtNum = (EditText) viewForm;
+                    txtNum.setText(tcrLib.ValidateNumericValue(sAnswer.trim()));
+                    break;
 
-            case "6": // SIGNATURE CAPTURE
-                File signfile = new File(Settings.signatureFolder, sAnswer);
-                ImageView imgvwSign = (ImageView) viewForm;
-                if(signfile.exists()) {
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                    Bitmap bitmapMaster = BitmapFactory.decodeFile(signfile.getAbsolutePath(), options);
-                    imgvwSign.setImageBitmap(bitmapMaster);
-                }
-                break;
+                case "6": // SIGNATURE CAPTURE
+                    File signfile = new File(Settings.signatureFolder, sAnswer);
+                    ImageView imgvwSign = (ImageView) viewForm;
+                    if (signfile.exists()) {
+                        Bitmap bitmapMaster = SetImageOptions(signfile);
+                        imgvwSign.setImageBitmap(bitmapMaster);
+                    }
+                    break;
 
-            case "9": // MULTI ITEM
-                CheckBox cbSetAnswer = (CheckBox) viewForm;
-                cbSetAnswer.setChecked(true);
-                break;
+                case "9": // MULTI ITEM
+                    CheckBox cbSetAnswer = (CheckBox) viewForm;
+                    cbSetAnswer.setChecked(true);
+                    break;
 
-            case "10": // SINGLE ITEM
-                RadioButton rbSetAnswer = (RadioButton) viewForm;
-                rbSetAnswer.setChecked(true);
-                break;
+                case "10": // SINGLE ITEM
+                    RadioButton rbSetAnswer = (RadioButton) viewForm;
+                    rbSetAnswer.setChecked(true);
+                    break;
 
-            case "11": // COMPUTATIONAL
-                EditText txtAnswerComp = (EditText) viewForm;
-                int ntxtID = txtAnswerComp.getId();
-                String sAnswerTrimmed = sAnswer.trim().replace("\"", "").replace(" ","").replace("(","").replace(")","");
-                String finalTotalValue = sAnswerTrimmed.split("=")[1];
-                hmCompValues.put(ntxtID, Double.parseDouble(finalTotalValue));
-                txtAnswerComp.setText(finalTotalValue);
-                break;
+                case "11": // COMPUTATIONAL
+                    EditText txtAnswerComp = (EditText) viewForm;
+                    int ntxtID = txtAnswerComp.getId();
+                    String sAnswerTrimmed = sAnswer.trim().replace("\"", "").replace(" ", "").replace("(", "").replace(")", "");
+                    String finalTotalValue = sAnswerTrimmed.split("=")[1];
+                    hmCompValues.put(ntxtID, Double.parseDouble(finalTotalValue));
+                    txtAnswerComp.setText(finalTotalValue);
+                    break;
 
-            case "12":
-                RadioButton rbConditional = (RadioButton) viewForm;
+                case "12":
+                    RadioButton rbConditional = (RadioButton) viewForm;
 
-                String[] wholeAnswer = sAnswer.split("\\|");
-                String outerConditionAns = wholeAnswer[0];
-                //String innerConditionAns = wholeAnswer[1];
-                String rbText = rbConditional.getText().toString().toUpperCase();
+                    String[] wholeAnswer = sAnswer.split("\\|");
+                    String outerConditionAns = wholeAnswer[0];
+                    String rbText = rbConditional.getText().toString().toUpperCase();
 
-                if(outerConditionAns.equals(rbText)) { // if condition answer == radiobutton value
-                    rbConditional.setChecked(true);
-                    rbConditional.performClick();
-                }
+                    if (outerConditionAns.equals(rbText)) { // if condition answer == radiobutton value
+                        rbConditional.setChecked(true);
+                        rbConditional.performClick();
+                    }
+                    break;
 
-/*                String[] arrInnerValues = innerConditionAns.split(",");
-                for (String innerVal : arrInnerValues) {
-                    String[] arrInner = innerVal.split("-");
-                    String formtypeID = arrInner[0];
-                    String value = arrInner[1];
-                }*/
-
-                break;
-
-            default: //NUMERIC, SINGLE LINE, MULTI LINE, DATE, TIME,
-                EditText txtBox = (EditText) viewForm;
-                txtBox.setText(sAnswer.trim());
-                break;
+                default: //NUMERIC, SINGLE LINE, MULTI LINE, DATE, TIME,
+                    EditText txtBox = (EditText) viewForm;
+                    txtBox.setText(sAnswer.trim());
+                    break;
+            }
         }
+        catch (Exception ex) {
+            String err = "Error in setting form answer.";
+            String exErr = ex.getMessage() != null ? ex.getMessage() : err;
+            Toast.makeText(QuestionsActivity.this, err, Toast.LENGTH_SHORT).show();
+            errorLog.appendLog(exErr, TAG);
+        }
+    }
+
+    private Bitmap SetImageOptions(File imgFile) {
+        BitmapFactory.Options options = new BitmapFactory.Options();
+        options.inPreferredConfig = Bitmap.Config.RGB_565;
+
+        options.inJustDecodeBounds = true;
+
+        BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+
+        options.inSampleSize = calculateInSampleSize(options, 180, 180);
+
+        options.inJustDecodeBounds = false;
+
+        return BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+    }
+
+    private static int calculateInSampleSize(BitmapFactory.Options options, int reqWidth, int reqHeight) {
+        // Raw height and width of image
+        final int height = options.outHeight;
+        final int width = options.outWidth;
+        int inSampleSize = 1;
+
+        if (height > reqHeight || width > reqWidth) {
+
+            final int halfHeight = height / 2;
+            final int halfWidth = width / 2;
+
+            // Calculate the largest inSampleSize value that is a power of 2 and keeps both
+            // height and width larger than the requested height and width.
+            while ((halfHeight / inSampleSize) >= reqHeight
+                    && (halfWidth / inSampleSize) >= reqWidth) {
+                inSampleSize *= 2;
+            }
+        }
+
+        return inSampleSize;
     }
 
     // SET ANSWER FOR INNER FORMS
@@ -2785,10 +2821,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 File imgFile = new  File(Settings.captureFolder, sAnswer);
 
                 if(imgFile.exists()) {
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-
-                    Bitmap bitmapMaster = BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
+                    Bitmap bitmapMaster = SetImageOptions(imgFile);
                     imgvw.setImageBitmap(bitmapMaster);
                 }
                 break;
@@ -2797,9 +2830,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 File signfile = new File(Settings.signatureFolder, sAnswer);
                 ImageView imgvwSign = (ImageView) viewForm;
                 if(signfile.exists()) {
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                    Bitmap bitmapMaster = BitmapFactory.decodeFile(signfile.getAbsolutePath(), options);
+                    Bitmap bitmapMaster = SetImageOptions(signfile);
                     imgvwSign.setImageBitmap(bitmapMaster);
                 }
                 break;
@@ -2876,16 +2907,13 @@ public class QuestionsActivity extends AppCompatActivity {
                 signfile = new File(uriSignpath.getPath());
 
                 if (signfile.exists()) {
-                    BitmapFactory.Options options = new BitmapFactory.Options();
-
-                    options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-
                     ImageView imgvw = General.hmSignature.get(qid);
 
-                    Bitmap bitmapMaster = BitmapFactory.decodeFile(signfile.getAbsolutePath(), options);
-                    imgvw.setImageBitmap(bitmapMaster);
-
-                    this.PutAnswers(qid, imgvw, filename, "6");
+                    if(imgvw != null) {
+                        Bitmap bitmapMaster = SetImageOptions(signfile);
+                        imgvw.setImageBitmap(bitmapMaster);
+                        this.PutAnswers(qid, imgvw, filename, "6");
+                    }
                 }
             }
     }
@@ -2900,30 +2928,39 @@ public class QuestionsActivity extends AppCompatActivity {
                 case 0: // MAIN IMAGE CAPTURE
                     if(hmUriImagequestionfile.size() > 0) {
 
-                        BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                        Bitmap bitmapMaster = BitmapFactory.decodeFile(hmUriImagequestionfile.get(imgFilename).getPath(), options);
-                        captureImgview.setImageBitmap(bitmapMaster);
+                        File fImageCapture = new File(hmUriImagequestionfile.get(imgFilename).getPath());
+                        if(fImageCapture == null)
+                            return;
 
-                        PutAnswers(imgQuestionid, captureImgview, imgFilename, imgFormtypeid);
+                        if(fImageCapture.exists()) {
+                            Bitmap bitmapMaster = SetImageOptions(fImageCapture);
+                            captureImgview.setImageBitmap(bitmapMaster);
+                            PutAnswers(imgQuestionid, captureImgview, imgFilename, imgFormtypeid);
+                        }
+                        else {
+                            Toast.makeText(QuestionsActivity.this, fImageCapture.getPath() + " is not existing", Toast.LENGTH_LONG).show();
+                        }
                     }
                     break;
-                case 1: // IMAGE CAPTURE INSIDE CONDITIONAL
+                case 1: // IMAGE CAPTURE INSIDE CONDITIONAL)
                     if(hmUriCondImagefile.size() > 0) {
+                        File fImageCaptureCond = new File(hmUriCondImagefile.get(imgFilename).getPath());
+                        if(fImageCaptureCond == null)
+                            return;
 
-                        BitmapFactory.Options options = new BitmapFactory.Options();
-                        options.inPreferredConfig = Bitmap.Config.ARGB_8888;
-                        Bitmap bitmapMaster = BitmapFactory.decodeFile(hmUriCondImagefile.get(imgFilename).getPath(), options);
-                        captureImgview.setImageBitmap(bitmapMaster);
-
-                        PutChildAnswer(CAMERA_CONDFORM_ID, CAMERA_COND_QUESTION_ID, CAMERA_COND_CHILDANSWER, CAMERA_COND_FORMTYPE_ID);
+                        if(fImageCaptureCond.exists()) {
+                            Bitmap bitmapMaster = SetImageOptions(fImageCaptureCond);
+                            captureImgview.setImageBitmap(bitmapMaster);
+                            PutChildAnswer(CAMERA_CONDFORM_ID, CAMERA_COND_QUESTION_ID, CAMERA_COND_CHILDANSWER, CAMERA_COND_FORMTYPE_ID);
+                        }
+                        else {
+                            Toast.makeText(QuestionsActivity.this, fImageCaptureCond.getPath() + " is not existing", Toast.LENGTH_LONG).show();
+                        }
                     }
                     break;
                 default:
                     break;
             }
-
-            System.gc();
         }
     }
 
@@ -2931,6 +2968,7 @@ public class QuestionsActivity extends AppCompatActivity {
     public void onBackPressed() {
         finish();
         overridePendingTransition(R.anim.hold, R.anim.slide_in_right);
+        System.gc();
     }
 
     @Override

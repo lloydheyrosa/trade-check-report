@@ -905,7 +905,8 @@ public class MainActivity extends AppCompatActivity {
                         errorLog.appendLog("Download success for " + type, TAG);
 
                     } else {
-                        errmsg = "Error in downloading files.\nResponse code: " + String.valueOf(responseCode);
+                        errmsg = "Error in downloading files: " + type + ".\nResponse code: " + String.valueOf(responseCode);
+                        return result;
                     }
 
                     httpConn.disconnect();
@@ -2045,8 +2046,7 @@ public class MainActivity extends AppCompatActivity {
 
                 result = true;
             }
-            catch (FileNotFoundException fex)
-            {
+            catch (FileNotFoundException fex) {
                 fex.printStackTrace();
                 errmsg = "file not found. Please log again.\nFILE: " + presentFile;
                 String exErr = fex.getMessage() != null ? fex.getMessage() : errmsg;
