@@ -259,6 +259,19 @@ public class SQLLibrary {
         return ret;
     }
 
+    public int GetTotalQuestionsComputation(String storecateggroupid) {
+        Cursor cursTotalQuestions = RawQuerySelect("SELECT COUNT(*) AS totQuestions FROM " + SQLiteDB.TABLE_STOREQUESTION
+                + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
+                + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('3','4','9','10','11','12')"
+                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);
+        cursTotalQuestions.moveToFirst();
+
+        int ret = 0;
+        ret = cursTotalQuestions.getInt(cursTotalQuestions.getColumnIndex("totQuestions"));
+        cursTotalQuestions.close();
+        return ret;
+    }
+
     public int GetRequiredQuestions(String storecateggroupid) {
         Cursor cursRequiredQuestions = RawQuerySelect("SELECT COUNT(*) AS requiredAns FROM " + SQLiteDB.TABLE_STOREQUESTION
                 + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid

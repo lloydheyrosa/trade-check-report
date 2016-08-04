@@ -96,7 +96,7 @@ public class CategoryActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(CategoryActivity.this, "", "Getting Activity scores...");
+            progressDL = ProgressDialog.show(CategoryActivity.this, "", "Loading categories. Please wait.");
             arrActivityList.clear();
         }
 

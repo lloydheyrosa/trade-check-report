@@ -91,7 +91,7 @@ public class GroupActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressGroupDL = ProgressDialog.show(GroupActivity.this, "", "Getting group scores...");
+            progressGroupDL = ProgressDialog.show(GroupActivity.this, "", "Loading groups. Please wait.");
             arrGroupList.clear();
         }
 

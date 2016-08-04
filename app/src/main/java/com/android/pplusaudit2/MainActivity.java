@@ -2051,24 +2051,18 @@ public class MainActivity extends AppCompatActivity {
                 errmsg = "file not found. Please log again.\nFILE: " + presentFile;
                 String exErr = fex.getMessage() != null ? fex.getMessage() : errmsg;
                 errorLog.appendLog(exErr, TAG);
-                dbase.setTransactionSuccessful();
-                dbase.endTransaction();
             }
             catch (IOException iex) {
                 iex.printStackTrace();
                 errmsg = "Data file error. Please log again.\nFILE: " + presentFile;
                 String exErr = iex.getMessage() != null ? iex.getMessage() : errmsg;
                 errorLog.appendLog(exErr, TAG);
-                dbase.setTransactionSuccessful();
-                dbase.endTransaction();
             }
             catch (Exception ex) {
                 ex.printStackTrace();
                 errmsg = "Some data are corrupted. Please log again.\nFILE: " + presentFile;
                 String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
                 errorLog.appendLog(exErr, TAG);
-                dbase.setTransactionSuccessful();
-                dbase.endTransaction();
             }
 
             return result;
@@ -2188,11 +2182,9 @@ public class MainActivity extends AppCompatActivity {
                 request.flush();
                 request.close();
 
-                InputStream responseStream = new
-                        BufferedInputStream(httpUrlConnection.getInputStream());
+                InputStream responseStream = new BufferedInputStream(httpUrlConnection.getInputStream());
 
-                BufferedReader responseStreamReader =
-                        new BufferedReader(new InputStreamReader(responseStream));
+                BufferedReader responseStreamReader = new BufferedReader(new InputStreamReader(responseStream));
 
                 String line = "";
                 StringBuilder stringBuilder = new StringBuilder();

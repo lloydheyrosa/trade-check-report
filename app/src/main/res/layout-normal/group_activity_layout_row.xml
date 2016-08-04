@@ -13,7 +13,7 @@
         android:layout_weight="1.5"
         android:gravity="left"
         android:layout_gravity="center"
-        android:text="GROUP 1"
+        android:text="ACTIVITY 1"
         style="@style/TextViewPrimary_medium" />
 
     <TextView

@@ -2051,7 +2051,6 @@ public class QuestionsActivity extends AppCompatActivity {
                                             return false;
                                         }
                                     }
-
                                     break;
 
                                 case "3": // NUMERIC
@@ -2437,7 +2436,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 if (cursOsalist.getCount() > 0) {
 
                     nTotalCorrectOSA += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
-                    nTotalQuestionsOSA += sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));
+                    nTotalQuestionsOSA += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
                 }
                 cursOsalist.close();
 
@@ -2447,7 +2446,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 if (cursNpi.getCount() > 0) {
 
                     nTotalCorrectNPI += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
-                    nTotalQuestionsNPI += sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));
+                    nTotalQuestionsNPI += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
                 }
                 cursNpi.close();
 
@@ -2457,14 +2456,12 @@ public class QuestionsActivity extends AppCompatActivity {
                 if (cursPlanogram.getCount() > 0) {
 
                     nTotalCorrectPlano += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
-                    nTotalQuestionsPlano += sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));;
+                    nTotalQuestionsPlano += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));;
                 }
                 cursPlanogram.close();
-
                 cursStoreCategoryGroups.moveToNext();
             }
             cursStoreCategoryGroups.close();
-
             cursStoreCategory.moveToNext();
         }
         cursStoreCategory.close();
