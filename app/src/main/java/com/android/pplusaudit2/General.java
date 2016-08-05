@@ -86,9 +86,8 @@ public class General {
         NONE
     }
 
-    public static String extFolder = Environment.getExternalStorageDirectory().getAbsolutePath().trim()+"/PPLUS";
-
     public static String mainURL = BETA ? "http://testtcr.chasetech.com" : "http://tcr2.chasetech.com";
+    //public static String mainURL = BETA ? "http://test.ulp-tcr.com" : "http://ulp-tcr.com";
 
     public static String POSTING_URL = mainURL + "/api/storeaudit";
     public static String URL_UPLOAD_CHECKIN = mainURL + "/api/uploadcheckin";

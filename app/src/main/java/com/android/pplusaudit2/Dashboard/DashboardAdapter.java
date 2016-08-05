@@ -58,11 +58,11 @@ class DashboardAdapter extends BaseAdapter {
         }
 
         String strMenu = General.Menu[position].split(":")[0].toUpperCase();
-        String strMenuDesc = General.Menu[position].split(":")[1].toUpperCase();
+        String strMenuDesc = General.Menu[position].split(":")[1];
 
         if(General.isAdminMode) {
             strMenu = General.Menu_admin[position].split(":")[0].toUpperCase();
-            strMenuDesc = General.Menu_admin[position].split(":")[1].toUpperCase();
+            strMenuDesc = General.Menu_admin[position].split(":")[1];
         }
 
         //holder.imgMenu.setImageResource(menuValues[position]);

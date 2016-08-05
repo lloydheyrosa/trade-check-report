@@ -137,8 +137,7 @@ public class DashboardActivity extends AppCompatActivity {
 
                 if(General.isAdminMode) { // ADMIN MODULES
 
-                    switch (position)
-                    {
+                    switch (position) {
                         case 0: // AUDIT
                             Cursor cursorStores = sql.GetDataCursor(SQLiteDB.TABLE_STORE);
                             if(cursorStores.getCount() <= 0) {
@@ -194,6 +193,7 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private class LoadStores extends AsyncTask<Void, Void, Void> {
+
         @Override
         protected void onPreExecute() {
             progressDL = ProgressDialog.show(DashboardActivity.this, "", "Logging out.");

@@ -69,7 +69,6 @@ import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String UrlAPI;
     private String urlGet;
     private String password;
     private String username;
@@ -106,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
     // -------
 
     private MyMessageBox messageBox;
-    private JSON_pplus json;
     private AlertDialog alertDialog;
 
     private SQLLibrary sql;
@@ -151,13 +149,11 @@ public class MainActivity extends AppCompatActivity {
 
         TAG = MainActivity.this.getLocalClassName();
 
-        UrlAPI =  General.mainURL + "/api/auth";
         urlGet =  General.mainURL + "/api/auth?";
         urlDownload = General.mainURL + "/api/download?";
         urlImage = General.mainURL + "/api/image?";
 
         messageBox = new MyMessageBox(this);
-        json = new JSON_pplus(this);
         sql = new SQLLibrary(this);
 
         arrStringTemplates = new ArrayList<>();
@@ -372,13 +368,6 @@ public class MainActivity extends AppCompatActivity {
 
             new AsyncPingWebServer().execute();
         }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-//        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-//        if(!wifiManager.isWifiEnabled()) wifiManager.setWifiEnabled(true);
     }
 
     @Override
@@ -854,8 +843,7 @@ public class MainActivity extends AppCompatActivity {
                             // extracts file name from header field
                             int index = disposition.indexOf("filename=");
                             if (index > 0) {
-                                fileName = disposition.substring(index + 10,
-                                        disposition.length() - 1);
+                                fileName = disposition.substring(index + 10, disposition.length() - 1);
                             }
                         } else {
                             // extracts file name from URL
@@ -905,7 +893,8 @@ public class MainActivity extends AppCompatActivity {
                         errorLog.appendLog("Download success for " + type, TAG);
 
                     } else {
-                        errmsg = "Error in downloading files.\nResponse code: " + String.valueOf(responseCode);
+                        errmsg = "Error in downloading files: " + type + ".\nResponse code: " + String.valueOf(responseCode);
+                        return result;
                     }
 
                     httpConn.disconnect();
@@ -932,7 +921,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
             if(!bResult) {
-                Toast.makeText(MainActivity.this, "Slow or unstable internet connection.", Toast.LENGTH_SHORT).show();
+                General.messageBox(MainActivity.this, "Download", errmsg);
                 sql.TruncateTable(SQLiteDB.TABLE_USER);
                 return;
             }
@@ -970,150 +959,150 @@ public class MainActivity extends AppCompatActivity {
         protected Boolean doInBackground(Void... params) {
             boolean result = false;
 
-            if(storeDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(storeDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(categoryDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(categoryDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(groupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(groupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(questionDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(questionDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(formsDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(formsDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(formtypesDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(formtypesDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(singleselectDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(singleselectDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(multiselectDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(multiselectDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(computationalDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(computationalDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(conditionalDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(conditionalDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(secondarylookupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(secondarylookupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(secondarylistDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(secondarylistDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(osalistDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(osalistDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(osalookupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(osalookupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(soslistDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(soslistDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(soslookupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(soslookupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(npiDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(npiDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(planogramDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(planogramDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(pcategoryDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(pcategoryDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-            if(pgroupDIR.exists()) {
-                try{
-                    lnReader = new LineNumberReader(new FileReader(pgroupDIR));
-                    nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
-                }
-                catch (IOException ie) { DebugLog.log(ie.getMessage()); }
-            }
-
-            progressDL.setMax(nMaxprogress);
-
             try {
+
+                if(storeDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(storeDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(categoryDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(categoryDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(groupDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(groupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(questionDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(questionDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(formsDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(formsDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(formtypesDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(formtypesDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(singleselectDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(singleselectDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(multiselectDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(multiselectDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(computationalDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(computationalDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(conditionalDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(conditionalDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(secondarylookupDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(secondarylookupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(secondarylistDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(secondarylistDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(osalistDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(osalistDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(osalookupDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(osalookupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(soslistDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(soslistDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(soslookupDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(soslookupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(npiDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(npiDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(planogramDIR.exists()) {
+                    try {
+                        lnReader = new LineNumberReader(new FileReader(planogramDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(pcategoryDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(pcategoryDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+                if(pgroupDIR.exists()) {
+                    try{
+                        lnReader = new LineNumberReader(new FileReader(pgroupDIR));
+                        nMaxprogress += Integer.parseInt(lnReader.readLine().trim().replace("\uFEFF", "").replace("\"", ""));
+                    }
+                    catch (IOException ie) { DebugLog.log(ie.getMessage()); }
+                }
+
+                progressDL.setMax(nMaxprogress);
 
                 // STORES
                 if(storeDIR.exists()) {
@@ -1144,7 +1133,8 @@ public class MainActivity extends AppCompatActivity {
                             SQLiteDB.COLUMN_STORE_templatecode,
                             SQLiteDB.COLUMN_STORE_auditid,
                             SQLiteDB.COLUMN_STORE_area,
-                            SQLiteDB.COLUMN_STORE_templatetype
+                            SQLiteDB.COLUMN_STORE_templatetype,
+                            SQLiteDB.COLUMN_STORE_remarks
                     };
 
                     String sqlinsertStore = sql.createInsertBulkQuery(SQLiteDB.TABLE_STORE, afields);
@@ -1161,7 +1151,7 @@ public class MainActivity extends AppCompatActivity {
 
                         sqlstatementStore.clearBindings();
                         for (int i = 0; i < afields.length; i++) {
-                            sqlstatementStore.bindString((i+1), values[i].trim().replace("\"",""));
+                            sqlstatementStore.bindString((i+1), values[i].trim().replace("\"","").toUpperCase());
                         }
                         sqlstatementStore.execute();
 
@@ -2044,30 +2034,23 @@ public class MainActivity extends AppCompatActivity {
 
                 result = true;
             }
-            catch (FileNotFoundException fex)
-            {
+            catch (FileNotFoundException fex) {
                 fex.printStackTrace();
                 errmsg = "file not found. Please log again.\nFILE: " + presentFile;
                 String exErr = fex.getMessage() != null ? fex.getMessage() : errmsg;
                 errorLog.appendLog(exErr, TAG);
-                dbase.setTransactionSuccessful();
-                dbase.endTransaction();
             }
             catch (IOException iex) {
                 iex.printStackTrace();
                 errmsg = "Data file error. Please log again.\nFILE: " + presentFile;
                 String exErr = iex.getMessage() != null ? iex.getMessage() : errmsg;
                 errorLog.appendLog(exErr, TAG);
-                dbase.setTransactionSuccessful();
-                dbase.endTransaction();
             }
             catch (Exception ex) {
                 ex.printStackTrace();
                 errmsg = "Some data are corrupted. Please log again.\nFILE: " + presentFile;
                 String exErr = ex.getMessage() != null ? ex.getMessage() : errmsg;
                 errorLog.appendLog(exErr, TAG);
-                dbase.setTransactionSuccessful();
-                dbase.endTransaction();
             }
 
             return result;
@@ -2187,11 +2170,9 @@ public class MainActivity extends AppCompatActivity {
                 request.flush();
                 request.close();
 
-                InputStream responseStream = new
-                        BufferedInputStream(httpUrlConnection.getInputStream());
+                InputStream responseStream = new BufferedInputStream(httpUrlConnection.getInputStream());
 
-                BufferedReader responseStreamReader =
-                        new BufferedReader(new InputStreamReader(responseStream));
+                BufferedReader responseStreamReader = new BufferedReader(new InputStreamReader(responseStream));
 
                 String line = "";
                 StringBuilder stringBuilder = new StringBuilder();

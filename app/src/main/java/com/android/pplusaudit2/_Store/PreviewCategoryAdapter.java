@@ -158,10 +158,10 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 cursOsalist.moveToFirst();
                 if(cursOsalist.getCount() > 0) {
                     int nCorrectAns = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
-                    int nTotQuestions = sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));
+                    int nTotalQuestionOSA = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
                     if(nCorrectAns > 0 || grpScoreno.trim().equals("1")) {
-                        String strOsaScore = String.valueOf(nCorrectAns) + " / " + String.valueOf(nTotQuestions);
+                        String strOsaScore = String.valueOf(nCorrectAns) + " / " + String.valueOf(nTotalQuestionOSA);
                         tvwScore.setText(strOsaScore);
                     }
                 }
@@ -173,7 +173,7 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 if (cursNpi.getCount() > 0) {
 
                     int nTotalCorrectNPI = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
-                    int nTotalQuestionsNPI = sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));
+                    int nTotalQuestionsNPI = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
                     if(nTotalCorrectNPI > 0 || grpScoreno.trim().equals("1")) {
                         String strOsaScore = String.valueOf(nTotalCorrectNPI) + " / " + String.valueOf(nTotalQuestionsNPI);
@@ -188,7 +188,7 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 if (cursPlanogram.getCount() > 0) {
 
                     int nTotalCorrectPlano = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
-                    int nTotalQuestionsPlano = sqlLibrary.GetTotalQuestions(String.valueOf(storeCategroupID));
+                    int nTotalQuestionsPlano = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
                     if(nTotalCorrectPlano > 0 || grpScoreno.trim().equals("1")) {
                         String strOsaScore = String.valueOf(nTotalCorrectPlano) + " / " + String.valueOf(nTotalQuestionsPlano);

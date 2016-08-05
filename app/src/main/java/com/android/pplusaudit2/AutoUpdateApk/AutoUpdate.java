@@ -111,6 +111,7 @@ public class AutoUpdate {
     }
 
     private void SetUpVars(Context ctx) {
+
         try {
             PackageManager pm = ctx.getPackageManager();
             String packageName = ctx.getPackageName();

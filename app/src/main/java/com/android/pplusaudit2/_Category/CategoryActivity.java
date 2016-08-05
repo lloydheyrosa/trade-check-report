@@ -84,10 +84,19 @@ public class CategoryActivity extends AppCompatActivity {
     private class AsyncLoadActivities extends AsyncTask<Void, Void, Boolean> {
 
         String errMsg = "";
+        int orderMode = 0;
+
+        AsyncLoadActivities() {
+            this.orderMode = 0;
+        }
+
+        AsyncLoadActivities(int orderMode) {
+            this.orderMode = orderMode;
+        }
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(CategoryActivity.this, "", "Getting Activity scores...");
+            progressDL = ProgressDialog.show(CategoryActivity.this, "", "Loading categories. Please wait.");
             arrActivityList.clear();
         }
 
@@ -97,14 +106,25 @@ public class CategoryActivity extends AppCompatActivity {
             boolean result = false;
 
             try {
-
-                Cursor cursStoreCategory = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + "," + SQLiteDB.COLUMN_CATEGORY_categoryorder
+                String strQuery = "SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + "," + SQLiteDB.COLUMN_CATEGORY_categoryorder
                         + "," + SQLiteDB.COLUMN_CATEGORY_categorydesc + "," + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
                         + "," + SQLiteDB.COLUMN_STORECATEGORY_final + "," + SQLiteDB.COLUMN_STORECATEGORY_status + "," + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_categoryid + " AS webCategid"
                         + " FROM " + SQLiteDB.TABLE_STORECATEGORY
                         + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
                         + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
-                        + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder);
+                        + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder;
+
+                if(this.orderMode == 1) { // SORT ALPHABETICALLY
+                    strQuery = "SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + "," + SQLiteDB.COLUMN_CATEGORY_categoryorder
+                            + "," + SQLiteDB.COLUMN_CATEGORY_categorydesc + "," + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
+                            + "," + SQLiteDB.COLUMN_STORECATEGORY_final + "," + SQLiteDB.COLUMN_STORECATEGORY_status + "," + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_categoryid + " AS webCategid"
+                            + " FROM " + SQLiteDB.TABLE_STORECATEGORY
+                            + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
+                            + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "'"
+                            + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categorydesc;
+                }
+
+                Cursor cursStoreCategory = sqlLibrary.RawQuerySelect(strQuery);
 
                 cursStoreCategory.moveToFirst();
 
@@ -195,25 +215,35 @@ public class CategoryActivity extends AppCompatActivity {
     }
 
     @Override
-    public boolean onCreateOptionsMenu(Menu menu) {
-        // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
-        return true;
-    }
-
-    @Override
     public boolean onOptionsItemSelected(MenuItem item) {
         // Handle action bar item clicks here. The action bar will
         // automatically handle clicks on the Home/Up button, so long
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if(id == android.R.id.home) {
-            finish();
-            overridePendingTransition(R.anim.hold, R.anim.slide_in_right);
-            return true;
+        switch (id) {
+            case android.R.id.home:
+                onBackPressed();
+                break;
+            case R.id.action_sort_by_alphabetically:
+                new AsyncLoadActivities(1).execute();
+                break;
+            case R.id.action_sort_by_template:
+                new AsyncLoadActivities().execute();
+                break;
+            default:
+                break;
         }
 
         return super.onOptionsItemSelected(item);
     }
+
+    @Override
+    public boolean onCreateOptionsMenu(Menu menu) {
+        // Inflate the menu; this adds items to the action bar if it is present.
+        getMenuInflater().inflate(R.menu.category_and_group_menu, menu);
+        return true;
+    }
+
+
 }

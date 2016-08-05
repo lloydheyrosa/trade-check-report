@@ -20,7 +20,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "unileverdb";
     private static final String TAG = "SettingsProvider";
-    public static final int DATABASE_VERSION = 10;
+    public static final int DATABASE_VERSION = 11;
 
     public SQLiteDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -73,6 +73,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
     public static final String COLUMN_STORE_perfectstore = "perfect_store"; // new field v.6
     public static final String COLUMN_STORE_area = "area"; // new field v.9
     public static final String COLUMN_STORE_templatetype = "templatetype"; // new field v.10
+    public static final String COLUMN_STORE_remarks = "remarks"; // new field v.11
 
     private static final String DATABASE_CREATE_TABLE_STORE = "CREATE TABLE " + TABLE_STORE + "("
             + COLUMN_STORE_id + " integer PRIMARY KEY autoincrement, "
@@ -105,7 +106,8 @@ public class SQLiteDB extends SQLiteOpenHelper {
             + COLUMN_STORE_planogram + " text, "
             + COLUMN_STORE_perfectstore + " text, "
             + COLUMN_STORE_area + " text, "
-            + COLUMN_STORE_templatetype + " numeric)";
+            + COLUMN_STORE_templatetype + " numeric, "
+            + COLUMN_STORE_remarks + " text)";
 
 
     // CATEGORY TABLE
@@ -587,6 +589,10 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
                 if(newVersion > oldVersion && oldVersion <= 9) { // version 10
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_templatetype + " NUMERIC");
+                }
+
+                if(newVersion > oldVersion && oldVersion <= 10) { // version 11
+                    db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_remarks + " TEXT DEFAULT ''");
                 }
 
                 String strLog = "Upgrading settings database from version " + oldVersion + " to "

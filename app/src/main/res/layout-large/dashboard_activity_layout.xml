@@ -21,6 +21,8 @@
             android:textSize="20sp"
             android:gravity="center"
             android:padding="15dp"
+            android:fontFamily="sans-serif-light"
+            android:textColor="@color/primary_text"
             android:text="User: SampleUser"/>
 
         <ListView

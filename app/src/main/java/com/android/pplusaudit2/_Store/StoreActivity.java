@@ -1,6 +1,8 @@
 package com.android.pplusaudit2._Store;
 
+import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
@@ -8,12 +10,17 @@ import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.SearchView;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.widget.AdapterView;
+import android.widget.Button;
 import android.widget.ListView;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.pplusaudit2.Database.SQLLibrary;
@@ -21,12 +28,14 @@ import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
+import com.android.pplusaudit2.PJP_Compliance.Compliance;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.TCRLib;
 import com.android.pplusaudit2._Category.CategoryActivity;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * Created by ULTRABOOK on 9/22/2015.
@@ -35,6 +44,8 @@ public class StoreActivity extends AppCompatActivity {
 
     private ArrayList<Stores> arrStoreList = new ArrayList<Stores>();
     private ArrayList<Stores> lstStores = new ArrayList<Stores>();
+
+    private ArrayList<FilterItem> arrFilterItems;
 
     private SQLLibrary sql;
     private SQLiteDB sqLiteDB;
@@ -47,6 +58,9 @@ public class StoreActivity extends AppCompatActivity {
     private StoreAdapter adapter;
     private String TAG;
     private ErrorLog errorLog;
+    private FilterItemAdapter adapterFilterItem;
+    private String strSelectedFilterArea;
+    private ArrayList<Compliance> arrCompliances;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,8 +72,8 @@ public class StoreActivity extends AppCompatActivity {
         overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
 
         errorLog = new ErrorLog(General.errlogFile, this);
-
         TAG = StoreActivity.this.getLocalClassName();
+        arrFilterItems = new ArrayList<>();
 
         getSupportActionBar().setTitle("STORES");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -72,6 +86,7 @@ public class StoreActivity extends AppCompatActivity {
         wlStayAwake.acquire();
         sql = new SQLLibrary(this);
         sqLiteDB = new SQLiteDB(this);
+        arrCompliances = new ArrayList<>();
 
         GetPerfectList();
 
@@ -84,12 +99,135 @@ public class StoreActivity extends AppCompatActivity {
         super.onDestroy();
     }
 
+    private class LoadFilter extends AsyncTask<Void, Void, Boolean> {
+
+        private String errMessage = "";
+        private String strQuery = "";
+        private String strFieldName = "";
+        private String strFilterTitle = "";
+        private int nFilterCode = 0;
+        private ArrayList<FilterItem> arrayList = new ArrayList<>();
+
+        LoadFilter(int filterCode, String strQuery, String strFieldName, String strOtherName) {
+            this.strQuery = strQuery;
+            this.strFieldName = strFieldName;
+            this.nFilterCode = filterCode;
+            this.strFilterTitle = strOtherName;
+        }
+
+        @Override
+        protected void onPreExecute() {
+            progressDL = ProgressDialog.show(StoreActivity.this, "", "Getting filters. Please wait.");
+        }
+
+        @Override
+        protected Boolean doInBackground(Void... params) {
+            boolean result = false;
+
+            try {
+
+                Cursor cursFilterItems = sql.RawQuerySelect(this.strQuery);
+
+                int ctr = 0;
+                arrayList.clear();
+
+                if(cursFilterItems.moveToFirst()) {
+                    while (!cursFilterItems.isAfterLast()) {
+                        String strDesc = cursFilterItems.getString(cursFilterItems.getColumnIndex(this.strFieldName)).trim().toUpperCase();
+
+                        if(strDesc.equals("")) {
+                            cursFilterItems.moveToNext();
+                            continue;
+                        }
+
+                        ctr++;
+                        arrayList.add(new FilterItem(ctr, strDesc));
+                        cursFilterItems.moveToNext();
+                    }
+                }
+
+                cursFilterItems.close();
+                result = true;
+            }
+            catch (Exception ex) {
+                errMessage = "Can't load filters. Please try again.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errMessage;
+                errorLog.appendLog(exErr, TAG);
+            }
+
+            return result;
+        }
+
+        @Override
+        protected void onPostExecute(Boolean aBoolean) {
+            progressDL.dismiss();
+            if(!aBoolean) {
+                General.messageBox(StoreActivity.this, "Filter", errMessage);
+                return;
+            }
+
+            arrFilterItems.clear();
+            arrFilterItems.addAll(arrayList);
+
+            final Dialog filterDialog = new Dialog(StoreActivity.this);
+            filterDialog.getWindow().requestFeature(Window.FEATURE_NO_TITLE);
+            filterDialog.setCancelable(true);
+            filterDialog.setContentView(R.layout.layout_dialog_filter);
+
+            ListView lvwFilters = (ListView) filterDialog.findViewById(R.id.lvwFilters);
+            TextView tvwFilterTitle = (TextView) filterDialog.findViewById(R.id.tvwFilterTitle);
+            Button btnBack = (Button) filterDialog.findViewById(R.id.btnFilterBack);
+
+            btnBack.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    filterDialog.dismiss();
+                }
+            });
+
+            String promptMessage = "SELECT " + this.strFilterTitle.toUpperCase();
+            if(arrFilterItems.size() == 0)
+                promptMessage = "No filter found.";
+            tvwFilterTitle.setText(promptMessage);
+
+            adapterFilterItem = new FilterItemAdapter(StoreActivity.this, arrFilterItems);
+            lvwFilters.setAdapter(adapterFilterItem);
+            adapterFilterItem.notifyDataSetChanged();
+
+            lvwFilters.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+                @Override
+                public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                    filterDialog.dismiss();
+                    if(nFilterCode == 1) {
+                        strSelectedFilterArea = arrFilterItems.get(position).filterItemDesc;
+                    }
+
+                    new LoadStores(nFilterCode, arrFilterItems.get(position)).execute();
+                }
+            });
+
+            filterDialog.show();
+        }
+    }
+
     // LOAD STORE SCORES
     private class LoadStores extends AsyncTask<Void, Void, Boolean> {
 
-        ArrayList<Stores> arrPendings;
-        ArrayList<Stores> arrPosted;
-        String errmsg = "";
+        private FilterItem filterItem;
+        private ArrayList<Stores> arrPendings;
+        private ArrayList<Stores> arrPosted;
+        private String errmsg = "";
+
+        private int filterCode = 0;
+
+        LoadStores(int filterCode, FilterItem filterItem) {
+            this.filterCode = filterCode;
+            this.filterItem = filterItem;
+        }
+
+        LoadStores() {
+            this.filterCode = 0;
+        }
 
         @Override
         protected void onPreExecute() {
@@ -106,7 +244,21 @@ public class StoreActivity extends AppCompatActivity {
 
             try {
 
-                Cursor cursorStore = sql.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STORE + " ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC");
+                String strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
+
+                switch (filterCode) {
+                    case 1: // filter by selected area
+                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + filterItem.filterItemDesc + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
+                        break;
+                    case 2: // filter by selected area and remarks
+                        strQuery = "SELECT * FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_remarks + " = '" + filterItem.filterItemDesc + "' AND " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' ORDER BY " + SQLiteDB.COLUMN_STORE_status + " > 0 DESC";
+                        break;
+                    default:
+                        break;
+                }
+
+                Cursor cursorStore = sql.RawQuerySelect(strQuery);
+
                 int nstoreid;
                 int templateid;
                 String templatename;
@@ -136,6 +288,15 @@ public class StoreActivity extends AppCompatActivity {
                     String region = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_region));
                     String distCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
                     String dist = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
+                    String remarks = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_remarks));
+                    String startDate = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_startdate));
+                    String endDate = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_enddate));
+                    String templateCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatecode));
+
+                    double osa = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_osa));
+                    double npi = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_npi));
+                    double planogram = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_planogram));
+                    double perfectStore = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_perfectstore));
 
                     Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted, gMatrixId);
                     store.auditID = auditID;
@@ -147,6 +308,14 @@ public class StoreActivity extends AppCompatActivity {
                     store.region = region;
                     store.distributorCode = distCode;
                     store.distributor = dist;
+                    store.remarks = remarks;
+                    store.startDate = startDate;
+                    store.endDate = endDate;
+                    store.osa = osa;
+                    store.npi = npi;
+                    store.planogram = planogram;
+                    store.perfectStore = perfectStore;
+                    store.templateCode = templateCode;
 
                     if (isAudited && !isPosted)
                         arrPendings.add(store);
@@ -178,7 +347,6 @@ public class StoreActivity extends AppCompatActivity {
             }
 
             lstStores.clear();
-
             lstStores.addAll(arrPendings);
             lstStores.addAll(arrPosted);
             lstStores.addAll(arrStoreList);
@@ -207,11 +375,33 @@ public class StoreActivity extends AppCompatActivity {
                     adapter.filter(newText.trim().toLowerCase(Locale.getDefault()));
                     return false;
                 }
-
             });
 
             searchView.setQuery(searchView.getQuery(), true);
             progressDL.dismiss();
+
+            if(filterItem != null) {
+                if (filterCode == 1) {
+                    String strQuery = "SELECT " + SQLiteDB.COLUMN_STORE_remarks + " FROM " + SQLiteDB.TABLE_STORE + " WHERE " + SQLiteDB.COLUMN_STORE_area + " = '" + strSelectedFilterArea + "' GROUP BY " + SQLiteDB.COLUMN_STORE_remarks;
+                    new LoadFilter(2, strQuery, SQLiteDB.COLUMN_STORE_remarks, "territory").execute();
+                    return;
+                }
+            }
+
+            int nUnposteds = arrPendings.size();
+            if(nUnposteds > 0) {
+                new AlertDialog.Builder(StoreActivity.this)
+                        .setCancelable(false)
+                        .setTitle("Audits")
+                        .setMessage("You have " + String.valueOf(nUnposteds) + " unposted audits on stores. Please post it before the posting date expiration.")
+                        .setNeutralButton("Ok", new DialogInterface.OnClickListener() {
+                            @Override
+                            public void onClick(DialogInterface dialog, int which) {
+                                dialog.dismiss();
+                            }
+                        })
+                        .create().show();
+            }
         }
     }
 
@@ -226,15 +416,18 @@ public class StoreActivity extends AppCompatActivity {
     }
 
     // PREVIEW BUTTON CLICK
-    // PREVIEW BUTTON CLICK
     public void previewOnClickEvent(View v) {
 
         Stores storeSelected = (Stores) v.getTag();
 
+        if(storeSelected == null) {
+            Toast.makeText(StoreActivity.this, "No selected Store.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         General.selectedStore = storeSelected;
 
         Intent intentPreview = new Intent(StoreActivity.this, StorePreviewActivity.class);
-        intentPreview.putExtra("STORE_ID", String.valueOf(storeSelected.storeID));
         startActivity(intentPreview);
     }
 
@@ -272,7 +465,7 @@ public class StoreActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(StoreActivity.this, "", "Getting store template. Please wait", true);
+            progressDL = ProgressDialog.show(StoreActivity.this, "", "Loading store template. Please wait", true);
         }
 
         @Override
@@ -296,7 +489,6 @@ public class StoreActivity extends AppCompatActivity {
                     cursKeylist.moveToFirst();
                     General.arrSecondaryKeylist = new ArrayList<String>();
                     while (!cursKeylist.isAfterLast()) {
-
                         General.arrSecondaryKeylist.add(cursKeylist.getString(cursKeylist.getColumnIndex(SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid)));
                         cursKeylist.moveToNext();
                     }
@@ -443,7 +635,6 @@ public class StoreActivity extends AppCompatActivity {
                             dbaseStoreQ.beginTransaction();
 
                             while (!cursQuestionsPerGroup.isAfterLast()) {
-
                                 String questionid = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_id));
                                 String strQuestionPrompt = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt));
 
@@ -469,19 +660,15 @@ public class StoreActivity extends AppCompatActivity {
                                     sqlstatementStoreQuestions.bindString(6, "0");
                                     sqlstatementStoreQuestions.execute();
                                 }
-
                                 cursQuestionsPerGroup.moveToNext();
                             }
 
                             dbaseStoreQ.setTransactionSuccessful();
                             dbaseStoreQ.endTransaction();
-
                             cursGroup.moveToNext();
                         }
-
                         cursCategories.moveToNext();
                     }
-
                     dbaseStoreQ.close();
                 }
                 result = true;
@@ -509,13 +696,6 @@ public class StoreActivity extends AppCompatActivity {
             intentActivity.putExtra("GRADE_MATRIX", General.selectedStore.gradeMatrixId);
             startActivity(intentActivity);
         }
-
-    }
-
-    @Override
-    protected void onResume() {
-        super.onResume();
-        //new LoadStores().execute();
     }
 
     @Override
@@ -527,7 +707,7 @@ public class StoreActivity extends AppCompatActivity {
     @Override
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
-        getMenuInflater().inflate(R.menu.menu_main, menu);
+        getMenuInflater().inflate(R.menu.stores_menu, menu);
         return true;
     }
 
@@ -538,9 +718,19 @@ public class StoreActivity extends AppCompatActivity {
         // as you specify a parent activity in AndroidManifest.xml.
         int id = item.getItemId();
 
-        if(id == android.R.id.home) {
-            onBackPressed();
-            return true;
+        switch (id) {
+            case R.id.action_set_filter:
+                String strQuery = "SELECT " + SQLiteDB.COLUMN_STORE_area + " FROM " + SQLiteDB.TABLE_STORE + " GROUP BY " + SQLiteDB.COLUMN_STORE_area;
+                new LoadFilter(1, strQuery, SQLiteDB.COLUMN_STORE_area, "Area").execute();
+                break;
+            case R.id.action_filterby_showall:
+                new LoadStores().execute();
+                break;
+            case android.R.id.home:
+                onBackPressed();
+                break;
+            default:
+                break;
         }
 
         return super.onOptionsItemSelected(item);
