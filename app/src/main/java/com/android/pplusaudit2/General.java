@@ -32,7 +32,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = false;
+    public static boolean BETA = true;
 
     public static String versionName = "";
     public static int versionCode = 0;
@@ -86,8 +86,8 @@ public class General {
         NONE
     }
 
-    public static String mainURL = BETA ? "http://testtcr.chasetech.com" : "http://tcr2.chasetech.com";
-    //public static String mainURL = BETA ? "http://test.ulp-tcr.com" : "http://ulp-tcr.com";
+    //public static String mainURL = BETA ? "http://testtcr.chasetech.com" : "http://tcr2.chasetech.com";
+    public static String mainURL = BETA ? "http://test.ulp-tcr.com" : "http://ulp-tcr.com";
 
     public static String POSTING_URL = mainURL + "/api/storeaudit";
     public static String URL_UPLOAD_CHECKIN = mainURL + "/api/uploadcheckin";

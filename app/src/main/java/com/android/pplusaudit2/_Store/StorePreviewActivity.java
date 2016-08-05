@@ -770,7 +770,8 @@ public class StorePreviewActivity extends AppCompatActivity {
 
             boolean result = false;
 
-            if(filepathToSend.exists()) filepathToSend.delete();
+            if(filepathToSend.exists())
+                filepathToSend.delete();
 
             try
             {
