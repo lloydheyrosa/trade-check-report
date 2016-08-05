@@ -14,7 +14,7 @@ public class Stores {
     public final String storeCode;
     public final String webStoreID;
     public final int auditTemplateId;
-    public final String Tempname;
+    public final String templateName;
     public final int finalValue;
     public final boolean isAudited;
     public final boolean isPosted;
@@ -34,19 +34,31 @@ public class Stores {
     public String region = "";
     public String distributorCode = "";
     public String distributor = "";
+    public String startDate = "";
+    public String endDate = "";
+    public String templateCode = "";
+
+    public double osa;
+    public double npi;
+    public double planogram;
+    public double perfectStore;
+
     public ArrayList<Compliance> complianceArrayList = new ArrayList<>();
 
     public Stores(int id, String code, String webstoreid, String storename, int templateid, String templatename, int finalval, boolean bAns, boolean posted, int gmatrixID) {
-
         this.storeID = id;
         this.storeName = storename;
         this.auditTemplateId = templateid;
-        this.Tempname = templatename;
+        this.templateName = templatename;
         this.storeCode = code;
         this.webStoreID = webstoreid;
         this.finalValue = finalval;
         this.isAudited = bAns;
         this.isPosted = posted;
         this.gradeMatrixId = gmatrixID;
+        this.osa = 0.00;
+        this.npi = 0.00;
+        this.planogram = 0.00;
+        this.perfectStore = 0.00;
     }
 }

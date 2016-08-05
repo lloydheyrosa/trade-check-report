@@ -25,9 +25,7 @@ import com.android.pplusaudit2.Debug.DebugLog;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
-import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.PJP_Compliance.Compliance;
-import com.android.pplusaudit2.PJP_Compliance.PjpActivity;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Settings;
 import com.android.pplusaudit2.TCRLib;
@@ -60,52 +58,31 @@ import java.util.Locale;
  */
 public class StorePreviewActivity extends AppCompatActivity {
 
-    SQLLibrary sqlLibrary;
-    TCRLib tcrLib;
+    private SQLLibrary sqlLibrary;
+    private TCRLib tcrLib;
 
-    Typeface fontIcon;
+    private String strOsa = "";
+    private String strNpi = "";
+    private String strPlanogram = "";
 
-    String storename;
-    String tempStoreId;
-    String previewStoreID;
-    String storeTemplate;
-    String storeCode;
-    String startDate;
-    String endDate;
-    int storeFinalValue;
-    String strOsa = "";
-    String strNpi = "";
-    String strPlanogram = "";
-    String strPerfectStore = "";
+    private ProgressDialog progressDL;
+    private File filepathToSend;
+    private String strFilenameToSend;
 
-    ProgressDialog progressDL;
-    File filepathToSend;
-    String strFilenameToSend;
+    private AlertDialog postDialog;
+    private ProgressDialog pDialog;
 
-    AlertDialog postDialog;
-    ProgressDialog pDialog;
+    private ListView lvwPreview;
 
-    ListView lvwPreview;
-    MyMessageBox messageBox;
+    private String strDetailsBody;
 
-    Cursor cursStore;
+    private String strImageFolder;
 
-    String strDetailsBody;
-    String strSummaryBody;
+    private PowerManager.WakeLock wlStayAwake;
 
-    String strImageFolder;
+    private boolean toggleAudit;
 
-    PowerManager powerman;
-    PowerManager.WakeLock wlStayAwake;
-
-    TextView tvwOsa;
-    TextView tvwNpi;
-    TextView tvwPlanogram;
-    TextView tvwPerfectStore;
-
-    boolean toggleAudit;
-
-    ArrayList<Category> arrCategories;
+    private ArrayList<Category> arrCategories;
     private String TAG;
     private ErrorLog errorLog;
     private ArrayList<Compliance> complianceArrayList;
@@ -129,66 +106,36 @@ public class StorePreviewActivity extends AppCompatActivity {
 
         complianceArrayList = new ArrayList<>();
 
-        fontIcon = Typeface.createFromAsset(getAssets(), General.typefacename);
-        powerman = (PowerManager) getSystemService(getApplicationContext().POWER_SERVICE);
+        Typeface fontIcon = Typeface.createFromAsset(getAssets(), General.typefacename);
+        PowerManager powerman = (PowerManager) getSystemService(POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
 
         sqlLibrary = new SQLLibrary(this);
         tcrLib = new TCRLib(this);
-        messageBox = new MyMessageBox(this);
         toggleAudit = false;
 
         arrCategories = new ArrayList<>();
         lvwPreview = (ListView) findViewById(R.id.lvwPreview);
 
-        Bundle eData = getIntent().getExtras();
-
-        if (eData != null) {
-            previewStoreID = eData.getString("STORE_ID");
-
-            cursStore = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
-            cursStore.moveToFirst();
-
-            storename = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_name)).trim();
-            tempStoreId = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storeid)).trim();
-            storeTemplate = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim();
-            storeCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode)).trim();
-            startDate = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_startdate)).trim();
-            endDate = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_enddate)).trim();
-            storeFinalValue = cursStore.getInt(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
-            strOsa = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_osa));
-            strNpi = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_npi));
-            strPlanogram = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_planogram));
-            strPerfectStore = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_perfectstore));
-
-            //LoadAuditSummary();
-            new LoadAuditSummary().execute();
-        }
-
         TextView tvwStoreTemplate = (TextView) findViewById(R.id.tvwStoreTemplate);
-        tvwOsa = (TextView) findViewById(R.id.tvwOsa);
-        tvwNpi = (TextView) findViewById(R.id.tvwNpi);
-        tvwPlanogram = (TextView) findViewById(R.id.tvwPlanogram);
-        tvwPerfectStore = (TextView) findViewById(R.id.tvwPerfectStorePerc);
+        TextView tvwOsa = (TextView) findViewById(R.id.tvwOsa);
+        TextView tvwNpi = (TextView) findViewById(R.id.tvwNpi);
+        TextView tvwPlanogram = (TextView) findViewById(R.id.tvwPlanogram);
+        TextView tvwPerfectStore = (TextView) findViewById(R.id.tvwPerfectStorePerc);
 
-        strOsa = strOsa == null ? "" : strOsa;
-        strNpi = strNpi == null ? "" : strNpi;
-        strPlanogram = strPlanogram == null ? "" : strPlanogram;
-        strPerfectStore = strPerfectStore == null ? "" : strPerfectStore;
+        strOsa = String.format(Locale.getDefault(), "%.2f", General.selectedStore.osa) + " %";
+        strNpi = String.format(Locale.getDefault(), "%.2f", General.selectedStore.npi) + " %";
+        strPlanogram = String.format(Locale.getDefault(), "%.2f", General.selectedStore.planogram) + " %";
+        String strPerfectStore = String.format(Locale.getDefault(), "%.2f", General.selectedStore.perfectStore) + " %";
 
-        strOsa = strOsa.trim().equals("") ? "0.00 %" : strOsa + " %";
-        strNpi = strNpi.trim().equals("") ? "0.00 %" : strNpi + " %";
-        strPlanogram = strPlanogram.trim().equals("") ? "0.00 %" : strPlanogram + " %";
-        strPerfectStore = strPerfectStore.trim().equals("")  ? "0.00 %" : strPerfectStore + " %";
-
-        String strTemplate = storename + " - " + storeTemplate;
+        String strTemplate = General.selectedStore.storeName + " - " + General.selectedStore.templateName;
         tvwStoreTemplate.setText(strTemplate);
         tvwOsa.setText(strOsa);
         tvwNpi.setText(strNpi);
         tvwPlanogram.setText(strPlanogram);
         tvwPerfectStore.setText(strPerfectStore);
 
-        strFilenameToSend = General.usercode + "_" + storeCode + ".csv";
+        strFilenameToSend = General.usercode + "_" + General.selectedStore.storeCode + ".csv";
         filepathToSend = new File(Settings.postingFolder, strFilenameToSend);
 
         Button btnBack = (Button) findViewById(R.id.btnBackPreview);
@@ -218,7 +165,7 @@ public class StorePreviewActivity extends AppCompatActivity {
             }
         });
 
-        if(!CheckDateValidation(startDate, endDate)) {
+        if(!CheckDateValidation(General.selectedStore.startDate, General.selectedStore.endDate)) {
             btnPost.setEnabled(false);
             General.messageBox(StorePreviewActivity.this, "End of posting", "End date of posting");
         }
@@ -244,6 +191,8 @@ public class StorePreviewActivity extends AppCompatActivity {
                 postDialog.show();
             }
         });
+
+        new LoadAuditSummary().execute();
     }
 
     private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
@@ -562,226 +511,233 @@ public class StorePreviewActivity extends AppCompatActivity {
 
         @Override
         protected Boolean doInBackground(Void... params) {
-            boolean ret = true;
+            boolean result = false;
 
             strDetailsBody = "";
-            strSummaryBody = "";
+            String strSummaryBody = "";
 
-            // STORE CATEGORY
-            Cursor cursStoreCategory = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + "," + SQLiteDB.COLUMN_CATEGORY_categoryorder
-                    + "," + SQLiteDB.COLUMN_CATEGORY_categorydesc + "," + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
-                    + "," + SQLiteDB.COLUMN_STORECATEGORY_final + "," + SQLiteDB.COLUMN_STORECATEGORY_status + "," + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_categoryid + " AS webCategid"
-                    + " FROM " + SQLiteDB.TABLE_STORECATEGORY
-                    + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
-                    + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = " + previewStoreID
-                    + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder);
-            cursStoreCategory.moveToFirst();
+            try {
 
-            while (!cursStoreCategory.isAfterLast()) {
+                // STORE CATEGORY
+                Cursor cursStoreCategory = sqlLibrary.RawQuerySelect("SELECT " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_id + "," + SQLiteDB.COLUMN_CATEGORY_categoryorder
+                        + "," + SQLiteDB.COLUMN_CATEGORY_categorydesc + "," + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
+                        + "," + SQLiteDB.COLUMN_STORECATEGORY_final + "," + SQLiteDB.COLUMN_STORECATEGORY_status + "," + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_categoryid + " AS webCategid"
+                        + " FROM " + SQLiteDB.TABLE_STORECATEGORY
+                        + " JOIN " + SQLiteDB.TABLE_CATEGORY + " ON " + SQLiteDB.TABLE_CATEGORY + "." + SQLiteDB.COLUMN_CATEGORY_id + " = " + SQLiteDB.TABLE_STORECATEGORY + "." + SQLiteDB.COLUMN_STORECATEGORY_categoryid
+                        + " WHERE " + SQLiteDB.COLUMN_STORECATEGORY_storeid + " = " + General.selectedStore.storeID
+                        + " ORDER BY " + SQLiteDB.COLUMN_CATEGORY_categoryorder);
+                cursStoreCategory.moveToFirst();
 
-                int storecategoryID = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
-                String categoryName = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categorydesc)).trim().toUpperCase();
-                int categOrder = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryorder));
-                int categoryid = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryid));
-                String categoryFinal = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_final));
-                String categStatusno = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_status));
-                int webCategoryId = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex("webCategid"));
+                while (!cursStoreCategory.isAfterLast()) {
 
-                String strCategStatus = tcrLib.GetStatus(categStatusno);
-                General.SCORE_STATUS categoryScore = tcrLib.GetScoreStatus(categoryFinal);
+                    int storecategoryID = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_id));
+                    String categoryName = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categorydesc)).trim().toUpperCase();
+                    int categOrder = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryorder));
+                    int categoryid = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_CATEGORY_categoryid));
+                    String categoryFinal = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_final));
+                    String categStatusno = cursStoreCategory.getString(cursStoreCategory.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORY_status));
+                    int webCategoryId = cursStoreCategory.getInt(cursStoreCategory.getColumnIndex("webCategid"));
 
-                arrCategories.add(new Category(categOrder, categoryid, categoryName, String.valueOf(storecategoryID), strCategStatus, categoryScore, webCategoryId));
+                    String strCategStatus = tcrLib.GetStatus(categStatusno);
+                    General.SCORE_STATUS categoryScore = tcrLib.GetScoreStatus(categoryFinal);
 
-                // STORE CATEGORY GROUP
-                Cursor cursStoreCategoryGroups = sqlLibrary.RawQuerySelect("SELECT tblstorecateggroup.id, tblgroup.groupdesc, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupid + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
-                        + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status  + "," + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt
-                        + "," + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_initial
-                        + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
-                        + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
-                        + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storecategoryID
-                        + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
-                cursStoreCategoryGroups.moveToFirst();
+                    arrCategories.add(new Category(categOrder, categoryid, categoryName, String.valueOf(storecategoryID), strCategStatus, categoryScore, webCategoryId));
 
-                while (!cursStoreCategoryGroups.isAfterLast()) {
+                    // STORE CATEGORY GROUP
+                    Cursor cursStoreCategoryGroups = sqlLibrary.RawQuerySelect("SELECT tblstorecateggroup.id, tblgroup.groupdesc, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupid + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                            + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status + "," + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt
+                            + "," + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_initial
+                            + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
+                            + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
+                            + " WHERE " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_storecategid + " = " + storecategoryID
+                            + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder);
+                    cursStoreCategoryGroups.moveToFirst();
 
-                    String groupDesc = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupdesc));
-                    int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
-                    String groupExempt = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt));
-                    String groupInitial = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_initial));
-                    String groupFinal = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_final));
+                    while (!cursStoreCategoryGroups.isAfterLast()) {
 
-                    if(!sqlLibrary.HasQuestionsPerGroup(storeCategroupID)) {
-                        cursStoreCategoryGroups.moveToNext();
-                        continue;
-                    }
+                        String groupDesc = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupdesc));
+                        int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+                        String groupExempt = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_exempt));
+                        String groupInitial = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_initial));
+                        String groupFinal = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_final));
 
-                    // STORE QUESTION
-                    Cursor cursStoreQuestion = sqlLibrary.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STOREQUESTION
-                            + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
-                            + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategroupID
-                            + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
-                    cursStoreQuestion.moveToFirst();
-
-                    String answer = "";
-                    String fullAnswer = "";
-                    String formtypedesc = "";
-                    int finalValue = 0;
-                    int exemptValue = 0;
-                    int initialValue = 0;
-
-                    while (!cursStoreQuestion.isAfterLast()) {
-                        String prompt = cursStoreQuestion.getString(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt)).trim();
-                        int formtypeid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_formtypeid));
-                        int formid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_formid));
-                        fullAnswer = "";
-                        try {
-                            answer = cursStoreQuestion.getString(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
-                            if(!answer.equals("")) fullAnswer = sqlLibrary.GetAnswer(answer, formtypeid, formid);
-                            finalValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_final));
-                            exemptValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_exempt));
-                            initialValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_initial));
-                        }
-                        catch (NullPointerException nex) { }
-
-                        formtypedesc = sqlLibrary.GetFormTypeDesc(formtypeid);
-
-                        // FOR MULTI LINE, REPLACE ENDLINES WITH WHITESPACE
-                        if(formtypeid == 5) {
-                            fullAnswer = fullAnswer.trim().replace("\n", " ");
+                        if (!sqlLibrary.HasQuestionsPerGroup(storeCategroupID)) {
+                            cursStoreCategoryGroups.moveToNext();
+                            continue;
                         }
 
-                        strDetailsBody += categoryName + "|";
-                        strDetailsBody += groupDesc + "|";
-                        strDetailsBody += prompt + "|";
-                        strDetailsBody += formtypedesc + "|";
-                        strDetailsBody += fullAnswer + "|";
-                        strDetailsBody += finalValue + "|";
-                        strDetailsBody += exemptValue + "|";
-                        strDetailsBody += initialValue;
-                        strDetailsBody += "\n";
+                        // STORE QUESTION
+                        Cursor cursStoreQuestion = sqlLibrary.RawQuerySelect("SELECT * FROM " + SQLiteDB.TABLE_STOREQUESTION
+                                + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
+                                + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storeCategroupID
+                                + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order);
+                        cursStoreQuestion.moveToFirst();
 
-                        // FOR CONDITIONAL
-                        if(formtypeid == 12) {
-                            Cursor cursConditional = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL, SQLiteDB.COLUMN_CONDITIONAL_formid + " = '" + formid + "' AND " + SQLiteDB.COLUMN_CONDITIONAL_condition + " = '" + fullAnswer.trim().toUpperCase() + "'");
-                            cursConditional.moveToFirst();
+                        String answer = "";
+                        String fullAnswer = "";
+                        String formtypedesc = "";
+                        int finalValue = 0;
+                        int exemptValue = 0;
+                        int initialValue = 0;
 
-                            if(cursConditional.getCount() == 0) {
-                                cursConditional.close();
-                                cursStoreQuestion.moveToNext();
-                                continue;
-                            }
-
-                            String[] aCondformids = null;
-
+                        while (!cursStoreQuestion.isAfterLast()) {
+                            String prompt = cursStoreQuestion.getString(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt)).trim();
+                            int formtypeid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_formtypeid));
+                            int formid = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_QUESTION_formid));
+                            fullAnswer = "";
                             try {
-                                aCondformids = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_conditionformsid)).trim().split("\\^");
+                                answer = cursStoreQuestion.getString(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
+                                if (!answer.equals(""))
+                                    fullAnswer = sqlLibrary.GetAnswer(answer, formtypeid, formid);
+                                finalValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_final));
+                                exemptValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_exempt));
+                                initialValue = cursStoreQuestion.getInt(cursStoreQuestion.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_initial));
+                            } catch (NullPointerException nex) { }
+
+                            formtypedesc = sqlLibrary.GetFormTypeDesc(formtypeid);
+
+                            // FOR MULTI LINE, REPLACE ENDLINES WITH WHITESPACE
+                            if (formtypeid == 5) {
+                                fullAnswer = fullAnswer.trim().replace("\n", " ");
                             }
-                            catch (NullPointerException nex) {
-                                nex.printStackTrace();
-                                cursConditional.close();
-                                cursStoreQuestion.moveToNext();
-                                continue;
-                            }
 
-                            if(aCondformids.length > 0) {
-                                for (String conformid : aCondformids) {
+                            strDetailsBody += categoryName + "|";
+                            strDetailsBody += groupDesc + "|";
+                            strDetailsBody += prompt + "|";
+                            strDetailsBody += formtypedesc + "|";
+                            strDetailsBody += fullAnswer + "|";
+                            strDetailsBody += finalValue + "|";
+                            strDetailsBody += exemptValue + "|";
+                            strDetailsBody += initialValue;
+                            strDetailsBody += "\n";
 
-                                    if(conformid.equals("")) continue;
+                            // FOR CONDITIONAL
+                            if (formtypeid == 12) {
+                                Cursor cursConditional = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL, SQLiteDB.COLUMN_CONDITIONAL_formid + " = '" + formid + "' AND " + SQLiteDB.COLUMN_CONDITIONAL_condition + " = '" + fullAnswer.trim().toUpperCase() + "'");
+                                cursConditional.moveToFirst();
 
-                                    Cursor cursforms = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + conformid + "'");
-                                    cursforms.moveToFirst();
-
-                                    String condPrompt = cursforms.getString(cursforms.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
-                                    int condtypeid = cursforms.getInt(cursforms.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
-                                    formtypedesc = sqlLibrary.GetFormTypeDesc(condtypeid);
-
-                                    // GET CHILD ANSWERS OF CONDITIONAL
-                                    Cursor cursCondAns = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid + " = '" + conformid + "' AND " + SQLiteDB.COLUMN_CONDANS_conditionalformtypeid + " = '" + condtypeid + "'");
-                                    cursCondAns.moveToFirst();
-                                    String childAnswer = "";
-                                    if (cursCondAns.getCount() > 0) {
-                                        childAnswer = cursCondAns.getString(cursCondAns.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalanswer)).trim();
-                                    }
-
-                                    cursCondAns.close();
-
-                                    fullAnswer = childAnswer;
-
-                                    // FOR MULTI LINE, REPLACE ENDLINES WITH WHITESPACE
-                                    if(condtypeid == 5 && !childAnswer.equals("")) {
-                                        fullAnswer = childAnswer.trim().replace("\n", " ");
-                                    }
-
-                                    // SINGLE ITEM
-                                    if (condtypeid == 10 && !childAnswer.equals("")) { // set full answer for single item
-                                        int nSingleselectId = Integer.valueOf(childAnswer);
-                                        // Get option id by formid and singleselect id
-                                        Cursor cursCondSingle = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SINGLESELECT, SQLiteDB.COLUMN_SINGLESELECT_formid + " = '" + conformid + "' AND " + SQLiteDB.COLUMN_SINGLESELECT_id + " = '" + nSingleselectId + "'");
-                                        cursCondSingle.moveToFirst();
-                                        String condOptionid = cursCondSingle.getString(cursCondSingle.getColumnIndex(SQLiteDB.COLUMN_SINGLESELECT_optionid)).trim();
-                                        fullAnswer = sqlLibrary.GetAnswer(condOptionid, condtypeid, Integer.valueOf(conformid));
-                                        cursCondSingle.close();
-                                    }
-
-                                    // MULTI ITEM
-                                    if (condtypeid == 9 && !childAnswer.equals("")) { // set full answer for multi item
-                                        String[] arrAns = childAnswer.split(",");
-                                        String ans = "";
-                                        for (String cboxAns : arrAns) {
-                                            Cursor cursMulti = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_MULTISELECT, SQLiteDB.COLUMN_MULTISELECT_optionid + " = '" + cboxAns + "'");
-                                            cursMulti.moveToNext();
-                                            ans += cursMulti.getString(cursMulti.getColumnIndex(SQLiteDB.COLUMN_MULTISELECT_option)).trim() + "-";
-                                            cursMulti.close();
-                                        }
-                                        fullAnswer = ans;
-                                    }
-
-                                    // LABEL
-                                    if (condtypeid == 1) {
-                                        fullAnswer = "";
-                                        finalValue = 0;
-                                        exemptValue = 0;
-                                        initialValue = 0;
-                                    }
-
-                                    strDetailsBody += categoryName + "|";
-                                    strDetailsBody += groupDesc + "|";
-                                    strDetailsBody += condPrompt + "|";
-                                    strDetailsBody += formtypedesc + "|";
-                                    strDetailsBody += fullAnswer + "|";
-                                    strDetailsBody += finalValue + "|";
-                                    strDetailsBody += exemptValue + "|";
-                                    strDetailsBody += initialValue;
-                                    strDetailsBody += "\n";
-
-                                    cursforms.close();
+                                if (cursConditional.getCount() == 0) {
+                                    cursConditional.close();
+                                    cursStoreQuestion.moveToNext();
+                                    continue;
                                 }
+
+                                String[] aCondformids = null;
+
+                                try {
+                                    aCondformids = cursConditional.getString(cursConditional.getColumnIndex(SQLiteDB.COLUMN_CONDITIONAL_conditionformsid)).trim().split("\\^");
+                                } catch (NullPointerException nex) {
+                                    nex.printStackTrace();
+                                    cursConditional.close();
+                                    cursStoreQuestion.moveToNext();
+                                    continue;
+                                }
+
+                                if (aCondformids.length > 0) {
+
+                                    for (String conformid : aCondformids) {
+
+                                        if (conformid.equals("")) continue;
+
+                                        Cursor cursforms = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_FORMS, SQLiteDB.COLUMN_FORMS_formid + " = '" + conformid + "'");
+                                        cursforms.moveToFirst();
+
+                                        String condPrompt = cursforms.getString(cursforms.getColumnIndex(SQLiteDB.COLUMN_FORMS_prompt));
+                                        int condtypeid = cursforms.getInt(cursforms.getColumnIndex(SQLiteDB.COLUMN_FORMS_typeid));
+                                        formtypedesc = sqlLibrary.GetFormTypeDesc(condtypeid);
+
+                                        // GET CHILD ANSWERS OF CONDITIONAL
+                                        Cursor cursCondAns = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_CONDITIONAL_ANSWERS, SQLiteDB.COLUMN_CONDANS_conditionalformid + " = '" + conformid + "' AND " + SQLiteDB.COLUMN_CONDANS_conditionalformtypeid + " = '" + condtypeid + "'");
+                                        cursCondAns.moveToFirst();
+                                        String childAnswer = "";
+                                        if (cursCondAns.getCount() > 0) {
+                                            childAnswer = cursCondAns.getString(cursCondAns.getColumnIndex(SQLiteDB.COLUMN_CONDANS_conditionalanswer)).trim();
+                                        }
+
+                                        cursCondAns.close();
+
+                                        fullAnswer = childAnswer;
+
+                                        // FOR MULTI LINE, REPLACE ENDLINES WITH WHITESPACE
+                                        if (condtypeid == 5 && !childAnswer.equals("")) {
+                                            fullAnswer = childAnswer.trim().replace("\n", " ");
+                                        }
+
+                                        // SINGLE ITEM
+                                        if (condtypeid == 10 && !childAnswer.equals("")) { // set full answer for single item
+                                            int nSingleselectId = Integer.valueOf(childAnswer);
+                                            // Get option id by formid and singleselect id
+                                            Cursor cursCondSingle = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SINGLESELECT, SQLiteDB.COLUMN_SINGLESELECT_formid + " = '" + conformid + "' AND " + SQLiteDB.COLUMN_SINGLESELECT_id + " = '" + nSingleselectId + "'");
+                                            cursCondSingle.moveToFirst();
+                                            String condOptionid = cursCondSingle.getString(cursCondSingle.getColumnIndex(SQLiteDB.COLUMN_SINGLESELECT_optionid)).trim();
+                                            fullAnswer = sqlLibrary.GetAnswer(condOptionid, condtypeid, Integer.valueOf(conformid));
+                                            cursCondSingle.close();
+                                        }
+
+                                        // MULTI ITEM
+                                        if (condtypeid == 9 && !childAnswer.equals("")) { // set full answer for multi item
+                                            String[] arrAns = childAnswer.split(",");
+                                            String ans = "";
+                                            for (String cboxAns : arrAns) {
+                                                Cursor cursMulti = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_MULTISELECT, SQLiteDB.COLUMN_MULTISELECT_optionid + " = '" + cboxAns + "'");
+                                                cursMulti.moveToNext();
+                                                ans += cursMulti.getString(cursMulti.getColumnIndex(SQLiteDB.COLUMN_MULTISELECT_option)).trim() + "-";
+                                                cursMulti.close();
+                                            }
+                                            fullAnswer = ans;
+                                        }
+
+                                        // LABEL
+                                        if (condtypeid == 1) {
+                                            fullAnswer = "";
+                                            finalValue = 0;
+                                            exemptValue = 0;
+                                            initialValue = 0;
+                                        }
+
+                                        strDetailsBody += categoryName + "|";
+                                        strDetailsBody += groupDesc + "|";
+                                        strDetailsBody += condPrompt + "|";
+                                        strDetailsBody += formtypedesc + "|";
+                                        strDetailsBody += fullAnswer + "|";
+                                        strDetailsBody += finalValue + "|";
+                                        strDetailsBody += exemptValue + "|";
+                                        strDetailsBody += initialValue;
+                                        strDetailsBody += "\n";
+
+                                        cursforms.close();
+                                    }
+                                }
+                                cursConditional.close();
                             }
 
-                            cursConditional.close();
+                            cursStoreQuestion.moveToNext();
                         }
 
-                        cursStoreQuestion.moveToNext();
-                    }
+                        if (!toggleAudit) {
+                            strSummaryBody += "audit_summary\n";
+                            toggleAudit = true;
+                        }
+                        strSummaryBody += categoryName + "|" + groupDesc + "|" + groupFinal + "|" + groupExempt + "|" + groupInitial;
+                        strSummaryBody += "\n";
 
-                    if(!toggleAudit) {
-                        strSummaryBody += "audit_summary\n";
-                        toggleAudit = true;
+                        cursStoreQuestion.close();
+                        cursStoreCategoryGroups.moveToNext();
                     }
-                    strSummaryBody += categoryName + "|" + groupDesc + "|" + groupFinal + "|" + groupExempt + "|" + groupInitial;
-                    strSummaryBody += "\n";
-
-                    cursStoreQuestion.close();
-                    cursStoreCategoryGroups.moveToNext();
+                    cursStoreCategoryGroups.close();
+                    cursStoreCategory.moveToNext();
                 }
-                cursStoreCategoryGroups.close();
-                cursStoreCategory.moveToNext();
+
+                strDetailsBody += strSummaryBody;
+                cursStoreCategory.close();
+                result = true;
+            }
+            catch (Exception ex) {
+                errmsg = ex.getMessage() != null ? ex.getMessage() : "Can't preview store audits.";
+                errorLog.appendLog(errmsg, TAG);
             }
 
-            strDetailsBody += strSummaryBody;
-            cursStoreCategory.close();
-
-            return ret;
+            return result;
         }
 
 
@@ -822,43 +778,27 @@ public class StorePreviewActivity extends AppCompatActivity {
 
                 String sBody = "";
 
-                cursStore.moveToFirst();
-
-                if(cursStore.getCount() > 0) {
-
-                    String account = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_account));
-                    String customerCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_customercode));
-                    String customer = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_customer));
-                    String regionCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_regioncode));
-                    String region = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_region));
-                    String distributorCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
-                    String distributor = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
-                    String templateCode = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatecode));
-                    String auditId = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_auditid));
-                    String area = cursStore.getString(cursStore.getColumnIndex(SQLiteDB.COLUMN_STORE_area));
-
                     sBody += General.usercode + "|"
-                            + auditId + "|"
-                            + account + "|"
-                            + customerCode + "|"
-                            + customer + "|"
-                            + regionCode + "|"
-                            + region + "|"
-                            + distributorCode + "|"
-                            + distributor + "|"
-                            + storeCode + "|"
-                            + storename + "|"
-                            + templateCode + "|"
-                            + storeTemplate + "|"
-                            + storeFinalValue + "|"
+                            + General.selectedStore.auditID + "|"
+                            + General.selectedStore.account + "|"
+                            + General.selectedStore.customerCode + "|"
+                            + General.selectedStore.customer + "|"
+                            + General.selectedStore.regionCode + "|"
+                            + General.selectedStore.region + "|"
+                            + General.selectedStore.distributorCode + "|"
+                            + General.selectedStore.distributor + "|"
+                            + General.selectedStore.storeCode + "|"
+                            + General.selectedStore.storeName + "|"
+                            + General.selectedStore.templateCode + "|"
+                            + General.selectedStore.templateName + "|"
+                            + String.valueOf(General.selectedStore.finalValue) + "|"
                             + strOsa + "|"
                             + strNpi + "|"
                             + strPlanogram + "|"
-                            + area;
+                            + General.selectedStore.area;
 
                     sBody += "\n";
                     sBody += strDetailsBody;
-                }
 
                 writer.append(sBody);
                 writer.flush();
@@ -1045,7 +985,7 @@ public class StorePreviewActivity extends AppCompatActivity {
     private void SetPostingSuccessful(String msg) {
         sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STORE
                 + " SET " + SQLiteDB.COLUMN_STORE_posted + " = '1', "
-                + SQLiteDB.COLUMN_STORE_postingdate + " = '" + General.getDateToday() + "', " + SQLiteDB.COLUMN_STORE_postingtime + " = '" + General.getTimeToday() + "'  WHERE " + SQLiteDB.COLUMN_STORE_id + " = '" + previewStoreID + "'");
+                + SQLiteDB.COLUMN_STORE_postingdate + " = '" + General.getDateToday() + "', " + SQLiteDB.COLUMN_STORE_postingtime + " = '" + General.getTimeToday() + "'  WHERE " + SQLiteDB.COLUMN_STORE_id + " = '" + General.selectedStore.storeID + "'");
 
         postDialog = new AlertDialog.Builder(StorePreviewActivity.this).create();
         postDialog.setTitle("Success");
@@ -1371,7 +1311,7 @@ public class StorePreviewActivity extends AppCompatActivity {
             }
 
             // STORE CATEGORY
-            Cursor cursStoreCategory = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + previewStoreID + "' AND " + SQLiteDB.COLUMN_STORECATEGORY_status + " > '0'");
+            Cursor cursStoreCategory = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_STORECATEGORY, SQLiteDB.COLUMN_STORECATEGORY_storeid + " = '" + General.selectedStore.storeID + "' AND " + SQLiteDB.COLUMN_STORECATEGORY_status + " > '0'");
             cursStoreCategory.moveToFirst();
 
             int totalImages = 0;
@@ -1441,7 +1381,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
         if(cursOsalist.getCount() > 0) {
 
-            Cursor cursGetOsalookup = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALOOKUP, SQLiteDB.COLUMN_OSALOOKUP_storeid + " = " + tempStoreId + " AND " + SQLiteDB.COLUMN_OSALOOKUP_categoryid + " = " + categoryid);
+            Cursor cursGetOsalookup = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALOOKUP, SQLiteDB.COLUMN_OSALOOKUP_storeid + " = " + General.selectedStore.webStoreID + " AND " + SQLiteDB.COLUMN_OSALOOKUP_categoryid + " = " + categoryid);
             cursGetOsalookup.moveToFirst();
 
             if(cursGetOsalookup.getCount() > 0) {

@@ -28,12 +28,14 @@ import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
+import com.android.pplusaudit2.PJP_Compliance.Compliance;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.TCRLib;
 import com.android.pplusaudit2._Category.CategoryActivity;
 
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.concurrent.ArrayBlockingQueue;
 
 /**
  * Created by ULTRABOOK on 9/22/2015.
@@ -58,6 +60,7 @@ public class StoreActivity extends AppCompatActivity {
     private ErrorLog errorLog;
     private FilterItemAdapter adapterFilterItem;
     private String strSelectedFilterArea;
+    private ArrayList<Compliance> arrCompliances;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -83,6 +86,7 @@ public class StoreActivity extends AppCompatActivity {
         wlStayAwake.acquire();
         sql = new SQLLibrary(this);
         sqLiteDB = new SQLiteDB(this);
+        arrCompliances = new ArrayList<>();
 
         GetPerfectList();
 
@@ -285,6 +289,14 @@ public class StoreActivity extends AppCompatActivity {
                     String distCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributorcode));
                     String dist = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
                     String remarks = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_remarks));
+                    String startDate = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_startdate));
+                    String endDate = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_enddate));
+                    String templateCode = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatecode));
+
+                    double osa = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_osa));
+                    double npi = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_npi));
+                    double planogram = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_planogram));
+                    double perfectStore = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_perfectstore));
 
                     Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted, gMatrixId);
                     store.auditID = auditID;
@@ -297,6 +309,13 @@ public class StoreActivity extends AppCompatActivity {
                     store.distributorCode = distCode;
                     store.distributor = dist;
                     store.remarks = remarks;
+                    store.startDate = startDate;
+                    store.endDate = endDate;
+                    store.osa = osa;
+                    store.npi = npi;
+                    store.planogram = planogram;
+                    store.perfectStore = perfectStore;
+                    store.templateCode = templateCode;
 
                     if (isAudited && !isPosted)
                         arrPendings.add(store);
@@ -401,10 +420,14 @@ public class StoreActivity extends AppCompatActivity {
 
         Stores storeSelected = (Stores) v.getTag();
 
+        if(storeSelected == null) {
+            Toast.makeText(StoreActivity.this, "No selected Store.", Toast.LENGTH_LONG).show();
+            return;
+        }
+
         General.selectedStore = storeSelected;
 
         Intent intentPreview = new Intent(StoreActivity.this, StorePreviewActivity.class);
-        intentPreview.putExtra("STORE_ID", String.valueOf(storeSelected.storeID));
         startActivity(intentPreview);
     }
 
@@ -442,7 +465,7 @@ public class StoreActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(StoreActivity.this, "", "Getting store template. Please wait", true);
+            progressDL = ProgressDialog.show(StoreActivity.this, "", "Loading store template. Please wait", true);
         }
 
         @Override
@@ -466,7 +489,6 @@ public class StoreActivity extends AppCompatActivity {
                     cursKeylist.moveToFirst();
                     General.arrSecondaryKeylist = new ArrayList<String>();
                     while (!cursKeylist.isAfterLast()) {
-
                         General.arrSecondaryKeylist.add(cursKeylist.getString(cursKeylist.getColumnIndex(SQLiteDB.COLUMN_SECONDARYKEYLIST_keygroupid)));
                         cursKeylist.moveToNext();
                     }

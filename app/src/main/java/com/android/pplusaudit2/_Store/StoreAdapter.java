@@ -74,7 +74,7 @@ public class StoreAdapter extends BaseAdapter {
         final int storeid = storeClassResult.get(position).storeID;
 
         holder.tvwStore.setText(String.valueOf(storeClassResult.get(position).storeName.toUpperCase()));
-        holder.tvwTemplatename.setText(String.valueOf(storeClassResult.get(position).Tempname));
+        holder.tvwTemplatename.setText(String.valueOf(storeClassResult.get(position).templateName));
         holder.tvwPostingDateTime.setText("");
 
         if(storeClassResult.get(position).isAudited) {

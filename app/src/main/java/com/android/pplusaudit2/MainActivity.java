@@ -69,7 +69,6 @@ import java.util.HashMap;
 
 public class MainActivity extends AppCompatActivity {
 
-    private String UrlAPI;
     private String urlGet;
     private String password;
     private String username;
@@ -106,7 +105,6 @@ public class MainActivity extends AppCompatActivity {
     // -------
 
     private MyMessageBox messageBox;
-    private JSON_pplus json;
     private AlertDialog alertDialog;
 
     private SQLLibrary sql;
@@ -151,13 +149,11 @@ public class MainActivity extends AppCompatActivity {
 
         TAG = MainActivity.this.getLocalClassName();
 
-        UrlAPI =  General.mainURL + "/api/auth";
         urlGet =  General.mainURL + "/api/auth?";
         urlDownload = General.mainURL + "/api/download?";
         urlImage = General.mainURL + "/api/image?";
 
         messageBox = new MyMessageBox(this);
-        json = new JSON_pplus(this);
         sql = new SQLLibrary(this);
 
         arrStringTemplates = new ArrayList<>();
@@ -372,13 +368,6 @@ public class MainActivity extends AppCompatActivity {
 
             new AsyncPingWebServer().execute();
         }
-    }
-
-    @Override
-    protected void onStart() {
-        super.onStart();
-//        WifiManager wifiManager = (WifiManager) this.getSystemService(Context.WIFI_SERVICE);
-//        if(!wifiManager.isWifiEnabled()) wifiManager.setWifiEnabled(true);
     }
 
     @Override
@@ -854,8 +843,7 @@ public class MainActivity extends AppCompatActivity {
                             // extracts file name from header field
                             int index = disposition.indexOf("filename=");
                             if (index > 0) {
-                                fileName = disposition.substring(index + 10,
-                                        disposition.length() - 1);
+                                fileName = disposition.substring(index + 10, disposition.length() - 1);
                             }
                         } else {
                             // extracts file name from URL
@@ -933,7 +921,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
             if(!bResult) {
-                Toast.makeText(MainActivity.this, "Slow or unstable internet connection.", Toast.LENGTH_SHORT).show();
+                General.messageBox(MainActivity.this, "Download", errmsg);
                 sql.TruncateTable(SQLiteDB.TABLE_USER);
                 return;
             }
