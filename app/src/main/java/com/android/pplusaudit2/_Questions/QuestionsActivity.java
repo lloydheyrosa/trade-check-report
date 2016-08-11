@@ -2434,7 +2434,6 @@ public class QuestionsActivity extends AppCompatActivity {
                 Cursor cursOsalist = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALIST, SQLiteDB.COLUMN_OSALIST_osakeygroupid + " = '" + groupID + "'");
                 cursOsalist.moveToFirst();
                 if (cursOsalist.getCount() > 0) {
-
                     nTotalCorrectOSA += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
                     nTotalQuestionsOSA += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
                 }
@@ -2444,7 +2443,6 @@ public class QuestionsActivity extends AppCompatActivity {
                 Cursor cursNpi = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_NPI, SQLiteDB.COLUMN_NPI_keygroupid + " = '" + groupID + "'");
                 cursNpi.moveToFirst();
                 if (cursNpi.getCount() > 0) {
-
                     nTotalCorrectNPI += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
                     nTotalQuestionsNPI += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
                 }
@@ -2454,11 +2452,11 @@ public class QuestionsActivity extends AppCompatActivity {
                 Cursor cursPlanogram = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_PLANOGRAM, SQLiteDB.COLUMN_PLANOGRAM_keygroupid + " = '" + groupID + "'");
                 cursPlanogram.moveToFirst();
                 if (cursPlanogram.getCount() > 0) {
-
                     nTotalCorrectPlano += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
                     nTotalQuestionsPlano += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));;
                 }
                 cursPlanogram.close();
+
                 cursStoreCategoryGroups.moveToNext();
             }
             cursStoreCategoryGroups.close();

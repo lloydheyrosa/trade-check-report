@@ -49,7 +49,7 @@ public class ErrorLog {
             int lineNumber = Thread.currentThread().getStackTrace()[3].getLineNumber();
 
             //BufferedWriter for performance, true to set append to file flag
-            String strLog = "[" + General.getDateTime() + "][" + classname + "][" + methodName + "][" + lineNumber + "][" + General.getDeviceName() + "][" + General.getDeviceOsVersion() + "]" + General.versionCode + "-" + SQLiteDB.DATABASE_VERSION + ": " + text;
+            String strLog = "[" + General.getDateTimeToday("-") + "][" + classname + "][" + methodName + "][" + lineNumber + "][" + General.getDeviceName() + "][" + General.getDeviceOsVersion() + "]" + General.versionCode + "-" + SQLiteDB.DATABASE_VERSION + ": " + text;
             Log.e(classname, strLog);
             BufferedWriter buf = new BufferedWriter(new FileWriter(fileLog, true));
             buf.append(strLog + "\n");

@@ -93,7 +93,6 @@ public class SQLLibrary {
     }*/
 
     public String GetTemplateName(String strStoreid) {
-
         Cursor curs = GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = " + strStoreid);
         curs.moveToFirst();
         String result = curs.getString(curs.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename));
@@ -102,7 +101,6 @@ public class SQLLibrary {
     }
 
     public String GetStoreCode(String strStoreid) {
-
         Cursor curs = GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = " + strStoreid);
         curs.moveToFirst();
         String result = curs.getString(curs.getColumnIndex(SQLiteDB.COLUMN_STORE_storecode));
@@ -111,7 +109,6 @@ public class SQLLibrary {
     }
 
     public String GetStartDateOfStore(String strStoreid) {
-
         Cursor curs = GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = " + strStoreid);
         curs.moveToFirst();
         String result = curs.getString(curs.getColumnIndex(SQLiteDB.COLUMN_STORE_startdate));
@@ -120,7 +117,6 @@ public class SQLLibrary {
     }
 
     public String GetEndDateOfStore(String strStoreid) {
-
         Cursor curs = GetDataCursor(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id + " = " + strStoreid);
         curs.moveToFirst();
         String result = curs.getString(curs.getColumnIndex(SQLiteDB.COLUMN_STORE_enddate));
@@ -129,22 +125,18 @@ public class SQLLibrary {
     }
 
     public void UpdateRecord(String tableName, String strWhereField, String strWhereValue, String[] aFields, String[] aValues) {
-        try{
-
+        try {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
-
             ContentValues contentValues = new ContentValues();
 
-            for (int i = 0; i < aFields.length ; i++)
-            {
+            for (int i = 0; i < aFields.length ; i++) {
                 contentValues.put(aFields[i], aValues[i]);
             }
 
             db.update(tableName, contentValues, strWhereField + " = ?", new String[] { strWhereValue });
-
             db.close();
 
-        }catch(Exception e){
+        } catch(Exception e) {
             e.printStackTrace();
         }
     }

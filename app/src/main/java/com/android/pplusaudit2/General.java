@@ -32,7 +32,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = true;
+    public static boolean BETA = false;
 
     public static String versionName = "";
     public static int versionCode = 0;
@@ -73,7 +73,6 @@ public class General {
     public static ArrayList<String> arrPendingStores = new ArrayList<>();
 
     public static Stores selectedStore;
-
     public static boolean isAdminMode = false;
 
     public static String GetApiLevelDevice() {
@@ -200,7 +199,14 @@ public class General {
     };
 
 
-    public static String getDateTime() {
+    public static String getDateTimeToday(String separator) {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        Date date = new Date();
+        return dateFormat.format(date);
+    }
+
+    public static String getDateTimeToday() {
         SimpleDateFormat dateFormat = new SimpleDateFormat(
                 "yyyy-MM-dd HH:mm:ss", Locale.getDefault());
         Date date = new Date();

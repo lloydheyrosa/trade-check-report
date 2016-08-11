@@ -48,7 +48,7 @@ public class AutoErrorLog implements Thread.UncaughtExceptionHandler {
                 for (int i = 0; i < arr.length; i++)
                     report += "    " + arr[i].toString() + "\n";
             }
-            report += "Datetime: " + General.getDateTime() + "\n";
+            report += "Datetime: " + General.getDateTimeToday("-") + "\n";
             report += "Model: " + General.getDeviceName() + "\n";
             report += "SQLite Version: " + String.valueOf(SQLiteDB.DATABASE_VERSION) + "\n";
             report += "Version code: " + String.valueOf(General.versionCode) + "\n";
