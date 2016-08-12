@@ -157,11 +157,11 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 Cursor cursOsalist = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALIST, SQLiteDB.COLUMN_OSALIST_osakeygroupid + " = '" + groupId + "'");
                 cursOsalist.moveToFirst();
                 if(cursOsalist.getCount() > 0) {
-                    int nCorrectAns = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    int nCorrectOsaAns = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
                     int nTotalQuestionOSA = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
-                    if(nCorrectAns > 0 || grpScoreno.trim().equals("1")) {
-                        String strOsaScore = String.valueOf(nCorrectAns) + " / " + String.valueOf(nTotalQuestionOSA);
+                    if(nCorrectOsaAns > 0 || grpScoreno.trim().equals("1")) {
+                        String strOsaScore = String.valueOf(nCorrectOsaAns) + " / " + String.valueOf(nTotalQuestionOSA);
                         tvwScore.setText(strOsaScore);
                     }
                 }

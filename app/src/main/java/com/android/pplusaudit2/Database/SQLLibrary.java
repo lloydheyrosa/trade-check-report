@@ -378,20 +378,35 @@ public class SQLLibrary {
         return ret;
     }
 
-    public Cursor GetStoreQuestions(String strCondition, SQLiteDatabase db, SQLiteDB dbh) {
+    public int GetCorrectAnswersComp(String storecateggroupid) {
 
+/*        Cursor cursQuestions = RawQuerySelect("SELECT COUNT(*) as questions"
+                + " FROM " + SQLiteDB.TABLE_STOREQUESTION + " JOIN " + SQLiteDB.TABLE_STORECATEGORYGROUP
+                + " ON " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_id
+                + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid + " = " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id
+                + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('2','3','4','5','6','7','8','9','10','11','12')"
+                + " AND " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);*/
+
+        Cursor cursQuestions = RawQuerySelect("SELECT COUNT(*) AS correctAns FROM " + SQLiteDB.TABLE_STOREQUESTION
+                + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_final + " = '1'"
+                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);
+        cursQuestions.moveToFirst();
+
+        int ret = cursQuestions.getInt(cursQuestions.getColumnIndex("correctAns"));
+        cursQuestions.close();
+        return ret;
+    }
+
+    public Cursor GetStoreQuestions(String strCondition, SQLiteDatabase db, SQLiteDB dbh) {
         db = dbh.getReadableDatabase();
         Cursor cursor = db.rawQuery("SELECT " + SQLiteDB.COLUMN_QUESTION_questionid + " FROM " + SQLiteDB.TABLE_QUESTION + " WHERE " + strCondition, null);
         return cursor;
-
     }
 
     public Cursor GetDataCursor(String tableName, String strCondition) {
-
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery("select * from " + tableName + " where " + strCondition, null);
         return cursor;
-
     }
 
     /*public Cursor GetQuestions2(String strCondition) {

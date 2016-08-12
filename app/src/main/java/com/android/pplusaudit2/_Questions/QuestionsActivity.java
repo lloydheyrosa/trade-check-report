@@ -2184,7 +2184,6 @@ public class QuestionsActivity extends AppCompatActivity {
                                 break;
                         }
 
-
                         sqlLibrary.ExecSQLWrite("UPDATE " + SQLiteDB.TABLE_STOREQUESTION
                                 + " SET " + SQLiteDB.COLUMN_STOREQUESTION_isAnswered + " = '1'"
                                 + "," + SQLiteDB.COLUMN_STOREQUESTION_answer + " = '" + answer + "'"
