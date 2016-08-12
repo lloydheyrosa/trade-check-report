@@ -2300,7 +2300,7 @@ public class QuestionsActivity extends AppCompatActivity {
                     SQLiteDB.COLUMN_STORE_final,
                     SQLiteDB.COLUMN_STORE_perfectstore
             };
-            String[] aUpdateValues = new String[]{
+            String[] aUpdateValues = new String[] {
                     String.valueOf(nStorePerfect),
                     String.valueOf(nStorePerfect),
                     strPerfectStoreScore
@@ -2344,14 +2344,17 @@ public class QuestionsActivity extends AppCompatActivity {
                     }
                     cursPassedGroup.moveToNext();
                 }
-                if (nReq == nPGroupMatched) nCategoryPerfect = 1;
+
+                if (nReq == nPGroupMatched)
+                    nCategoryPerfect = 1;
             }
 
-            String[] aUpdateFields = new String[]{
+            String[] aUpdateFields = new String[] {
                     SQLiteDB.COLUMN_STORECATEGORY_initial,
-                    SQLiteDB.COLUMN_STORECATEGORY_final,
+                    SQLiteDB.COLUMN_STORECATEGORY_final
             };
-            String[] aUpdateValues = new String[]{
+
+            String[] aUpdateValues = new String[] {
                     String.valueOf(nCategoryPerfect),
                     String.valueOf(nCategoryPerfect)
             };
@@ -2428,6 +2431,7 @@ public class QuestionsActivity extends AppCompatActivity {
             cursStoreCategoryGroups.moveToFirst();
 
             while (!cursStoreCategoryGroups.isAfterLast()) {
+
                 String groupID = cursStoreCategoryGroups.getString(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupid));
                 int storeCategroupID = cursStoreCategoryGroups.getInt(cursStoreCategoryGroups.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
 
