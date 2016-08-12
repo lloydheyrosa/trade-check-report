@@ -142,8 +142,8 @@ public class SQLLibrary {
     }
 
     public void UpdateRecord(String tableName, String[] strWhereField, String[] strWhereValue, String[] aFields, String[] aValues) {
-        try{
 
+        try {
             SQLiteDatabase db = dbHelper.getWritableDatabase();
 
             ContentValues contentValues = new ContentValues();
@@ -162,7 +162,7 @@ public class SQLLibrary {
 
             db.close();
 
-        }catch(Exception e){
+        } catch(Exception e){
             e.printStackTrace();
         }
     }
@@ -208,7 +208,6 @@ public class SQLLibrary {
     }
 
     public Cursor RawQuerySelect(String strQuery) {
-
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery(strQuery, null);
         //db.close();
@@ -255,12 +254,34 @@ public class SQLLibrary {
         Cursor cursTotalQuestions = RawQuerySelect("SELECT COUNT(*) AS totQuestions FROM " + SQLiteDB.TABLE_STOREQUESTION
                 + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
                 + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('3','4','9','10','11','12')"
+                + " AND " + SQLiteDB.COLUMN_QUESTION_expectedans + " != ''"
                 + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);
         cursTotalQuestions.moveToFirst();
 
         int ret = 0;
         ret = cursTotalQuestions.getInt(cursTotalQuestions.getColumnIndex("totQuestions"));
         cursTotalQuestions.close();
+        return ret;
+    }
+
+    public int GetCorrectAnswersComp(String storecateggroupid) {
+
+//        String strQuery = "SELECT COUNT(*) AS correctAns FROM " + SQLiteDB.TABLE_STOREQUESTION
+//                + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_final + " = '1'"
+//                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid;
+
+        String strQuery = "SELECT COUNT(*) AS correctAns FROM " + SQLiteDB.TABLE_STOREQUESTION
+                + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id + " = " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid
+                + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('3','4','9','10','11','12')"
+                + " AND " + SQLiteDB.COLUMN_QUESTION_expectedans + " != ''"
+                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_final + " = '1'"
+                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = '" + storecateggroupid + "'";
+
+        Cursor cursQuestions = RawQuerySelect(strQuery);
+        cursQuestions.moveToFirst();
+
+        int ret = cursQuestions.getInt(cursQuestions.getColumnIndex("correctAns"));
+        cursQuestions.close();
         return ret;
     }
 
@@ -361,35 +382,9 @@ public class SQLLibrary {
 
     public int GetCorrectAnswers(String storecateggroupid) {
 
-/*        Cursor cursQuestions = RawQuerySelect("SELECT COUNT(*) as questions"
-                + " FROM " + SQLiteDB.TABLE_STOREQUESTION + " JOIN " + SQLiteDB.TABLE_STORECATEGORYGROUP
-                + " ON " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_id
-                + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid + " = " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id
-                + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('2','3','4','5','6','7','8','9','10','11','12')"
-                + " AND " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);*/
-
         Cursor cursQuestions = RawQuerySelect("SELECT COUNT(*) AS correctAns FROM " + SQLiteDB.TABLE_STOREQUESTION
                 + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_final + " = '1'"
-                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);
-        cursQuestions.moveToFirst();
-
-        int ret = cursQuestions.getInt(cursQuestions.getColumnIndex("correctAns"));
-        cursQuestions.close();
-        return ret;
-    }
-
-    public int GetCorrectAnswersComp(String storecateggroupid) {
-
-/*        Cursor cursQuestions = RawQuerySelect("SELECT COUNT(*) as questions"
-                + " FROM " + SQLiteDB.TABLE_STOREQUESTION + " JOIN " + SQLiteDB.TABLE_STORECATEGORYGROUP
-                + " ON " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_id
-                + " JOIN " + SQLiteDB.TABLE_QUESTION + " ON " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_questionid + " = " + SQLiteDB.TABLE_QUESTION + "." + SQLiteDB.COLUMN_QUESTION_id
-                + " WHERE " + SQLiteDB.COLUMN_QUESTION_formtypeid + " IN ('2','3','4','5','6','7','8','9','10','11','12')"
-                + " AND " + SQLiteDB.TABLE_STOREQUESTION + "." + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);*/
-
-        Cursor cursQuestions = RawQuerySelect("SELECT COUNT(*) AS correctAns FROM " + SQLiteDB.TABLE_STOREQUESTION
-                + " WHERE " + SQLiteDB.COLUMN_STOREQUESTION_final + " = '1'"
-                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = " + storecateggroupid);
+                + " AND " + SQLiteDB.COLUMN_STOREQUESTION_storecategorygroupid + " = '" + storecateggroupid + "'");
         cursQuestions.moveToFirst();
 
         int ret = cursQuestions.getInt(cursQuestions.getColumnIndex("correctAns"));
@@ -437,11 +432,9 @@ public class SQLLibrary {
     }
 
     /*public Cursor GetGroupItem(String tableName, String strCondition) {
-
         SQLiteDatabase db = dbHelper.getReadableDatabase();
         Cursor cursor = db.rawQuery("select * from " + tableName + " where " + strCondition + " GROUP BY " + SQLiteDB.COLUMN_QUESTION_formgrpid + " ORDER BY " + SQLiteDB.COLUMN_QUESTION_order, null);
         return cursor;
-
     }
 
 

@@ -157,7 +157,7 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 Cursor cursOsalist = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALIST, SQLiteDB.COLUMN_OSALIST_osakeygroupid + " = '" + groupId + "'");
                 cursOsalist.moveToFirst();
                 if(cursOsalist.getCount() > 0) {
-                    int nCorrectOsaAns = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    int nCorrectOsaAns = sqlLibrary.GetCorrectAnswersComp(String.valueOf(storeCategroupID));
                     int nTotalQuestionOSA = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
                     if(nCorrectOsaAns > 0 || grpScoreno.trim().equals("1")) {
@@ -172,7 +172,7 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 cursNpi.moveToFirst();
                 if (cursNpi.getCount() > 0) {
 
-                    int nTotalCorrectNPI = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    int nTotalCorrectNPI = sqlLibrary.GetCorrectAnswersComp(String.valueOf(storeCategroupID));
                     int nTotalQuestionsNPI = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
                     if(nTotalCorrectNPI > 0 || grpScoreno.trim().equals("1")) {
@@ -187,7 +187,7 @@ class PreviewCategoryAdapter extends BaseAdapter {
                 cursPlanogram.moveToFirst();
                 if (cursPlanogram.getCount() > 0) {
 
-                    int nTotalCorrectPlano = sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    int nTotalCorrectPlano = sqlLibrary.GetCorrectAnswersComp(String.valueOf(storeCategroupID));
                     int nTotalQuestionsPlano = sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
 
                     if(nTotalCorrectPlano > 0 || grpScoreno.trim().equals("1")) {

@@ -2147,8 +2147,15 @@ public class QuestionsActivity extends AppCompatActivity {
                         if (arrExpectedAns.contains(answer)) {
                             questionInitStatus = 1;
                         }
+                        else {
+                            if(arrExpectedAns.size() == 1) {
+                                if (arrExpectedAns.get(0).trim().equals("") && !answer.trim().equals("")) {
+                                    questionInitStatus = 1;
+                                }
+                            }
+                        }
 
-                        // GET EXPECTED ANSWER VALUE AND CHECK CORRECT ANSWER
+                        // GET EXPECTED ANSWER VALUE AND CHECK CORRECT ANSWER FOR CONDITIONAL
                         switch (expFormtypeid) {
 
                             case 9: // MULTI ITEM
@@ -2433,7 +2440,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 Cursor cursOsalist = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_OSALIST, SQLiteDB.COLUMN_OSALIST_osakeygroupid + " = '" + groupID + "'");
                 cursOsalist.moveToFirst();
                 if (cursOsalist.getCount() > 0) {
-                    nTotalCorrectOSA += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    nTotalCorrectOSA += sqlLibrary.GetCorrectAnswersComp(String.valueOf(storeCategroupID));
                     nTotalQuestionsOSA += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
                 }
                 cursOsalist.close();
@@ -2442,7 +2449,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 Cursor cursNpi = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_NPI, SQLiteDB.COLUMN_NPI_keygroupid + " = '" + groupID + "'");
                 cursNpi.moveToFirst();
                 if (cursNpi.getCount() > 0) {
-                    nTotalCorrectNPI += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    nTotalCorrectNPI += sqlLibrary.GetCorrectAnswersComp(String.valueOf(storeCategroupID));
                     nTotalQuestionsNPI += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));
                 }
                 cursNpi.close();
@@ -2451,7 +2458,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 Cursor cursPlanogram = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_PLANOGRAM, SQLiteDB.COLUMN_PLANOGRAM_keygroupid + " = '" + groupID + "'");
                 cursPlanogram.moveToFirst();
                 if (cursPlanogram.getCount() > 0) {
-                    nTotalCorrectPlano += sqlLibrary.GetCorrectAnswers(String.valueOf(storeCategroupID));
+                    nTotalCorrectPlano += sqlLibrary.GetCorrectAnswersComp(String.valueOf(storeCategroupID));
                     nTotalQuestionsPlano += sqlLibrary.GetTotalQuestionsComputation(String.valueOf(storeCategroupID));;
                 }
                 cursPlanogram.close();
@@ -2482,10 +2489,10 @@ public class QuestionsActivity extends AppCompatActivity {
                 SQLiteDB.COLUMN_STORE_final,
                 SQLiteDB.COLUMN_STORE_osa,
                 SQLiteDB.COLUMN_STORE_npi,
-                SQLiteDB.COLUMN_STORE_planogram,
+                SQLiteDB.COLUMN_STORE_planogram
         };
 
-        String[] aUpdateValues = new String[]{
+        String[] aUpdateValues = new String[] {
                 storeStatus,
                 storeFinalvalue,
                 storeFinalvalue,
@@ -2493,6 +2500,15 @@ public class QuestionsActivity extends AppCompatActivity {
                 npi,
                 planogram
         };
+
+        if(General.selectedStore != null) {
+            General.selectedStore.finalValue = Integer.parseInt(storeFinalvalue);
+            General.selectedStore.initialValue = Integer.parseInt(storeFinalvalue);
+            General.selectedStore.status = Integer.parseInt(storeStatus);
+            General.selectedStore.osa = dTotalOsa;
+            General.selectedStore.npi = dTotalNpi;
+            General.selectedStore.planogram = dTotalPlanogram;
+        }
 
         sqlLibrary.UpdateRecord(SQLiteDB.TABLE_STORE, SQLiteDB.COLUMN_STORE_id, String.valueOf(General.selectedStore.storeID), aUpdateFields, aUpdateValues);
 
@@ -2548,7 +2564,6 @@ public class QuestionsActivity extends AppCompatActivity {
         // 0 = PENDING
         // 1 = PARTIAL
         // 2 = COMPLETE
-
 
 
         if(nTotAnswered != nTotQuestions) groupStatus = 1;

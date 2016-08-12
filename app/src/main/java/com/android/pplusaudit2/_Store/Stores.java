@@ -15,7 +15,8 @@ public class Stores {
     public final String webStoreID;
     public final int auditTemplateId;
     public final String templateName;
-    public final int finalValue;
+    public int finalValue;
+    public int initialValue;
     public final boolean isAudited;
     public final boolean isPosted;
     public boolean isChecked = false;
@@ -43,9 +44,11 @@ public class Stores {
     public double planogram;
     public double perfectStore;
 
+    public int status;
+
     public ArrayList<Compliance> complianceArrayList = new ArrayList<>();
 
-    public Stores(int id, String code, String webstoreid, String storename, int templateid, String templatename, int finalval, boolean bAns, boolean posted, int gmatrixID) {
+    public Stores(int id, String code, String webstoreid, String storename, int templateid, String templatename, int finalval, int initialVal, boolean bAns, boolean posted, int gmatrixID) {
         this.storeID = id;
         this.storeName = storename;
         this.auditTemplateId = templateid;
@@ -53,6 +56,7 @@ public class Stores {
         this.storeCode = code;
         this.webStoreID = webstoreid;
         this.finalValue = finalval;
+        this.initialValue = initialVal;
         this.isAudited = bAns;
         this.isPosted = posted;
         this.gradeMatrixId = gmatrixID;
@@ -60,5 +64,6 @@ public class Stores {
         this.npi = 0.00;
         this.planogram = 0.00;
         this.perfectStore = 0.00;
+        this.status = 0;
     }
 }

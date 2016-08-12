@@ -460,7 +460,9 @@ public class PjpActivity extends AppCompatActivity {
                         int templateid = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_audittempid));
                         String templatename = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim().replace("\"", "");
                         boolean isAudited = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_status)) > 0;
+                        int nStatus = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_status));
                         int finalValue = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
+                        int initialValue = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_initial));
                         boolean isPosted = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_posted)) == 1;
                         int gMatrixId = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_gradematrixid));
                         int auditID = cursorPjp.getInt(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_auditid));
@@ -474,7 +476,7 @@ public class PjpActivity extends AppCompatActivity {
                         String dist = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_distributor));
                         String remarks = cursorPjp.getString(cursorPjp.getColumnIndex(SQLiteDB.COLUMN_STORE_remarks));
 
-                        Stores newStore = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted, gMatrixId);
+                        Stores newStore = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, initialValue, isAudited, isPosted, gMatrixId);
                         newStore.auditID = auditID;
                         newStore.account = account;
                         newStore.customerCode = customerCode;
@@ -485,6 +487,7 @@ public class PjpActivity extends AppCompatActivity {
                         newStore.distributorCode = distCode;
                         newStore.distributor = dist;
                         newStore.remarks = remarks;
+                        newStore.status = nStatus;
 
                         Cursor cursorCompliance = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_PJPCOMP, SQLiteDB.COLUMN_PJPCOMP_storeid + " = '" + nstoreid + "' AND " + SQLiteDB.COLUMN_PJPCOMP_usercode + " = '" + General.usercode + "' ORDER BY " + SQLiteDB.COLUMN_PJPCOMP_id);
                         if (cursorCompliance.moveToFirst()) {

@@ -277,6 +277,8 @@ public class StoreActivity extends AppCompatActivity {
                     templatename = cursorStore.getString(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_templatename)).trim().replace("\"", "");
                     isAudited = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_status)) > 0;
                     int finalValue = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_final));
+                    int initialValue = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_initial));
+                    int nStatus = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_status));
                     isPosted = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_posted)) == 1;
                     int gMatrixId = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_gradematrixid));
                     int auditID = cursorStore.getInt(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_auditid));
@@ -298,7 +300,7 @@ public class StoreActivity extends AppCompatActivity {
                     double planogram = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_planogram));
                     double perfectStore = cursorStore.getDouble(cursorStore.getColumnIndex(SQLiteDB.COLUMN_STORE_perfectstore));
 
-                    Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, isAudited, isPosted, gMatrixId);
+                    Stores store = new Stores(nstoreid, storeCode, webStoreid, storename, templateid, templatename, finalValue, initialValue, isAudited, isPosted, gMatrixId);
                     store.auditID = auditID;
                     store.account = account;
                     store.customerCode = customerCode;
@@ -316,6 +318,7 @@ public class StoreActivity extends AppCompatActivity {
                     store.planogram = planogram;
                     store.perfectStore = perfectStore;
                     store.templateCode = templateCode;
+                    store.status = nStatus;
 
                     if (isAudited && !isPosted)
                         arrPendings.add(store);

@@ -710,7 +710,6 @@ public class StorePreviewActivity extends AppCompatActivity {
                                 }
                                 cursConditional.close();
                             }
-
                             cursStoreQuestion.moveToNext();
                         }
 
@@ -718,6 +717,7 @@ public class StorePreviewActivity extends AppCompatActivity {
                             strSummaryBody += "audit_summary\n";
                             toggleAudit = true;
                         }
+
                         strSummaryBody += categoryName + "|" + groupDesc + "|" + groupFinal + "|" + groupExempt + "|" + groupInitial;
                         strSummaryBody += "\n";
 
@@ -749,10 +749,9 @@ public class StorePreviewActivity extends AppCompatActivity {
                 return;
             }
 
-            new LoadCompliances().execute();
-
             lvwPreview.setAdapter(new PreviewCategoryAdapter(StorePreviewActivity.this, arrCategories));
             lvwPreview.setSmoothScrollbarEnabled(true);
+            new LoadCompliances().execute();
         }
     }
 
