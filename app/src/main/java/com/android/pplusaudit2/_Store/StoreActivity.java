@@ -612,7 +612,7 @@ public class StoreActivity extends AppCompatActivity {
 
                             while (!cursBrand.isAfterLast()) {
 
-                                General.arrBrandSelected.add(cursBrand.getString(cursBrand.getColumnIndex(SQLiteDB.COLUMN_SECONDARYDISP_brand)));
+                                General.arrBrandSelected.add(cursBrand.getString(cursBrand.getColumnIndex(SQLiteDB.COLUMN_SECONDARYDISP_brand)).trim().toLowerCase(Locale.getDefault()));
                                 cursBrand.moveToNext();
                             }
                             cursBrand.close();
@@ -639,18 +639,20 @@ public class StoreActivity extends AppCompatActivity {
 
                             while (!cursQuestionsPerGroup.isAfterLast()) {
                                 String questionid = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_id));
-                                String strQuestionPrompt = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt));
+                                String strQuestionPrompt = cursQuestionsPerGroup.getString(cursQuestionsPerGroup.getColumnIndex(SQLiteDB.COLUMN_QUESTION_prompt)).trim().toLowerCase(Locale.getDefault());
 
                                 if (General.arrSecondaryKeylist.contains(strTempGroupId)) {
-                                    if (General.arrBrandSelected.contains(strQuestionPrompt)) {
-                                        sqlstatementStoreQuestions.clearBindings();
-                                        sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);
-                                        sqlstatementStoreQuestions.bindString(2, questionid);
-                                        sqlstatementStoreQuestions.bindString(3, "0");
-                                        sqlstatementStoreQuestions.bindString(4, "0");
-                                        sqlstatementStoreQuestions.bindString(5, "0");
-                                        sqlstatementStoreQuestions.bindString(6, "0");
-                                        sqlstatementStoreQuestions.execute();
+                                    for (String brands : General.arrBrandSelected) {
+                                        if (strQuestionPrompt.contains(brands)) {
+                                            sqlstatementStoreQuestions.clearBindings();
+                                            sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);
+                                            sqlstatementStoreQuestions.bindString(2, questionid);
+                                            sqlstatementStoreQuestions.bindString(3, "0");
+                                            sqlstatementStoreQuestions.bindString(4, "0");
+                                            sqlstatementStoreQuestions.bindString(5, "0");
+                                            sqlstatementStoreQuestions.bindString(6, "0");
+                                            sqlstatementStoreQuestions.execute();
+                                        }
                                     }
                                 } else {
 
@@ -662,6 +664,7 @@ public class StoreActivity extends AppCompatActivity {
                                     sqlstatementStoreQuestions.bindString(5, "0");
                                     sqlstatementStoreQuestions.bindString(6, "0");
                                     sqlstatementStoreQuestions.execute();
+
                                 }
                                 cursQuestionsPerGroup.moveToNext();
                             }

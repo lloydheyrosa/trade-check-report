@@ -21,16 +21,16 @@ import java.util.List;
 class CategoryAdapter extends BaseAdapter {
 
     private Context mContext;
-    private List<Category> activityResultList = null;
-    private ArrayList<Category> arrActivityList;
+    private List<Category> categoryResultList = null;
+    private ArrayList<Category> arrCategoryList;
     private Typeface menuFontIcon;
 
     CategoryAdapter(Context ctx, ArrayList<Category> arrList)
     {
         this.mContext = ctx;
-        activityResultList = arrList;
-        arrActivityList = new ArrayList<Category>();
-        arrActivityList.addAll(arrList);
+        categoryResultList = arrList;
+        arrCategoryList = new ArrayList<Category>();
+        arrCategoryList.addAll(arrList);
         this.menuFontIcon = Typeface.createFromAsset(mContext.getAssets(), General.typefacename);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
     }
@@ -64,10 +64,10 @@ class CategoryAdapter extends BaseAdapter {
             holder = (ViewHolder) view.getTag();
         }
 
-        holder.tvwActivity.setText(String.valueOf(activityResultList.get(position).activityName));
-        holder.tvwActivity.setTag(activityResultList.get(position).categoryAndTempid);
+        holder.tvwActivity.setText(String.valueOf(categoryResultList.get(position).activityName));
+        holder.tvwActivity.setTag(categoryResultList.get(position).categoryAndTempid);
 
-        String categoryStatus = activityResultList.get(position).categoryStatus.trim().toUpperCase();
+        String categoryStatus = categoryResultList.get(position).categoryStatus.trim().toUpperCase();
         String categoryScoreStatus = "";
 
         holder.tvwCategoryStatus.setText(categoryStatus);
@@ -89,7 +89,7 @@ class CategoryAdapter extends BaseAdapter {
             holder.tvwIconStatus.setText(General.ICON_STAR_COMPLETE);
         }
 
-        switch (activityResultList.get(position).categoryScoreStatus) {
+        switch (categoryResultList.get(position).categoryScoreStatus) {
             case PASSED:
                 categoryScoreStatus = General.ICON_PASSED + " " + General.SCORE_STATUS_PASSED;
                 holder.tvwCategoryScoreStatus.setTextColor(view.getResources().getColor(R.color.green));
@@ -112,12 +112,12 @@ class CategoryAdapter extends BaseAdapter {
 
     @Override
     public int getCount() {
-        return activityResultList.size();
+        return categoryResultList.size();
     }
 
     @Override
     public Object getItem(int position) {
-        return activityResultList.get(position);
+        return categoryResultList.get(position);
     }
 
     @Override

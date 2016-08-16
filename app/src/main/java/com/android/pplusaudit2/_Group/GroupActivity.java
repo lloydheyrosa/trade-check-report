@@ -102,7 +102,7 @@ public class GroupActivity extends AppCompatActivity {
 
             try {
 
-                String strQuery = "SELECT tblstorecateggroup.id, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                String strQuery = "SELECT tblstorecateggroup.id, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupid + "," + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
                         + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status
                         + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
                         + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
@@ -110,7 +110,7 @@ public class GroupActivity extends AppCompatActivity {
                         + " ORDER BY " + SQLiteDB.COLUMN_GROUP_grouporder;
 
                 if(this.orderMode == 1) {
-                    strQuery = "SELECT tblstorecateggroup.id, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
+                    strQuery = "SELECT tblstorecateggroup.id, " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupid + "," + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_groupdesc + ", " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_final
                             + "," + SQLiteDB.COLUMN_STORECATEGORYGROUP_status
                             + " FROM " + SQLiteDB.TABLE_STORECATEGORYGROUP
                             + " JOIN " + SQLiteDB.TABLE_GROUP + " ON " + SQLiteDB.TABLE_GROUP + "." + SQLiteDB.COLUMN_GROUP_id + " = " + SQLiteDB.TABLE_STORECATEGORYGROUP + "." + SQLiteDB.COLUMN_STORECATEGORYGROUP_groupid
@@ -124,6 +124,7 @@ public class GroupActivity extends AppCompatActivity {
                 while (!cursorGroup.isAfterLast()) {
 
                     int storeCategoryGroupID = cursorGroup.getInt(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_STORECATEGORYGROUP_id));
+                    int webGroupID = cursorGroup.getInt(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupid));
 
                     if (!sqlLibrary.HasQuestionsPerGroup(storeCategoryGroupID)) {
 
@@ -153,7 +154,9 @@ public class GroupActivity extends AppCompatActivity {
 
                     String desc = cursorGroup.getString(cursorGroup.getColumnIndex(SQLiteDB.COLUMN_GROUP_groupdesc)).trim().replace("\"", "").toUpperCase();
 
-                    arrGroupList.add(new Group(storeCategoryGroupID, desc, String.valueOf(storeCategoryGroupID), grpStatus, scoreStatus));
+                    Group newGroup = new Group(storeCategoryGroupID, desc, String.valueOf(storeCategoryGroupID), grpStatus, scoreStatus);
+                    newGroup.webGroupID = webGroupID;
+                    arrGroupList.add(newGroup);
                     cursorGroup.moveToNext();
                 }
 
