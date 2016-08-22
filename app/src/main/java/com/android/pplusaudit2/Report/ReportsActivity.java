@@ -55,7 +55,7 @@ public class ReportsActivity extends AppCompatActivity {
 
         final ArrayList<Reports> reportsArrayList = new ArrayList<>();
         reportsArrayList.add(new Reports(1, "USER AUDIT SUMMARY REPORT", "Audit summary report of user.", "\uf0c5"));
-        reportsArrayList.add(new Reports(2, "STORE REPORT", "Reprot summary per store.", "\uf0c5"));
+        reportsArrayList.add(new Reports(2, "STORE REPORT", "Report summary per store.", "\uf0c5"));
 
         ListView lvwReports = (ListView) findViewById(R.id.lvwReports);
         lvwReports.setAdapter(new ReportsAdapter(this, reportsArrayList));
