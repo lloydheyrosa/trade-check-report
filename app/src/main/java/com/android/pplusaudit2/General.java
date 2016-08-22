@@ -3,17 +3,15 @@ package com.android.pplusaudit2;
 import android.app.AlertDialog;
 import android.content.Context;
 import android.content.DialogInterface;
-import android.content.SharedPreferences;
 import android.content.pm.PackageInfo;
 import android.content.pm.PackageManager;
 import android.os.Build;
-import android.os.Environment;
 import android.util.Log;
 import android.widget.ImageView;
 
 import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
-import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.Report.AuditSummary.Audit;
+import com.android.pplusaudit2.Report.CustomerSummary.Customer;
 import com.android.pplusaudit2._Store.Stores;
 
 import java.text.SimpleDateFormat;
@@ -96,11 +94,20 @@ public class General {
     public static String URL_REPORT_AUDITS = mainURL + "/api/postedaudits";
     public static String URL_REPORT_STORESUMMARY = mainURL + "/api/storesummaryreport";
     public static String URL_REPORT_USERSUMMARY = mainURL + "/api/usersummaryreport";
+    public static String URL_REPORT_CUSTOMER_SUMMARY = mainURL + "/api/customersummaryreport";
+    public static String URL_REPORT_CUSTOMER_REGION = mainURL + "/api/customerregionalreport";
+    public static String URL_REPORT_OSA = mainURL + "/api/osareport";
+    public static String URL_REPORT_NPI = mainURL + "/api/npireport";
+    public static String URL_REPORT_SOS = mainURL + "/api/sosreport";
+    public static String URL_REPORT_CUSTOMIZED_PLANOGRAM_REPORT = mainURL + "/api/customizedplanoreport";
+    public static String URL_REPORT_PJP_FREQUENCY_REPORT = mainURL + "/api/pjpreport";
 
-    public static String QUESTION_IMAGE_CAPTURE = "Pplus2 Image";
+    static String QUESTION_IMAGE_CAPTURE = "Pplus2 Image";
 
     public static HashMap<Integer, ImageView> hmSignature;
     public static HashMap<Integer, ImageView> hmCondSignature;
+
+    public static Customer selectedCustomer;
 
     public static final String STORE_LIST = "stores";
     public static final String CATEGORY_LIST = "temp_categories";

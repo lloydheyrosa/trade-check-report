@@ -33,14 +33,12 @@ import java.util.ArrayList;
 
 public class ReportAuditActivity extends AppCompatActivity {
 
-    ProgressDialog progressDialog;
-
-    UserSummary userSummary;
-
-    long selectedAuditID;
-    ListView lvwAuditSummary;
-    ArrayList<ReportField> arrReports;
-    ReportFieldAdapter reportAdapter;
+    private ProgressDialog progressDialog;
+    private UserSummary userSummary;
+    private long selectedAuditID;
+    private ListView lvwAuditSummary;
+    private ArrayList<ReportField> arrReports;
+    private ReportFieldAdapter reportAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {

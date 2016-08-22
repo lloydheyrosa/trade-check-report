@@ -1,4 +1,4 @@
-package com.android.pplusaudit2.Report;
+package com.android.pplusaudit2.Report.StoreSummary;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -8,7 +8,6 @@ import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
 import android.util.Log;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -34,10 +33,10 @@ import java.util.ArrayList;
 
 public class ReportStoreActivity extends AppCompatActivity {
 
-    ProgressDialog progressDialog;
+    private ProgressDialog progressDialog;
 
-    ArrayList<StoreReport> arrStoreReports;
-    long selectedAuditID;
+    private ArrayList<StoreItem> arrStoreItems;
+    private long selectedAuditID;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -45,12 +44,12 @@ public class ReportStoreActivity extends AppCompatActivity {
         setContentView(R.layout.report_store_activity);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
-        String title = "STORE REPORT";
+        String title = "STORE SUMMARY REPORT";
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setTitle(title);
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
 
-        arrStoreReports = new ArrayList<>();
+        arrStoreItems = new ArrayList<>();
         final Spinner spnAudit = (Spinner) findViewById(R.id.spnAudit);
         Button btnProcess = (Button) findViewById(R.id.btnProcess);
 
@@ -114,7 +113,7 @@ public class ReportStoreActivity extends AppCompatActivity {
             boolean result = false;
 
             String response = "";
-            arrStoreReports.clear();
+            arrStoreItems.clear();
 
             try {
                 URL url = new URL(General.URL_REPORT_STORESUMMARY + "/" + selectedAuditID + "/user/" + General.usercode);
@@ -134,7 +133,7 @@ public class ReportStoreActivity extends AppCompatActivity {
                 if(response.trim().contains("No Report Available")) {
                     String msg = new JSONObject(response).getString("msg");
                     errormsg = msg;
-                    arrStoreReports.clear();
+                    arrStoreItems.clear();
                     return false;
                 }
 
@@ -145,24 +144,24 @@ public class ReportStoreActivity extends AppCompatActivity {
                     for (int i = 0; i < dataArray.length(); i++) {
                         JSONObject jsonObject = (JSONObject) dataArray.get(i);
 
-                        StoreReport storeReport = new StoreReport();
-                        storeReport.ID = jsonObject.getInt("id");
-                        storeReport.userID = jsonObject.getInt("user_id");
-                        storeReport.auditID = jsonObject.getInt("audit_id");
-                        storeReport.account = jsonObject.getString("account");
-                        storeReport.customerCode = jsonObject.getString("customer_code");
-                        storeReport.customer = jsonObject.getString("customer");
-                        storeReport.area = jsonObject.getString("area");
-                        storeReport.regionCode = jsonObject.getString("region");
-                        storeReport.storeName = jsonObject.getString("store_name");
-                        storeReport.perfectStore = jsonObject.getDouble("perfect_percentage");
-                        storeReport.osa = jsonObject.getDouble("osa");
-                        storeReport.npi = jsonObject.getDouble("npi");
-                        storeReport.planogram = jsonObject.getDouble("planogram");
-                        storeReport.updateAt = jsonObject.getString("updated_at");
-                        storeReport.auditName = jsonObject.getString("audit_name");
+                        StoreItem storeItem = new StoreItem();
+                        storeItem.ID = jsonObject.getInt("id");
+                        storeItem.userID = jsonObject.getInt("user_id");
+                        storeItem.auditID = jsonObject.getInt("audit_id");
+                        storeItem.account = jsonObject.getString("account");
+                        storeItem.customerCode = jsonObject.getString("customer_code");
+                        storeItem.customer = jsonObject.getString("customer");
+                        storeItem.area = jsonObject.getString("area");
+                        storeItem.regionCode = jsonObject.getString("region");
+                        storeItem.storeName = jsonObject.getString("store_name");
+                        storeItem.perfectStore = jsonObject.getDouble("perfect_percentage");
+                        storeItem.osa = jsonObject.getDouble("osa");
+                        storeItem.npi = jsonObject.getDouble("npi");
+                        storeItem.planogram = jsonObject.getDouble("planogram");
+                        storeItem.updateAt = jsonObject.getString("updated_at");
+                        storeItem.auditName = jsonObject.getString("audit_name");
 
-                        arrStoreReports.add(storeReport);
+                        arrStoreItems.add(storeItem);
                     }
 
                     result = true;
@@ -189,8 +188,8 @@ public class ReportStoreActivity extends AppCompatActivity {
                 Toast.makeText(ReportStoreActivity.this, errormsg, Toast.LENGTH_LONG).show();
             }
 
-            ListView lvwStoreReport = (ListView) findViewById(R.id.lvwStoreReport);
-            ReportStoreAdapter storeAdapter = new ReportStoreAdapter(ReportStoreActivity.this, arrStoreReports);
+            ListView lvwStoreReport = (ListView) findViewById(R.id.lvwCustSumReport);
+            ReportStoreAdapter storeAdapter = new ReportStoreAdapter(ReportStoreActivity.this, arrStoreItems);
             lvwStoreReport.setAdapter(storeAdapter);
             storeAdapter.notifyDataSetChanged();
         }

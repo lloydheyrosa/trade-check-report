@@ -8,7 +8,6 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -21,6 +20,8 @@ import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.Audit;
 import com.android.pplusaudit2.Report.AuditSummary.ReportAuditActivity;
+import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummaryReport;
+import com.android.pplusaudit2.Report.StoreSummary.ReportStoreActivity;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -54,8 +55,15 @@ public class ReportsActivity extends AppCompatActivity {
         errorLog = new ErrorLog(General.errlogFile, this);
 
         final ArrayList<Reports> reportsArrayList = new ArrayList<>();
-        reportsArrayList.add(new Reports(1, "USER AUDIT SUMMARY REPORT", "Audit summary report of user.", "\uf0c5"));
-        reportsArrayList.add(new Reports(2, "STORE REPORT", "Report summary per store.", "\uf0c5"));
+        reportsArrayList.add(new Reports(1, "USER AUDIT SUMMARY REPORT", "Audit summary report of user per audit month.", "\uf0c5"));
+        reportsArrayList.add(new Reports(2, "STORE AUDIT SUMMARY REPORT", "Stores audit summary report per audit month.", "\uf0c5"));
+        reportsArrayList.add(new Reports(3, "CUSTOMER SUMMARY REPORT", "Customer report per audit month.", "\uf0c5"));
+        reportsArrayList.add(new Reports(4, "CUSTOMER REGION SUMMARY REPORT", "Customer regions report per audit month.", "\uf0c5"));
+        reportsArrayList.add(new Reports(5, "OSA REPORT - PER SKU", "Report of SKU's On Shelf Availability.", "\uf0c5"));
+        reportsArrayList.add(new Reports(6, "NPI REPORT - PER SKU", "Report of SKU's NPI.", "\uf0c5"));
+        reportsArrayList.add(new Reports(7, "SOS REPORT", "SOS Report of user.", "\uf0c5"));
+        reportsArrayList.add(new Reports(8, "CUSTOMIZED PLANOGRAM REPORT", "Customized planogram report.", "\uf0c5"));
+        reportsArrayList.add(new Reports(8, "PJP FREQUENCY REPORT", "PJP frequency report of user.", "\uf0c5"));
 
         ListView lvwReports = (ListView) findViewById(R.id.lvwReports);
         lvwReports.setAdapter(new ReportsAdapter(this, reportsArrayList));
@@ -194,7 +202,25 @@ public class ReportsActivity extends AppCompatActivity {
                 case 1: // USER SUMMARY REPORT
                     intent = new Intent(ReportsActivity.this, ReportAuditActivity.class);
                     break;
-                case 2: // STORE REPORT
+                case 2: // STORE SUMMARY REPORT
+                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    break;
+                case 3: // CUSTOMER SUMMARY REPORT
+                    intent = new Intent(ReportsActivity.this, CustomerSummaryReport.class);
+                    break;
+                case 4: // CUSTOMER REGIONAL SUMMARY REPORT
+                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    break;
+                case 5: // PER SKU OSA REPORT
+                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    break;
+                case 6: // PER SKU NPI REPORT
+                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    break;
+                case 7: // SOS REPORT
+                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    break;
+                case 8: // CUSTOMIZED PLANOGRAM REPORT
                     intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
                     break;
                 default:

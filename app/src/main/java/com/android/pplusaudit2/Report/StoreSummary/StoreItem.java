@@ -1,9 +1,13 @@
-package com.android.pplusaudit2.Report;
+package com.android.pplusaudit2.Report.StoreSummary;
+
+import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummaryItem;
+
+import java.util.ArrayList;
 
 /**
  * Created by ULTRABOOK on 5/10/2016.
  */
-public class StoreReport {
+public class StoreItem {
 
     public int ID;
     public int userID;

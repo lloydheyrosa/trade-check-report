@@ -14,27 +14,27 @@
         android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="450dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
             android:orientation="horizontal">
 
-            <Spinner
-                android:id="@+id/spnAudit"
-                android:layout_width="0dp"
-                android:layout_gravity="center_vertical"
+            <TextView
+                android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_weight="3"/>
+                android:text="CUSTOMER NAME: "
+                android:textSize="14sp"
+                android:padding="8dp"
+                android:textColor="@color/primary_text"/>
 
-            <Button
-                android:id="@+id/btnProcess"
-                android:layout_width="0dp"
+            <TextView
+                android:id="@+id/tvwCustomerName"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_weight="1"
-                android:layout_gravity="center_vertical"
-                android:text="PROCESS"
-                style="@style/button_design"
-                android:background="@drawable/btn_accent" />
+                android:text="SAMPLE STORE NAME"
+                android:textSize="14sp"
+                android:padding="8dp"
+                android:textStyle="bold"
+                android:textColor="@color/colorPrimaryDark"/>
 
         </LinearLayout>
 
@@ -130,7 +130,7 @@
         </LinearLayout>
 
         <ListView
-            android:id="@+id/lvwCustSumReport"
+            android:id="@+id/lvwCustSubReport"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:drawSelectorOnTop="false"/>

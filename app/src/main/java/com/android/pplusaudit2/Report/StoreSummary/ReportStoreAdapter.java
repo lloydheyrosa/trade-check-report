@@ -1,4 +1,4 @@
-package com.android.pplusaudit2.Report;
+package com.android.pplusaudit2.Report.StoreSummary;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -11,20 +11,19 @@ import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 
-import org.w3c.dom.Text;
-
 import java.util.ArrayList;
 
 /**
  * Created by ULTRABOOK on 5/10/2016.
  */
 public class ReportStoreAdapter extends BaseAdapter {
-    Context mContext;
-    ArrayList<StoreReport> arrStoreReports;
 
-    public ReportStoreAdapter(Context mContext, ArrayList<StoreReport> arrStoreReports) {
+    Context mContext;
+    ArrayList<StoreItem> arrStoreItems;
+
+    public ReportStoreAdapter(Context mContext, ArrayList<StoreItem> arrStoreItems) {
         this.mContext = mContext;
-        this.arrStoreReports = arrStoreReports;
+        this.arrStoreItems = arrStoreItems;
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(mContext, General.errlogFile));
     }
 
@@ -60,29 +59,29 @@ public class ReportStoreAdapter extends BaseAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        holder.tvwStoreName.setText(arrStoreReports.get(position).storeName);
-        holder.tvwAuditName.setText(arrStoreReports.get(position).auditName);
-        holder.tvwPerfectStore.setText(String.format("%.2f", arrStoreReports.get(position).perfectStore) + " %");
-        holder.tvwOSA.setText(String.valueOf(arrStoreReports.get(position).osa));
-        holder.tvwNPI.setText(String.valueOf(arrStoreReports.get(position).npi));
-        holder.tvwPlanogram.setText(String.valueOf(arrStoreReports.get(position).planogram));
-        holder.tvwPostingDate.setText(arrStoreReports.get(position).updateAt);
+        holder.tvwStoreName.setText(arrStoreItems.get(position).storeName);
+        holder.tvwAuditName.setText(arrStoreItems.get(position).auditName);
+        holder.tvwPerfectStore.setText(String.format("%.2f", arrStoreItems.get(position).perfectStore) + " %");
+        holder.tvwOSA.setText(String.valueOf(arrStoreItems.get(position).osa));
+        holder.tvwNPI.setText(String.valueOf(arrStoreItems.get(position).npi));
+        holder.tvwPlanogram.setText(String.valueOf(arrStoreItems.get(position).planogram));
+        holder.tvwPostingDate.setText(arrStoreItems.get(position).updateAt);
 
         return convertView;
     }
 
     @Override
     public int getCount() {
-        return arrStoreReports.size();
+        return arrStoreItems.size();
     }
 
     @Override
     public long getItemId(int position) {
-        return arrStoreReports.get(position).ID;
+        return arrStoreItems.get(position).ID;
     }
 
     @Override
-    public StoreReport getItem(int position) {
-        return arrStoreReports.get(position);
+    public StoreItem getItem(int position) {
+        return arrStoreItems.get(position);
     }
 }

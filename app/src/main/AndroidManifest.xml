@@ -145,7 +145,7 @@
         </activity>
         <activity android:name=".Report.AuditSummary.ReportAuditActivity" />
         <activity
-            android:name=".Report.ReportStoreActivity"
+            android:name=".Report.StoreSummary.ReportStoreActivity"
             android:screenOrientation="landscape" />
         <activity
             android:name=".Report.ReportsActivity"
@@ -162,10 +162,14 @@
 
         <activity
             android:name=".PJP_Compliance.PjpActivity"
-            android:label="PJP Compliance"/>
+            android:label="PJP Compliance" />
         <activity
             android:name=".PJP_Compliance.PjpPreviewActivity"
-            android:label="Check in record"></activity>
+            android:label="Check in record" />
+        <activity
+            android:name=".Report.CustomerSummary.CustomerSummaryReport"
+            android:screenOrientation="landscape"></activity>
+        <activity android:name=".Report.CustomerSummary.CustomerSummarySubReport"></activity>
     </application>
 
 </manifest>
