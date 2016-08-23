@@ -100,7 +100,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
     private String SOSAnswer = "";
 
-    // <INTEGER KEY = QUESTIONID, HASHMAP<INTEGER = VIEW ID, ANSWERCLASS>>
+    // <INTEGER KEY = QUESTIONID, HASHMAP<INTEGER = VIEW CustomerStoreItemID, ANSWERCLASS>>
     private HashMap<Integer, HashMap<Integer, Pplus_AnswerClass>> hmlistAnswers;
     private HashMap<Integer, String> hmExpectedAnswers;
     private HashMap<Integer, String> hmFormulalistsByFormid;
@@ -2656,7 +2656,7 @@ public class QuestionsActivity extends AppCompatActivity {
         return strRet;
     }
 
-    // GET IF FORM GROUP ID IS EXISTING IN SOS LIST
+    // GET IF FORM GROUP CustomerStoreItemID IS EXISTING IN SOS LIST
     private boolean GetSOSListLookup() {
         boolean res = false;
 

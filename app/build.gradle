@@ -9,7 +9,7 @@ android {
         minSdkVersion 17
         targetSdkVersion 23
         versionCode 34
-        versionName "7.6.21"
+        versionName "7.6.21.beta"
     }
     buildTypes {
         release {

@@ -16,6 +16,7 @@ import android.widget.Spinner;
 import android.widget.Toast;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.AuditAdapter;
@@ -37,11 +38,16 @@ public class ReportStoreActivity extends AppCompatActivity {
 
     private ArrayList<StoreItem> arrStoreItems;
     private long selectedAuditID;
+    private ErrorLog errorLog;
+    private String TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.report_store_activity);
+
+        errorLog = new ErrorLog(General.errlogFile, this);
+        TAG = this.getLocalClassName();
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
         String title = "STORE SUMMARY REPORT";
@@ -168,14 +174,14 @@ public class ReportStoreActivity extends AppCompatActivity {
                 }
             }
             catch (IOException ex) {
-                ex.printStackTrace();
-                Log.e("IO Error", ex.getMessage());
-                errormsg = ex.getLocalizedMessage();
+                errormsg = "Error in fetching reports. Please check internet connection and try again.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errormsg;
+                errorLog.appendLog(exErr, TAG);
             }
             catch (JSONException ex) {
-                ex.printStackTrace();
-                Log.e("IO Error", ex.getMessage());
-                errormsg = ex.getLocalizedMessage();
+                errormsg = "Error in web return response.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errormsg;
+                errorLog.appendLog(exErr, TAG);
             }
 
             return result;

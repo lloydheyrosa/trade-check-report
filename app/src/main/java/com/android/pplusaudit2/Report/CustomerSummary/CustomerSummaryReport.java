@@ -2,6 +2,7 @@ package com.android.pplusaudit2.Report.CustomerSummary;
 
 import android.app.ProgressDialog;
 import android.content.Context;
+import android.content.Intent;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.os.AsyncTask;
@@ -10,16 +11,17 @@ import android.os.Bundle;
 import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
+import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.AuditAdapter;
-import com.android.pplusaudit2.Report.StoreSummary.StoreItem;
-import com.android.pplusaudit2.Report.StoreSummary.ReportStoreAdapter;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -38,14 +40,21 @@ public class CustomerSummaryReport extends AppCompatActivity {
 
     private ArrayList<Customer> arrCustomerItems;
     private ArrayList<Customer> arrCustomerLoader;
-    private ArrayList<CustomerSummaryItem> arrCustSummarySubItems;
+    private ArrayList<CustomerStoreItem> arrCustSummarySubItems;
     private long selectedAuditID;
     private CustomerAdapter customersAdapter;
+
+    private ErrorLog errorLog;
+    private String TAG;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.customer_summary_report_activity);
+
+        errorLog = new ErrorLog(General.errlogFile, this);
+        TAG = this.getLocalClassName();
+        Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
         String title = "CUSTOMER SUMMARY REPORT";
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
@@ -70,6 +79,20 @@ public class CustomerSummaryReport extends AppCompatActivity {
             public void onClick(View v) {
                 selectedAuditID = spnAudit.getSelectedItemId();
                 new CheckInternet().execute();
+            }
+        });
+
+        lvwCustomers.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+                General.selectedCustomer = arrCustomerItems.get(position);
+
+                if(General.selectedCustomer.customerStoreItems.size() == 0) {
+                    Toast.makeText(CustomerSummaryReport.this, "No records found for this customer.", Toast.LENGTH_LONG).show();
+                    return;
+                }
+
+                startActivity(new Intent(CustomerSummaryReport.this, CustomerSummarySubReport.class));
             }
         });
     }
@@ -153,7 +176,26 @@ public class CustomerSummaryReport extends AppCompatActivity {
                     for (int i = 0; i < dataArray.length(); i++) {
                         JSONObject jsonObject = (JSONObject) dataArray.get(i);
 
-                        Customer customer = new Customer(i);
+                        Customer customer = new Customer(i + 1);
+                        customer.customerCode = jsonObject.getString("customer_code");
+                        customer.customerName = jsonObject.getString("customer");
+                        customer.regionCode = jsonObject.getString("region_code");
+                        customer.regionName = jsonObject.getString("region");
+                        customer.channelCode = jsonObject.getString("channel_code");
+                        customer.auditID = jsonObject.getInt("audit_id");
+                        customer.mappedStores = jsonObject.getInt("mapped_stores");
+                        customer.visitedStores = jsonObject.getInt("visited_stores");
+                        customer.template = jsonObject.getString("audit_tempalte");
+                        customer.auditName = jsonObject.getString("audit_group");
+                        customer.osaAve = jsonObject.getDouble("osa_ave");
+                        customer.osa = jsonObject.getDouble("osa");
+                        customer.npiAve = jsonObject.getDouble("npi_ave");
+                        customer.npi = jsonObject.getDouble("npi");
+                        customer.planogram = jsonObject.getDouble("planogram");
+                        customer.planogramAve = jsonObject.getDouble("planogram_ave");
+                        customer.perfectStores = jsonObject.getInt("perfect_stores");
+                        customer.perfectStoresAve = jsonObject.getDouble("ave_perfect_stores");
+                        customer.psDoors = jsonObject.getDouble("ps_doors");
 
                         arrCustomerLoader.add(customer);
                     }
@@ -162,14 +204,14 @@ public class CustomerSummaryReport extends AppCompatActivity {
                 }
             }
             catch (IOException ex) {
-                ex.printStackTrace();
-                Log.e("IO Error", ex.getMessage());
-                errormsg = ex.getLocalizedMessage();
+                errormsg = "Error in fetching reports. Please check internet connection and try again.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errormsg;
+                errorLog.appendLog(exErr, TAG);
             }
             catch (JSONException ex) {
-                ex.printStackTrace();
-                Log.e("IO Error", ex.getMessage());
-                errormsg = ex.getLocalizedMessage();
+                errormsg = "Error in web return response.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errormsg;
+                errorLog.appendLog(exErr, TAG);
             }
 
             return result;
@@ -204,7 +246,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
 
             try {
 
-                for (Customer customer : arrCustomerItems) {
+                for (Customer customer : arrCustomerLoader) {
 
                     arrCustSummarySubItems.clear();
 
@@ -241,27 +283,47 @@ public class CustomerSummaryReport extends AppCompatActivity {
                         for (int i = 0; i < dataArray.length(); i++) {
                             JSONObject jsonObject = (JSONObject) dataArray.get(i);
 
-                            CustomerSummaryItem customerSummaryItem = new CustomerSummaryItem(i);
-                            customerSummaryItem.customer = customer;
+                            int id = jsonObject.getInt("id");
 
-                            arrCustSummarySubItems.add(customerSummaryItem);
+                            CustomerStoreItem customerStoreItem = new CustomerStoreItem(id);
+                            customerStoreItem.userID = jsonObject.getInt("id");
+                            customerStoreItem.auditID = jsonObject.getInt("audit_id");
+                            customerStoreItem.account = jsonObject.getString("account");
+                            customerStoreItem.area = jsonObject.getString("area");
+                            customerStoreItem.distributorCode = jsonObject.getString("distributor_code");
+                            customerStoreItem.distributor = jsonObject.getString("distributor");
+                            customerStoreItem.storeCode = jsonObject.getString("store_code");
+                            customerStoreItem.storeName = jsonObject.getString("store_name");
+                            customerStoreItem.channelCode = jsonObject.getString("channel_code");
+                            customerStoreItem.perfectStore = jsonObject.getInt("perfect_store");
+                            customerStoreItem.osa = jsonObject.getDouble("osa");
+                            customerStoreItem.npi = jsonObject.getDouble("npi");
+                            customerStoreItem.planogram = jsonObject.getDouble("planogram");
+                            customerStoreItem.createdAt = jsonObject.getString("created_at");
+                            customerStoreItem.updateAt = jsonObject.getString("updated_at");
+                            customerStoreItem.perfectCategory = jsonObject.getInt("perfect_category");
+                            customerStoreItem.totalCategory = jsonObject.getInt("total_category");
+                            customerStoreItem.perfectPercentage = jsonObject.getInt("perfect_percentage");
+                            customerStoreItem.customer = customer;
+
+                            arrCustSummarySubItems.add(customerStoreItem);
                         }
 
-                        customer.customerSummaryItems.addAll(arrCustSummarySubItems);
+                        customer.customerStoreItems.addAll(arrCustSummarySubItems);
                         result = true;
                     }
                     else errormsg = "Web response error.";
                 }
             }
             catch (IOException ex) {
-                ex.printStackTrace();
-                Log.e("IO Error", ex.getMessage());
-                errormsg = ex.getLocalizedMessage();
+                errormsg = "Error in fetching reports. Please check internet connection and try again.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errormsg;
+                errorLog.appendLog(exErr, TAG);
             }
             catch (JSONException ex) {
-                ex.printStackTrace();
-                Log.e("IO Error", ex.getMessage());
-                errormsg = ex.getLocalizedMessage();
+                errormsg = "Error in web return response.";
+                String exErr = ex.getMessage() != null ? ex.getMessage() : errormsg;
+                errorLog.appendLog(exErr, TAG);
             }
 
             return result;

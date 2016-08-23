@@ -9,32 +9,34 @@ import java.util.ArrayList;
 public class Customer {
 
     public final int customerID;
-    public int userID;
     public int auditID;
     public String auditName;
-    public String account;
     public String customerCode;
     public String customerName;
-    public String area;
     public String regionCode;
     public String regionName;
-    public String distributorCode;
-    public String distributor;
-    public String storeCode;
     public String storeName;
     public String channelCode;
     public String template;
-    public String createdAt;
-    public String updateAt;
     public int perfectStores;
+
     public double osaAve;
     public double npiAve;
     public double planogramAve;
+    public double perfectStoresAve;
 
-    public ArrayList<CustomerSummaryItem> customerSummaryItems;
+    public double osa;
+    public double npi;
+    public double planogram;
+
+    public double psDoors;
+    public int mappedStores;
+    public int visitedStores;
+
+    public ArrayList<CustomerStoreItem> customerStoreItems;
 
     public Customer(int customerID) {
         this.customerID = customerID;
-        this.customerSummaryItems = new ArrayList<>();
+        this.customerStoreItems = new ArrayList<>();
     }
 }
