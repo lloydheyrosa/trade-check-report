@@ -30,7 +30,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = true;
+    public static boolean BETA = false;
 
     public static String versionName = "";
     public static int versionCode = 0;

@@ -10,70 +10,59 @@
         android:orientation="horizontal">
 
         <TextView
-            android:id="@+id/tvwStoreName"
+            android:id="@+id/tvwCustomerName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:textStyle="bold"
-            android:textColor="@color/colorPrimaryDark"
+            android:textSize="18sp"
+            android:padding="6dp"
+            android:textColor="@color/primary_text"
             android:gravity="center"
             android:text="CUSTOMER NAME"/>
 
         <TextView
-            android:id="@+id/tvwAuditName"
+            android:id="@+id/tvwSkuItem"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:layout_weight="2"
+            android:textSize="16sp"
+            android:padding="6dp"
             android:gravity="center"
-            android:textColor="@color/primary_text"
-            android:text="SAMPLE"/>
-
-        <TextView
-            android:id="@+id/tvwPerfectStore"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:gravity="center"
-            android:textColor="@color/primary_text"
+            android:textColor="@color/colorPrimaryDark"
             android:text="0"/>
 
         <TextView
-            android:id="@+id/tvwOSA"
+            android:id="@+id/tvwStoreCount"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:textColor="@color/primary_text"
+            android:textSize="18sp"
+            android:padding="6dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="0.00"/>
 
         <TextView
-            android:id="@+id/tvwNPI"
+            android:id="@+id/tvwAvailability"
             android:layout_width="0dp"
             android:layout_height="match_parent"
-            android:textColor="@color/primary_text"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:textSize="18sp"
+            android:padding="6dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="0.00"/>
 
         <TextView
-            android:id="@+id/tvwPlanogram"
+            android:id="@+id/tvwOsaValue"
             android:layout_width="0dp"
             android:layout_height="match_parent"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:textColor="@color/primary_text"
+            android:textSize="18sp"
+            android:padding="6dp"
             android:gravity="center"
+            android:textStyle="bold"
+            android:textColor="@color/colorPrimaryDark"
             android:text="0.00"/>
 
     </LinearLayout>

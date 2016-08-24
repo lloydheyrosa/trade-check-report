@@ -1,4 +1,4 @@
-package com.android.pplusaudit2.Report.CustomerSummary;
+package com.android.pplusaudit2.Report.CustomerRegionSummary;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -8,7 +8,6 @@ import android.net.NetworkInfo;
 import android.os.AsyncTask;
 import android.support.v7.app.AppCompatActivity;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
@@ -22,6 +21,11 @@ import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.AuditAdapter;
+import com.android.pplusaudit2.Report.CustomerSummary.Customer;
+import com.android.pplusaudit2.Report.CustomerSummary.CustomerAdapter;
+import com.android.pplusaudit2.Report.CustomerSummary.CustomerStoreItem;
+import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummaryReport;
+import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummarySubReport;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -34,7 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
 
-public class CustomerSummaryReport extends AppCompatActivity {
+public class CustomerRegionReport extends AppCompatActivity {
 
     private ProgressDialog progressDialog;
 
@@ -42,7 +46,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
     private ArrayList<Customer> arrCustomerLoader;
     private ArrayList<CustomerStoreItem> arrCustSummarySubItems;
     private long selectedAuditID;
-    private CustomerAdapter customersAdapter;
+    private CustomerRegionAdapter customersAdapter;
 
     private ErrorLog errorLog;
     private String TAG;
@@ -50,7 +54,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.customer_summary_report_activity);
+        setContentView(R.layout.customer_region_report_activity);
 
         errorLog = new ErrorLog(General.errlogFile, this);
         TAG = this.getLocalClassName();
@@ -63,14 +67,14 @@ public class CustomerSummaryReport extends AppCompatActivity {
         arrCustSummarySubItems = new ArrayList<>();
 
         final Spinner spnAudit = (Spinner) findViewById(R.id.spnAudit);
+        ListView lvwRegionCustomers = (ListView) findViewById(R.id.lvwRegionCustomers);
         Button btnProcess = (Button) findViewById(R.id.btnProcess);
 
-        AuditAdapter dataAdapter = new AuditAdapter(CustomerSummaryReport.this, android.R.layout.simple_dropdown_item_1line, General.arraylistAudits);
+        AuditAdapter dataAdapter = new AuditAdapter(CustomerRegionReport.this, android.R.layout.simple_dropdown_item_1line, General.arraylistAudits);
         spnAudit.setAdapter(dataAdapter);
 
-        ListView lvwCustomers = (ListView) findViewById(R.id.lvwCustomers);
-        customersAdapter = new CustomerAdapter(CustomerSummaryReport.this, arrCustomerItems);
-        lvwCustomers.setAdapter(customersAdapter);
+        customersAdapter = new CustomerRegionAdapter(CustomerRegionReport.this, arrCustomerItems);
+        lvwRegionCustomers.setAdapter(customersAdapter);
 
         btnProcess.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -80,27 +84,29 @@ public class CustomerSummaryReport extends AppCompatActivity {
             }
         });
 
-        lvwCustomers.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        lvwRegionCustomers.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> parent, View view, int position, long id) {
+
                 General.selectedCustomer = arrCustomerItems.get(position);
 
                 if(General.selectedCustomer.customerStoreItems.size() == 0) {
-                    Toast.makeText(CustomerSummaryReport.this, "No records found for this customer.", Toast.LENGTH_LONG).show();
+                    Toast.makeText(CustomerRegionReport.this, "No records found for this customer.", Toast.LENGTH_LONG).show();
                     return;
                 }
 
-                startActivity(new Intent(CustomerSummaryReport.this, CustomerSummarySubReport.class));
+                startActivity(new Intent(CustomerRegionReport.this, CustomerRegionSubReport.class));
             }
         });
     }
+
 
     private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
 
         @Override
         protected void onPreExecute() {
-            progressDialog = ProgressDialog.show(CustomerSummaryReport.this, "", "Checking internet connection.");
+            progressDialog = ProgressDialog.show(CustomerRegionReport.this, "", "Checking internet connection.");
         }
 
         @Override
@@ -123,7 +129,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDialog.dismiss();
             if(!bResult) {
-                Toast.makeText(CustomerSummaryReport.this, errmsg, Toast.LENGTH_SHORT).show();
+                Toast.makeText(CustomerRegionReport.this, errmsg, Toast.LENGTH_SHORT).show();
                 return;
             }
 
@@ -137,7 +143,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
         @Override
         protected void onPreExecute() {
             arrCustomerLoader.clear();
-            progressDialog = ProgressDialog.show(CustomerSummaryReport.this, "", "Fetching Customer Summary report. Please wait.");
+            progressDialog = ProgressDialog.show(CustomerRegionReport.this, "", "Fetching Customer Summary report. Please wait.");
         }
 
         @Override
@@ -148,7 +154,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
 
             try {
 
-                URL url = new URL(General.URL_REPORT_CUSTOMER_SUMMARY + "/" + selectedAuditID + "/user/" + General.usercode);
+                URL url = new URL(General.URL_REPORT_CUSTOMER_REGION + "/" + selectedAuditID + "/user/" + General.usercode);
                 HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
                 urlConnection.connect();
 
@@ -219,7 +225,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDialog.dismiss();
             if(!bResult) {
-                Toast.makeText(CustomerSummaryReport.this, errormsg, Toast.LENGTH_LONG).show();
+                Toast.makeText(CustomerRegionReport.this, errormsg, Toast.LENGTH_LONG).show();
                 return;
             }
 
@@ -233,7 +239,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressDialog = ProgressDialog.show(CustomerSummaryReport.this, "", "Fetching Customer Summary report. Please wait.");
+            progressDialog = ProgressDialog.show(CustomerRegionReport.this, "", "Fetching Customer Summary report. Please wait.");
         }
 
         @Override
@@ -248,7 +254,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
 
                     arrCustSummarySubItems.clear();
 
-                    URL url = new URL(General.URL_REPORT_CUSTOMER_SUMMARY
+                    URL url = new URL(General.URL_REPORT_CUSTOMER_REGION
                             + "/" + customer.customerCode
                             + "/region/" + customer.regionCode
                             + "/template/" + customer.channelCode
@@ -331,7 +337,7 @@ public class CustomerSummaryReport extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDialog.dismiss();
             if(!bResult) {
-                Toast.makeText(CustomerSummaryReport.this, errormsg, Toast.LENGTH_LONG).show();
+                Toast.makeText(CustomerRegionReport.this, errormsg, Toast.LENGTH_LONG).show();
             }
 
             arrCustomerItems.clear();

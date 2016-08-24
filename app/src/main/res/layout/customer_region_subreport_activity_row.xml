@@ -22,17 +22,6 @@
             android:text="CUSTOMER NAME"/>
 
         <TextView
-            android:id="@+id/tvwAuditName"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:gravity="center"
-            android:textColor="@color/primary_text"
-            android:text="SAMPLE"/>
-
-        <TextView
             android:id="@+id/tvwPerfectStore"
             android:layout_width="0dp"
             android:layout_height="match_parent"

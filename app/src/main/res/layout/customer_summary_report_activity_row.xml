@@ -29,6 +29,7 @@
             android:textSize="20sp"
             android:padding="8dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="SAMPLE"/>
 
         <TextView
@@ -39,6 +40,7 @@
             android:textSize="20sp"
             android:padding="8dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="0"/>
 
         <TextView
@@ -49,6 +51,7 @@
             android:textSize="20sp"
             android:padding="8dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="0.00"/>
 
         <TextView
@@ -59,6 +62,7 @@
             android:textSize="20sp"
             android:padding="8dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="0.00"/>
 
         <TextView
@@ -69,6 +73,7 @@
             android:textSize="20sp"
             android:padding="8dp"
             android:gravity="center"
+            android:textColor="@color/primary_text"
             android:text="0.00"/>
 
     </LinearLayout>

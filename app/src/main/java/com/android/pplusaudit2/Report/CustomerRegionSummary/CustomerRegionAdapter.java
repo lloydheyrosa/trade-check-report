@@ -1,4 +1,4 @@
-package com.android.pplusaudit2.Report.CustomerSummary;
+package com.android.pplusaudit2.Report.CustomerRegionSummary;
 
 import android.content.Context;
 import android.view.LayoutInflater;
@@ -10,27 +10,28 @@ import android.widget.TextView;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
+import com.android.pplusaudit2.Report.CustomerSummary.Customer;
 
 import java.util.ArrayList;
 import java.util.Locale;
 
 /**
- * Created by Lloyd on 8/22/16.
+ * Created by Lloyd on 8/23/16.
  */
 
-public class CustomerSubAdapter extends BaseAdapter {
+public class CustomerRegionAdapter extends BaseAdapter {
 
     private Context mContext;
-    private ArrayList<CustomerStoreItem> arrCustomerStores;
+    private ArrayList<Customer> arrCustomers;
 
-    public CustomerSubAdapter(Context mContext, ArrayList<CustomerStoreItem> arrCustomerStoreItems) {
+    public CustomerRegionAdapter(Context mContext, ArrayList<Customer> arrCustomerItems) {
         this.mContext = mContext;
-        this.arrCustomerStores = arrCustomerStoreItems;
+        this.arrCustomers = arrCustomerItems;
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(mContext, General.errlogFile));
     }
 
     private class ViewHolder {
-        TextView tvwStoreName;
+        TextView tvwCustomerName;
         TextView tvwAuditName;
         TextView tvwPerfectStore;
         TextView tvwOSA;
@@ -44,10 +45,10 @@ public class CustomerSubAdapter extends BaseAdapter {
 
         if(convertView == null) {
             LayoutInflater inflater = (LayoutInflater) mContext.getSystemService(Context.LAYOUT_INFLATER_SERVICE);
-            convertView = inflater.inflate(R.layout.customer_summary_subreport_activity_row, parent, false);
+            convertView = inflater.inflate(R.layout.customer_summary_report_activity_row, parent, false);
             holder = new ViewHolder();
 
-            holder.tvwStoreName = (TextView) convertView.findViewById(R.id.tvwStoreName);
+            holder.tvwCustomerName = (TextView) convertView.findViewById(R.id.tvwCustomerName);
             holder.tvwAuditName = (TextView) convertView.findViewById(R.id.tvwAuditName);
             holder.tvwPerfectStore = (TextView) convertView.findViewById(R.id.tvwPerfectStore);
             holder.tvwOSA = (TextView) convertView.findViewById(R.id.tvwOSA);
@@ -60,29 +61,29 @@ public class CustomerSubAdapter extends BaseAdapter {
             holder = (ViewHolder) convertView.getTag();
         }
 
-        holder.tvwStoreName.setText(arrCustomerStores.get(position).storeName);
-        holder.tvwAuditName.setText(arrCustomerStores.get(position).customer.auditName);
-        holder.tvwPerfectStore.setText(String.valueOf(arrCustomerStores.get(position).perfectStore));
-        holder.tvwOSA.setText(String.format(Locale.getDefault(), "%.2f", arrCustomerStores.get(position).osa));
-        holder.tvwNPI.setText(String.format(Locale.getDefault(), "%.2f", arrCustomerStores.get(position).npi));
-        holder.tvwPlanogram.setText(String.format(Locale.getDefault(), "%.2f", arrCustomerStores.get(position).planogram));
+        holder.tvwCustomerName.setText(arrCustomers.get(position).regionName);
+        holder.tvwAuditName.setText(arrCustomers.get(position).auditName);
+        holder.tvwPerfectStore.setText(String.valueOf(arrCustomers.get(position).perfectStores));
+        holder.tvwOSA.setText(String.format(Locale.getDefault(), "%.2f", arrCustomers.get(position).osaAve));
+        holder.tvwNPI.setText(String.format(Locale.getDefault(), "%.2f", arrCustomers.get(position).npiAve));
+        holder.tvwPlanogram.setText(String.format(Locale.getDefault(), "%.2f", arrCustomers.get(position).planogramAve));
 
         return convertView;
     }
 
     @Override
     public int getCount() {
-        return arrCustomerStores.size();
+        return arrCustomers.size();
     }
 
     @Override
-    public CustomerStoreItem getItem(int position) {
-        return arrCustomerStores.get(position);
+    public Customer getItem(int position) {
+        return arrCustomers.get(position);
     }
 
     @Override
     public long getItemId(int position) {
-        return arrCustomerStores.get(position).CustomerStoreItemID;
+        return arrCustomers.get(position).customerID;
     }
 
 }

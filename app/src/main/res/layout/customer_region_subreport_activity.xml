@@ -18,23 +18,58 @@
             android:layout_height="wrap_content"
             android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="wrap_content"
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="CUSTOMER NAME: "
-                android:textSize="16sp"
-                android:padding="8dp"
-                android:textColor="@color/primary_text"/>
+                android:layout_weight="1"
+                android:orientation="horizontal">
 
-            <TextView
-                android:id="@+id/tvwCustomerName"
-                android:layout_width="match_parent"
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="REGION: "
+                    android:textSize="16sp"
+                    android:padding="8dp"
+                    android:textColor="@color/primary_text"/>
+
+                <TextView
+                    android:id="@+id/tvwRegionName"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="SAMPLE REGION NAME"
+                    android:textSize="16sp"
+                    android:padding="8dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"/>
+
+            </LinearLayout>
+
+            <LinearLayout
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="SAMPLE STORE NAME"
-                android:textSize="16sp"
-                android:padding="8dp"
-                android:textStyle="bold"
-                android:textColor="@color/colorPrimaryDark"/>
+                android:layout_weight="1"
+                android:gravity="right"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="AUDIT MONTH: "
+                    android:textSize="16sp"
+                    android:padding="8dp"
+                    android:textColor="@color/primary_text"/>
+
+                <TextView
+                    android:id="@+id/tvwAuditMonth"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="SAMPLE REGION NAME"
+                    android:textSize="16sp"
+                    android:padding="8dp"
+                    android:textStyle="bold"
+                    android:textColor="@color/colorPrimaryDark"/>
+
+            </LinearLayout>
 
         </LinearLayout>
 
@@ -54,18 +89,6 @@
                 android:background="@color/colorPrimaryDark"
                 android:textColor="@color/white"
                 android:text="STORE NAME"/>
-
-            <TextView
-                android:layout_width="0dp"
-                android:layout_height="match_parent"
-                android:layout_weight="1"
-                android:textSize="14sp"
-                android:padding="8dp"
-                android:textStyle="bold"
-                android:gravity="center"
-                android:background="@color/colorPrimaryDark"
-                android:textColor="@color/white"
-                android:text="AUDIT NAME"/>
 
             <TextView
                 android:layout_width="0dp"
@@ -118,7 +141,7 @@
         </LinearLayout>
 
         <ListView
-            android:id="@+id/lvwCustSubReport"
+            android:id="@+id/lvwCustRegionSub"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:drawSelectorOnTop="false"/>

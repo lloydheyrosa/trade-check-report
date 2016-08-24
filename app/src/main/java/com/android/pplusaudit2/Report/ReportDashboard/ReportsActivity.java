@@ -1,4 +1,4 @@
-package com.android.pplusaudit2.Report;
+package com.android.pplusaudit2.Report.ReportDashboard;
 
 import android.app.ProgressDialog;
 import android.content.Context;
@@ -20,7 +20,9 @@ import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.Audit;
 import com.android.pplusaudit2.Report.AuditSummary.ReportAuditActivity;
+import com.android.pplusaudit2.Report.CustomerRegionSummary.CustomerRegionReport;
 import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummaryReport;
+import com.android.pplusaudit2.Report.OSAReport.OsaReportActivity;
 import com.android.pplusaudit2.Report.StoreSummary.ReportStoreActivity;
 
 import org.json.JSONArray;
@@ -209,10 +211,10 @@ public class ReportsActivity extends AppCompatActivity {
                     intent = new Intent(ReportsActivity.this, CustomerSummaryReport.class);
                     break;
                 case 4: // CUSTOMER REGIONAL SUMMARY REPORT
-                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    intent = new Intent(ReportsActivity.this, CustomerRegionReport.class);
                     break;
                 case 5: // PER SKU OSA REPORT
-                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    intent = new Intent(ReportsActivity.this, OsaReportActivity.class);
                     break;
                 case 6: // PER SKU NPI REPORT
                     intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);

@@ -14,27 +14,28 @@
         android:orientation="vertical">
 
         <LinearLayout
-            android:layout_width="match_parent"
+            android:layout_width="450dp"
             android:layout_height="wrap_content"
+            android:layout_gravity="center"
+            android:layout_marginBottom="10dp"
             android:orientation="horizontal">
 
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="CUSTOMER NAME: "
-                android:textSize="16sp"
-                android:padding="8dp"
-                android:textColor="@color/primary_text"/>
+            <Spinner
+                android:id="@+id/spnAudit"
+                android:layout_width="0dp"
+                android:layout_gravity="center_vertical"
+                android:layout_height="match_parent"
+                android:layout_weight="3"/>
 
-            <TextView
-                android:id="@+id/tvwCustomerName"
-                android:layout_width="match_parent"
+            <Button
+                android:id="@+id/btnProcess"
+                android:layout_width="0dp"
                 android:layout_height="wrap_content"
-                android:text="SAMPLE STORE NAME"
-                android:textSize="16sp"
-                android:padding="8dp"
-                android:textStyle="bold"
-                android:textColor="@color/colorPrimaryDark"/>
+                android:layout_weight="1"
+                android:layout_gravity="center_vertical"
+                android:text="PROCESS"
+                style="@style/button_design"
+                android:background="@drawable/btn_accent" />
 
         </LinearLayout>
 
@@ -53,7 +54,7 @@
                 android:gravity="center"
                 android:background="@color/colorPrimaryDark"
                 android:textColor="@color/white"
-                android:text="STORE NAME"/>
+                android:text="REGION"/>
 
             <TextView
                 android:layout_width="0dp"
@@ -65,7 +66,8 @@
                 android:gravity="center"
                 android:background="@color/colorPrimaryDark"
                 android:textColor="@color/white"
-                android:text="AUDIT NAME"/>
+                android:text="AUDIT NAME"
+                android:id="@+id/textView" />
 
             <TextView
                 android:layout_width="0dp"
@@ -89,7 +91,7 @@
                 android:background="@color/colorPrimaryDark"
                 android:textColor="@color/white"
                 android:gravity="center"
-                android:text="OSA %"/>
+                android:text="OSA Ave %"/>
 
             <TextView
                 android:layout_width="0dp"
@@ -101,7 +103,7 @@
                 android:background="@color/colorPrimaryDark"
                 android:textColor="@color/white"
                 android:gravity="center"
-                android:text="NPI %"/>
+                android:text="NPI Ave %"/>
 
             <TextView
                 android:layout_width="0dp"
@@ -113,12 +115,12 @@
                 android:background="@color/colorPrimaryDark"
                 android:textColor="@color/white"
                 android:gravity="center"
-                android:text="PLANOGRAM %"/>
+                android:text="PLANOGRAM Ave %"/>
 
         </LinearLayout>
 
         <ListView
-            android:id="@+id/lvwCustSubReport"
+            android:id="@+id/lvwRegionCustomers"
             android:layout_width="match_parent"
             android:layout_height="match_parent"
             android:drawSelectorOnTop="false"/>

@@ -148,7 +148,7 @@
             android:name=".Report.StoreSummary.ReportStoreActivity"
             android:screenOrientation="landscape" />
         <activity
-            android:name=".Report.ReportsActivity"
+            android:name=".Report.ReportDashboard.ReportsActivity"
             android:label="Reports" />
 
         <service
@@ -168,8 +168,21 @@
             android:label="Check in record" />
         <activity
             android:name=".Report.CustomerSummary.CustomerSummaryReport"
-            android:screenOrientation="landscape"></activity>
-        <activity android:name=".Report.CustomerSummary.CustomerSummarySubReport"></activity>
+            android:label="Customer Summary Report"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".Report.CustomerSummary.CustomerSummarySubReport"
+            android:label="Customer Summary Report"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".Report.CustomerRegionSummary.CustomerRegionReport"
+            android:label="Customer Region Summary Report"
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".Report.CustomerRegionSummary.CustomerRegionSubReport"
+            android:label="Customer Region Summary Report"
+            android:screenOrientation="landscape" />
+        <activity android:name=".Report.OSAReport.OsaReportActivity"></activity>
     </application>
 
 </manifest>
