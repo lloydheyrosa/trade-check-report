@@ -7,15 +7,16 @@
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
+        android:padding="8dp"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <TextView
             android:id="@+id/tvwStorename"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:layout_weight="0.98"
+            android:textSize="14sp"
             android:textStyle="bold"
             android:textColor="@color/colorPrimaryDark"
             android:gravity="center"
@@ -26,8 +27,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:textSize="14sp"
             android:gravity="center"
             android:textColor="@color/primary_text"
             android:text="USERNAME"/>
@@ -37,8 +37,17 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:textSize="14sp"
+            android:gravity="center"
+            android:textColor="@color/primary_text"
+            android:text="USERNAME"/>
+
+        <TextView
+            android:id="@+id/tvwCategory"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:textSize="14sp"
             android:gravity="center"
             android:textColor="@color/primary_text"
             android:text="USERNAME"/>
@@ -48,8 +57,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:textSize="14sp"
             android:gravity="center"
             android:textColor="@color/primary_text"
             android:text="USERNAME"/>
@@ -59,19 +67,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
-            android:gravity="center"
-            android:textColor="@color/primary_text"
-            android:text="USERNAME"/>
-
-        <TextView
-            android:id="@+id/tvwAchievement"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_weight="1"
-            android:textSize="20sp"
-            android:padding="8dp"
+            android:textSize="14sp"
             android:gravity="center"
             android:textColor="@color/primary_text"
             android:text="USERNAME"/>

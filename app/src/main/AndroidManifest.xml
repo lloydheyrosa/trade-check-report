@@ -188,9 +188,16 @@
         <activity
             android:name=".Report.NPIReport.NpiReportActivity"
             android:label="NPI REPORT" />
-        <activity android:name=".Report.SOSReport.SosReportActivity"
+        <activity
+            android:name=".Report.SOSReport.SosReportActivity"
             android:label="@string/string_sos_report"
-            android:screenOrientation="landscape"></activity>
+            android:screenOrientation="landscape" />
+        <activity
+            android:name=".Report.CustomizedPlanoReport.CustomizedPlanoReportActivity"
+            android:label="Customized Planogram Report"
+            android:screenOrientation="landscape" />
+        <activity android:name=".Report.PjpFrequencyReport.PjpFrequencyActivity"
+            android:label="PJP Frequency Report" />
     </application>
 
 </manifest>

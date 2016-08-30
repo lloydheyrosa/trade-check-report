@@ -19,9 +19,6 @@ import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.AuditAdapter;
-import com.android.pplusaudit2.Report.StoreSummary.ReportStoreActivity;
-import com.android.pplusaudit2.Report.StoreSummary.ReportStoreAdapter;
-import com.android.pplusaudit2.Report.StoreSummary.StoreItem;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,7 +40,7 @@ public class SosReportActivity extends AppCompatActivity {
     private ArrayList<SosItem> sosItemArrayListLoader;
     private long selectedAuditID;
     private ProgressDialog progressDialog;
-    private SosReportAdapter storeAdapter;
+    private SosReportAdapter sosReportAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -73,9 +70,9 @@ public class SosReportActivity extends AppCompatActivity {
             }
         });
 
-        ListView lvwStoreReport = (ListView) findViewById(R.id.lvwCustSumReport);
-        storeAdapter = new SosReportAdapter(SosReportActivity.this, sosItemArrayList);
-        lvwStoreReport.setAdapter(storeAdapter);
+        ListView lvwSosReport = (ListView) findViewById(R.id.lvwSosReport);
+        sosReportAdapter = new SosReportAdapter(SosReportActivity.this, sosItemArrayList);
+        lvwSosReport.setAdapter(sosReportAdapter);
     }
 
     private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
@@ -110,11 +107,11 @@ public class SosReportActivity extends AppCompatActivity {
                 return;
             }
 
-            new GetStoreReports().execute();
+            new GetSosReportTask().execute();
         }
     }
 
-    private class GetStoreReports extends AsyncTask<Void, Void, Boolean> {
+    private class GetSosReportTask extends AsyncTask<Void, Void, Boolean> {
         String errormsg = "";
         @Override
         protected void onPreExecute() {
@@ -159,16 +156,19 @@ public class SosReportActivity extends AppCompatActivity {
                     for (int i = 0; i < dataArray.length(); i++) {
                         JSONObject jsonObject = (JSONObject) dataArray.get(i);
 
+                        String sos = jsonObject.getString("sos_measurement").trim().equals("") ? "0" : jsonObject.getString("sos_measurement").trim();
+                        String target = jsonObject.getString("target").trim().equals("") ? "0" : jsonObject.getString("target").trim();
+
                         SosItem item = new SosItem(i+1);
                         item.auditID = jsonObject.getInt("audit_id");
                         item.desc = jsonObject.getString("description");
                         item.storeName = jsonObject.getString("store_name");
                         item.storeCode = jsonObject.getString("store_code");
                         item.category = jsonObject.getString("category");
-                        item.psSosMeasurement = jsonObject.getDouble("sos_measurement");
+                        item.psSosMeasurement = Double.valueOf(sos);
                         item.customerName = jsonObject.getString("customer");
                         item.auditTemplate = jsonObject.getString("template");
-                        item.target = jsonObject.getDouble("target");
+                        item.target = Double.valueOf(target);
 
                         sosItemArrayListLoader.add(item);
                     }
@@ -199,7 +199,7 @@ public class SosReportActivity extends AppCompatActivity {
 
             sosItemArrayList.clear();
             sosItemArrayList.addAll(sosItemArrayListLoader);
-            storeAdapter.notifyDataSetChanged();
+            sosReportAdapter.notifyDataSetChanged();
         }
     }
 
@@ -207,7 +207,6 @@ public class SosReportActivity extends AppCompatActivity {
     public boolean onOptionsItemSelected(MenuItem item) {
 
         int id = item.getItemId();
-
         if(id == android.R.id.home) {
             finish();
             return true;

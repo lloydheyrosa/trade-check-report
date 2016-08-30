@@ -16,12 +16,10 @@ public class SosItem {
     public String category;
     public double target;
     public double psSosMeasurement;
-    public boolean achievement;
 
     public SosItem(int sosID) {
         this.sosID = sosID;
         this.target = 0.0;
         this.psSosMeasurement = 0.0;
-        this.achievement = false;
     }
 }

@@ -26,6 +26,7 @@ public class AuditAdapter extends ArrayAdapter<Audit> {
         arrAudits.addAll(objects);
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(context, General.errlogFile));
     }
+
     public AuditAdapter(Context context, int resource, List<Audit> objects) {
         super(context, resource, objects);
         this.mContext = context;

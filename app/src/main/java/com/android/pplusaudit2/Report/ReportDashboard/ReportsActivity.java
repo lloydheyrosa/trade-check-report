@@ -22,8 +22,11 @@ import com.android.pplusaudit2.Report.AuditSummary.Audit;
 import com.android.pplusaudit2.Report.AuditSummary.ReportAuditActivity;
 import com.android.pplusaudit2.Report.CustomerRegionSummary.CustomerRegionReport;
 import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummaryReport;
+import com.android.pplusaudit2.Report.CustomizedPlanoReport.CustomizedPlanoReportActivity;
 import com.android.pplusaudit2.Report.NPIReport.NpiReportActivity;
 import com.android.pplusaudit2.Report.OSAReport.OsaReportActivity;
+import com.android.pplusaudit2.Report.PjpFrequencyReport.PjpFrequencyActivity;
+import com.android.pplusaudit2.Report.SOSReport.SosReportActivity;
 import com.android.pplusaudit2.Report.StoreSummary.ReportStoreActivity;
 
 import org.json.JSONArray;
@@ -66,7 +69,7 @@ public class ReportsActivity extends AppCompatActivity {
         reportsArrayList.add(new Reports(6, "NPI REPORT - PER SKU", "Report of SKU's NPI.", "\uf0c5"));
         reportsArrayList.add(new Reports(7, "SOS REPORT", "SOS Report of user.", "\uf0c5"));
         reportsArrayList.add(new Reports(8, "CUSTOMIZED PLANOGRAM REPORT", "Customized planogram report.", "\uf0c5"));
-        reportsArrayList.add(new Reports(8, "PJP FREQUENCY REPORT", "PJP frequency report of user.", "\uf0c5"));
+        reportsArrayList.add(new Reports(9, "PJP FREQUENCY REPORT", "PJP frequency report of user.", "\uf0c5"));
 
         ListView lvwReports = (ListView) findViewById(R.id.lvwReports);
         lvwReports.setAdapter(new ReportsAdapter(this, reportsArrayList));
@@ -221,10 +224,13 @@ public class ReportsActivity extends AppCompatActivity {
                     intent = new Intent(ReportsActivity.this, NpiReportActivity.class);
                     break;
                 case 7: // SOS REPORT
-                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    intent = new Intent(ReportsActivity.this, SosReportActivity.class);
                     break;
                 case 8: // CUSTOMIZED PLANOGRAM REPORT
-                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    intent = new Intent(ReportsActivity.this, CustomizedPlanoReportActivity.class);
+                    break;
+                case 9: // PJP FREQUENCY REPORT
+                    intent = new Intent(ReportsActivity.this, PjpFrequencyActivity.class);
                     break;
                 default:
                     break;
