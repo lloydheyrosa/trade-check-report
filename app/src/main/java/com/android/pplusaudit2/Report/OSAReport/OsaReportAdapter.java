@@ -31,7 +31,6 @@ public class OsaReportAdapter extends BaseAdapter {
 
     private class ViewHolder {
         TextView tvwCustomerName;
-        TextView tvwAuditName;
         TextView tvwSkuItem;
         TextView tvwStoreCount;
         TextView tvwAvailability;
@@ -48,7 +47,6 @@ public class OsaReportAdapter extends BaseAdapter {
             holder = new ViewHolder();
 
             holder.tvwCustomerName = (TextView) convertView.findViewById(R.id.tvwCustomerName);
-            holder.tvwAuditName = (TextView) convertView.findViewById(R.id.tvwAuditName);
             holder.tvwSkuItem = (TextView) convertView.findViewById(R.id.tvwSkuItem);
             holder.tvwStoreCount = (TextView) convertView.findViewById(R.id.tvwStoreCount);
             holder.tvwAvailability = (TextView) convertView.findViewById(R.id.tvwAvailability);
@@ -61,7 +59,6 @@ public class OsaReportAdapter extends BaseAdapter {
         }
 
         holder.tvwCustomerName.setText(arrOsaItems.get(position).customerName);
-        holder.tvwAuditName.setText(arrOsaItems.get(position).description);
         holder.tvwSkuItem.setText(String.valueOf(arrOsaItems.get(position).prompt));
         holder.tvwStoreCount.setText(String.valueOf(arrOsaItems.get(position).storeCount));
         holder.tvwAvailability.setText(String.valueOf(arrOsaItems.get(position).availability));

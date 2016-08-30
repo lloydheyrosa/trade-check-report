@@ -22,6 +22,7 @@ import com.android.pplusaudit2.Report.AuditSummary.Audit;
 import com.android.pplusaudit2.Report.AuditSummary.ReportAuditActivity;
 import com.android.pplusaudit2.Report.CustomerRegionSummary.CustomerRegionReport;
 import com.android.pplusaudit2.Report.CustomerSummary.CustomerSummaryReport;
+import com.android.pplusaudit2.Report.NPIReport.NpiReportActivity;
 import com.android.pplusaudit2.Report.OSAReport.OsaReportActivity;
 import com.android.pplusaudit2.Report.StoreSummary.ReportStoreActivity;
 
@@ -217,7 +218,7 @@ public class ReportsActivity extends AppCompatActivity {
                     intent = new Intent(ReportsActivity.this, OsaReportActivity.class);
                     break;
                 case 6: // PER SKU NPI REPORT
-                    intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);
+                    intent = new Intent(ReportsActivity.this, NpiReportActivity.class);
                     break;
                 case 7: // SOS REPORT
                     intent = new Intent(ReportsActivity.this, ReportStoreActivity.class);

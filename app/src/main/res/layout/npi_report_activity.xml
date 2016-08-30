@@ -23,7 +23,7 @@
             android:textStyle="bold"
             android:gravity="center"
             android:textColor="@color/primary_text"
-            android:text="OSA REPORT - PER SKU"/>
+            android:text="NPI REPORT - PER SKU"/>
 
     </android.support.v7.widget.CardView>
 
