@@ -12,16 +12,14 @@ import android.view.View;
 import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Spinner;
+import android.widget.TextView;
 import android.widget.Toast;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
-import com.android.pplusaudit2.PJP_Compliance.PjpActivity;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Report.AuditSummary.AuditAdapter;
-import com.android.pplusaudit2.Report.OSAReport.OsaItem;
-import com.android.pplusaudit2.Report.OSAReport.OsaReportActivity;
 import com.android.pplusaudit2.Report.OSAReport.OsaReportAdapter;
 
 import org.json.JSONArray;
@@ -42,9 +40,9 @@ public class PjpFrequencyActivity extends AppCompatActivity {
     private ErrorLog errorLog;
     private long selectedAuditID;
 
-    private ArrayList<OsaItem> arrOsaItems;
-    private ArrayList<OsaItem> arrOsaItemsLoader;
-    private OsaReportAdapter osaReportAdapter;
+    private ArrayList<FrequencyItem> arrFrequencyItems;
+    private ArrayList<FrequencyItem> arrFrequencyItemsLoader;
+    private FrequencyItemAdapter frequencyReportAdapter;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -58,12 +56,13 @@ public class PjpFrequencyActivity extends AppCompatActivity {
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         overridePendingTransition(R.anim.slide_up, R.anim.hold);
 
-        arrOsaItems = new ArrayList<>();
-        arrOsaItemsLoader = new ArrayList<>();
+        arrFrequencyItems = new ArrayList<>();
+        arrFrequencyItemsLoader = new ArrayList<>();
 
         final Spinner spnAudit = (Spinner) findViewById(R.id.spnAudit);
+        TextView tvwUserName = (TextView) findViewById(R.id.tvwUserName);
         Button btnProcess = (Button) findViewById(R.id.btnProcess);
-        ListView lvwOsaReports = (ListView) findViewById(R.id.lvwPjpFrequency);
+        ListView lvwPjpFrequency = (ListView) findViewById(R.id.lvwPjpFrequency);
 
         AuditAdapter dataAdapter = new AuditAdapter(PjpFrequencyActivity.this, android.R.layout.simple_dropdown_item_1line, General.arraylistAudits);
         spnAudit.setAdapter(dataAdapter);
@@ -75,9 +74,10 @@ public class PjpFrequencyActivity extends AppCompatActivity {
                 new CheckInternet().execute();
             }
         });
+        tvwUserName.setText(General.userFullName);
 
-        osaReportAdapter = new OsaReportAdapter(this, arrOsaItems);
-        lvwOsaReports.setAdapter(osaReportAdapter);
+        frequencyReportAdapter = new FrequencyItemAdapter(this, arrFrequencyItems);
+        lvwPjpFrequency.setAdapter(frequencyReportAdapter);
 
     }
 
@@ -124,8 +124,8 @@ public class PjpFrequencyActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            arrOsaItemsLoader.clear();
-            progressDialog = ProgressDialog.show(PjpFrequencyActivity.this, "", "Fetching OSA Report per SKU. Please wait.", false);
+            arrFrequencyItemsLoader.clear();
+            progressDialog = ProgressDialog.show(PjpFrequencyActivity.this, "", "Fetching PJP Frequency Report. Please wait.", false);
         }
 
         @Override
@@ -147,37 +147,31 @@ public class PjpFrequencyActivity extends AppCompatActivity {
                 }
                 bufferedReader.close();
                 urlConnection.disconnect();
-                response = stringBuilder.toString();
+                response = stringBuilder.toString().toLowerCase();
 
-                if (response.trim().contains("No reports found.")) {
-                    errMsg = new JSONObject(response).getString("msg");
-                    return false;
-                }
-
-                if (!response.trim().equals("")) {
+                if (!response.contains("no report available")) {
 
                     JSONArray dataArray = new JSONArray(response);
 
-                    for (int i = 0; i < dataArray.length(); i++) {
-                        JSONObject jsonObject = (JSONObject) dataArray.get(i);
+                    if(dataArray.length() > 0) {
 
-                        OsaItem osaItem = new OsaItem(i+1);
-                        osaItem.osaPercent = jsonObject.getDouble("osa_percent");
-                        osaItem.template = jsonObject.getString("template");
-                        osaItem.category = jsonObject.getString("category");
-                        osaItem.description = jsonObject.getString("description");
-                        osaItem.auditID = jsonObject.getInt("audit_id");
-                        osaItem.userID = jsonObject.getInt("user_id");
-                        osaItem.storeCount = jsonObject.getInt("store_count");
-                        osaItem.prompt = jsonObject.getString("prompt");
-                        osaItem.customerName = jsonObject.getString("customer");
-                        osaItem.group = jsonObject.getString("group");
-                        osaItem.channelCode = jsonObject.getString("channel_code");
-                        osaItem.availability = jsonObject.getInt("availability");
+                        for (int i = 0; i < dataArray.length(); i++) {
+                            JSONObject jsonObject = (JSONObject) dataArray.get(i);
 
-                        arrOsaItemsLoader.add(osaItem);
+                            FrequencyItem frequencyItem = new FrequencyItem(i + 1);
+                            frequencyItem.frequency = jsonObject.getInt("frequency");
+                            frequencyItem.storeName = jsonObject.getString("store_name");
+
+                            arrFrequencyItemsLoader.add(frequencyItem);
+                        }
+                        result = true;
                     }
-                    result = true;
+                    else {
+                        errMsg = "No reports found.";
+                    }
+                }
+                else {
+                    errMsg = new JSONObject(response).getString("msg").trim().toLowerCase();
                 }
             }
             catch (IOException | JSONException ex) {
@@ -194,12 +188,11 @@ public class PjpFrequencyActivity extends AppCompatActivity {
             progressDialog.dismiss();
             if(!bResult) {
                 Toast.makeText(PjpFrequencyActivity.this, errMsg, Toast.LENGTH_LONG).show();
-                return;
             }
 
-            arrOsaItems.clear();
-            arrOsaItems.addAll(arrOsaItemsLoader);
-            osaReportAdapter.notifyDataSetChanged();
+            arrFrequencyItems.clear();
+            arrFrequencyItems.addAll(arrFrequencyItemsLoader);
+            frequencyReportAdapter.notifyDataSetChanged();
         }
     }
 

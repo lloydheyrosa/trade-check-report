@@ -14,18 +14,18 @@
             android:id="@+id/tvwStoreName"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="1"
+            android:layout_weight="2"
             android:textSize="18sp"
             android:padding="6dp"
             android:textColor="@color/primary_text"
             android:gravity="center"
-            android:text="CUSTOMER NAME"/>
+            android:text="STORE NAME"/>
 
         <TextView
             android:id="@+id/tvwFrequency"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_weight="2"
+            android:layout_weight="1"
             android:textSize="18sp"
             android:padding="6dp"
             android:gravity="center"
