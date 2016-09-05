@@ -168,7 +168,7 @@ public class CustomerRegionReport extends AppCompatActivity {
                 urlConnection.disconnect();
                 response = stringBuilder.toString();
 
-                if(response.trim().contains("No reports found.")) {
+                if(response.trim().contains("No Report Available")) {
                     errormsg = new JSONObject(response).getString("msg");
                     return false;
                 }

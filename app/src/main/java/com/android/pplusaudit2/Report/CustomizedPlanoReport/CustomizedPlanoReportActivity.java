@@ -144,7 +144,7 @@ public class CustomizedPlanoReportActivity extends AppCompatActivity {
                 urlConnection.disconnect();
                 response = stringBuilder.toString();
 
-                if (response.trim().contains("No reports found.")) {
+                if (response.trim().contains("No Report Available")) {
                     errMsg = new JSONObject(response).getString("msg");
                     return false;
                 }
