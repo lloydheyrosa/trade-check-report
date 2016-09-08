@@ -2085,6 +2085,7 @@ public class MainActivity extends AppCompatActivity {
 
             alertDialog.setTitle("Done");
             alertDialog.setMessage("Saving Downloaded data done.");
+            alertDialog.setCancelable(false);
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
@@ -2092,8 +2093,6 @@ public class MainActivity extends AppCompatActivity {
                             Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                             startActivity(mainIntent);
                             finish();
-/*                                                    Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
-                                                    startActivity(mainIntent);*/
                         }
                     });
             alertDialog.show();

@@ -655,7 +655,6 @@ public class StoreActivity extends AppCompatActivity {
                                         }
                                     }
                                 } else {
-
                                     sqlstatementStoreQuestions.clearBindings();
                                     sqlstatementStoreQuestions.bindString(1, storeCategoryGroupID);
                                     sqlstatementStoreQuestions.bindString(2, questionid);
@@ -664,7 +663,6 @@ public class StoreActivity extends AppCompatActivity {
                                     sqlstatementStoreQuestions.bindString(5, "0");
                                     sqlstatementStoreQuestions.bindString(6, "0");
                                     sqlstatementStoreQuestions.execute();
-
                                 }
                                 cursQuestionsPerGroup.moveToNext();
                             }
