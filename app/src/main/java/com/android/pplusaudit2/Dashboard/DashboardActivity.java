@@ -34,6 +34,7 @@ import com.android.pplusaudit2.MainActivity;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.PJP_Compliance.PjpActivity;
 import com.android.pplusaudit2.Report.ReportDashboard.ReportsActivity;
+import com.android.pplusaudit2._Questions.QuestionsActivity;
 import com.android.pplusaudit2._Store.StoreActivity;
 import com.android.pplusaudit2.R;
 
@@ -347,15 +348,7 @@ public class DashboardActivity extends AppCompatActivity {
     @Override
     protected void onStart() {
         super.onStart();
-/*        if(General.oldversionCode < General.versionCode) {
-            SharedPreferences.Editor spEditor = General.sharedPref.edit();
-            spEditor.putBoolean(getString(R.string.pref_isLogged), false);
-            spEditor.apply();
-
-            Intent intentmenu = new Intent(DashboardActivity.this, MainActivity.class);
-            startActivity(intentmenu);
-            finish();
-        }*/
+        General.verifyStoragePermissions(DashboardActivity.this);
     }
 
     @Override

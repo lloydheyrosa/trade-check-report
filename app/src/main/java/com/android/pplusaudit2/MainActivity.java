@@ -64,6 +64,7 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
+import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -784,7 +785,14 @@ public class MainActivity extends AppCompatActivity {
             progressDL.dismiss();
             if(s != null) {
                 messageBox.ShowMessage("Image Download", s);
-                sql.TruncateTable(SQLiteDB.TABLE_USER);
+                try {
+                    sql.TruncateTable(SQLiteDB.TABLE_USER);
+                }
+                catch (Exception e) {
+                    String exErr = e.getMessage() != null ? e.getMessage() : "Error truncating user table.";
+                    Toast.makeText(MainActivity.this, exErr, Toast.LENGTH_LONG).show();
+                    errorLog.appendLog(TAG, exErr);
+                }
                 return;
             }
 
@@ -934,7 +942,14 @@ public class MainActivity extends AppCompatActivity {
             progressDL.dismiss();
             if(!bResult) {
                 General.messageBox(MainActivity.this, "Download", errmsg);
-                sql.TruncateTable(SQLiteDB.TABLE_USER);
+                try {
+                    sql.TruncateTable(SQLiteDB.TABLE_USER);
+                }
+                catch (Exception e) {
+                    String exErr = e.getMessage() != null ? e.getMessage() : "Error truncating user table.";
+                    Toast.makeText(MainActivity.this, exErr, Toast.LENGTH_LONG).show();
+                    errorLog.appendLog(TAG, exErr);
+                }
                 return;
             }
 
@@ -2083,8 +2098,16 @@ public class MainActivity extends AppCompatActivity {
                 alertDialog.setButton(DialogInterface.BUTTON_NEUTRAL, "OK", new DialogInterface.OnClickListener() {
                     @Override
                     public void onClick(DialogInterface dialog, int which) {
-                        sql.TruncateTable(SQLiteDB.TABLE_USER);
-                        finish();
+                        dialog.dismiss();
+                        try {
+                            sql.TruncateTable(SQLiteDB.TABLE_USER);
+                            finish();
+                        }
+                        catch (Exception e) {
+                            String exErr = e.getMessage() != null ? e.getMessage() : "Error truncating user table.";
+                            Toast.makeText(MainActivity.this, exErr, Toast.LENGTH_LONG).show();
+                            errorLog.appendLog(TAG, exErr);
+                        }
                     }
                 });
                 alertDialog.show();

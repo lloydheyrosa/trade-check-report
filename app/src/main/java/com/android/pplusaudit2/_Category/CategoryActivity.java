@@ -54,6 +54,8 @@ public class CategoryActivity extends AppCompatActivity {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.category_activity_layout);
 
+        overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
+
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
 
         TAG = CategoryActivity.this.getLocalClassName();
@@ -63,8 +65,6 @@ public class CategoryActivity extends AppCompatActivity {
 
         arrActivityList = new ArrayList<>();
         lstActivities = new ArrayList<>();
-
-        overridePendingTransition(R.anim.slide_in_left, R.anim.hold);
 
         sqlLibrary = new SQLLibrary(this);
         tcrLib = new TCRLib(this);

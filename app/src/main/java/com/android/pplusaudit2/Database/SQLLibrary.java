@@ -6,10 +6,12 @@ import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.util.Log;
+import android.widget.Toast;
 
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 
+import java.sql.SQLException;
 import java.util.Date;
 
 /**
@@ -461,49 +463,54 @@ public class SQLLibrary {
         return cursor;
     }*/
 
-    public void InitializeAllTables() {
-        TruncateTable(SQLiteDB.TABLE_USER);
-        TruncateTable(SQLiteDB.TABLE_STORE);
-        TruncateTable(SQLiteDB.TABLE_QUESTION);
-        TruncateTable(SQLiteDB.TABLE_CATEGORY);
-        TruncateTable(SQLiteDB.TABLE_GROUP);
-        TruncateTable(SQLiteDB.TABLE_FORMS);
-        TruncateTable(SQLiteDB.TABLE_SINGLESELECT);
-        TruncateTable(SQLiteDB.TABLE_MULTISELECT);
-        TruncateTable(SQLiteDB.TABLE_COMPUTATIONAL);
-        TruncateTable(SQLiteDB.TABLE_CONDITIONAL);
-        TruncateTable(SQLiteDB.TABLE_CONDITIONAL_ANSWERS);
-        TruncateTable(SQLiteDB.TABLE_STORECATEGORY);
-        TruncateTable(SQLiteDB.TABLE_STORECATEGORYGROUP);
-        TruncateTable(SQLiteDB.TABLE_STOREQUESTION);
-        TruncateTable(SQLiteDB.TABLE_SECONDARYDISP);
-        TruncateTable(SQLiteDB.TABLE_SECONDARYKEYLIST);
-        TruncateTable(SQLiteDB.TABLE_OSALIST);
-        TruncateTable(SQLiteDB.TABLE_OSALOOKUP);
-        TruncateTable(SQLiteDB.TABLE_SOSLIST);
-        TruncateTable(SQLiteDB.TABLE_SOSLOOKUP);
-        TruncateTable(SQLiteDB.TABLE_PICTURES);
-        TruncateTable(SQLiteDB.TABLE_NPI);
-        TruncateTable(SQLiteDB.TABLE_PLANOGRAM);
-        TruncateTable(SQLiteDB.TABLE_PERFECT_CATEGORY);
-        TruncateTable(SQLiteDB.TABLE_PERFECT_GROUP);
-        TruncateTable(SQLiteDB.TABLE_PJPCOMP);
+    public boolean InitializeAllTables() {
+        boolean result = false;
+        try {
+            TruncateTable(SQLiteDB.TABLE_USER);
+            TruncateTable(SQLiteDB.TABLE_STORE);
+            TruncateTable(SQLiteDB.TABLE_QUESTION);
+            TruncateTable(SQLiteDB.TABLE_CATEGORY);
+            TruncateTable(SQLiteDB.TABLE_GROUP);
+            TruncateTable(SQLiteDB.TABLE_FORMS);
+            TruncateTable(SQLiteDB.TABLE_SINGLESELECT);
+            TruncateTable(SQLiteDB.TABLE_MULTISELECT);
+            TruncateTable(SQLiteDB.TABLE_COMPUTATIONAL);
+            TruncateTable(SQLiteDB.TABLE_CONDITIONAL);
+            TruncateTable(SQLiteDB.TABLE_CONDITIONAL_ANSWERS);
+            TruncateTable(SQLiteDB.TABLE_STORECATEGORY);
+            TruncateTable(SQLiteDB.TABLE_STORECATEGORYGROUP);
+            TruncateTable(SQLiteDB.TABLE_STOREQUESTION);
+            TruncateTable(SQLiteDB.TABLE_SECONDARYDISP);
+            TruncateTable(SQLiteDB.TABLE_SECONDARYKEYLIST);
+            TruncateTable(SQLiteDB.TABLE_OSALIST);
+            TruncateTable(SQLiteDB.TABLE_OSALOOKUP);
+            TruncateTable(SQLiteDB.TABLE_SOSLIST);
+            TruncateTable(SQLiteDB.TABLE_SOSLOOKUP);
+            TruncateTable(SQLiteDB.TABLE_PICTURES);
+            TruncateTable(SQLiteDB.TABLE_NPI);
+            TruncateTable(SQLiteDB.TABLE_PLANOGRAM);
+            TruncateTable(SQLiteDB.TABLE_PERFECT_CATEGORY);
+            TruncateTable(SQLiteDB.TABLE_PERFECT_GROUP);
+            TruncateTable(SQLiteDB.TABLE_PJPCOMP);
+            result = true;
+        }
+        catch (Exception e) {
+            String exErr = e.getMessage() != null ? e.getMessage() : "Error in truncating tables.";
+            Toast.makeText(this.mContext, exErr, Toast.LENGTH_LONG).show();
+        }
+
+        return result;
     }
 
-    public boolean TruncateTable(String tableName) {
+    public boolean TruncateTable(String tableName) throws SQLException, Exception {
 
         SQLiteDatabase db = dbHelper.getWritableDatabase();
         int count = db.delete(tableName, null, null);
-        try {
             db.execSQL("DELETE FROM SQLITE_SEQUENCE WHERE NAME = '" + tableName.trim() + "'");
-        }
-        catch (Exception ex) {
-            Log.e("Exception", ex.getMessage());
-        }
+
         db.close();
 
         return count==0;
-
     }
 
 

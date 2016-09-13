@@ -1,6 +1,7 @@
 package com.android.pplusaudit2.Database;
 
 import android.content.Context;
+import android.database.Cursor;
 import android.database.SQLException;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteOpenHelper;
@@ -20,7 +21,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
     private static final String DATABASE_NAME = "unileverdb";
     private static final String TAG = "SettingsProvider";
-    public static final int DATABASE_VERSION = 11;
+    public static final int DATABASE_VERSION = 12;
 
     public SQLiteDB(Context context) {
         super(context, DATABASE_NAME, null, DATABASE_VERSION);
@@ -263,7 +264,7 @@ public class SQLiteDB extends SQLiteOpenHelper {
     public static final String COLUMN_CONDANS_conditionalformid = "conditional_form_id";
     public static final String COLUMN_CONDANS_conditionalanswer = "conditional_answer";
 
-    private static final String DATABASE_CREATE_TABLE_CONDITIONAL_ANSWERS = "CREATE TABLE " + TABLE_CONDITIONAL_ANSWERS + "("
+    private static final String DATABASE_CREATE_TABLE_CONDITIONAL_ANSWERS = "CREATE TABLE IF NOT EXISTS " + TABLE_CONDITIONAL_ANSWERS + "("
             + COLUMN_CONDANS_id + " integer PRIMARY KEY autoincrement, "
             + COLUMN_CONDANS_questionid + " numeric, "
             + COLUMN_CONDANS_conditionalformid + " numeric, "
@@ -540,6 +541,8 @@ public class SQLiteDB extends SQLiteOpenHelper {
     @Override
     public void onUpgrade(SQLiteDatabase db, int oldVersion, int newVersion) {
 
+        String changesMsg = "";
+
         if(newVersion > oldVersion) {
             try {
                 // ADDING COLUMNS
@@ -548,51 +551,56 @@ public class SQLiteDB extends SQLiteOpenHelper {
                 db.execSQL("ALTER TABLE " + TABLE_FORMS + " ADD COLUMN " + COLUMN_FORMS_defaultans + " TEXT DEFAULT 0");
                 db.execSQL("ALTER TABLE " + TABLE_CONDITIONAL + " ADD COLUMN " + COLUMN_CONDITIONAL_optionid + " NUMERIC DEFAULT 0");*/
 
-                if(newVersion > oldVersion && oldVersion <= 1) { // version 2
+                if(newVersion > oldVersion && oldVersion < 2) { // version 2
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_auditid + " NUMERIC");
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 2) { // version 3
+                if(newVersion > oldVersion && oldVersion < 3) { // version 3
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_osa + " TEXT DEFAULT 0");
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_npi + " TEXT DEFAULT 0");
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_planogram + " TEXT DEFAULT 0");
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 3) { // version 4
+                if(newVersion > oldVersion && oldVersion < 4) { // version 4
                     db.execSQL(DATABASE_CREATE_TABLE_NPI);
                     db.execSQL(DATABASE_CREATE_TABLE_PLANOGRAM);
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 4) { // version 5
+                if(newVersion > oldVersion && oldVersion < 5) { // version 5
                     db.execSQL(DATABASE_CREATE_TABLE_PERFECTCATEGORY);
                     db.execSQL(DATABASE_CREATE_TABLE_PERFECTGROUP);
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 5) { // version 6
+                if(newVersion > oldVersion && oldVersion < 6) { // version 6
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_perfectstore + " TEXT DEFAULT 0");
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 6) { // version 7
+                if(newVersion > oldVersion && oldVersion < 7) { // version 7
                     db.execSQL(DATABASE_CREATE_TABLE_PJPCOMP);
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 7) { // version 8
+                if(newVersion > oldVersion && oldVersion < 8) { // version 8
                     db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_longitude + " TEXT DEFAULT 0");
                     db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_latitude + " TEXT DEFAULT 0");
                     db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_address + " TEXT");
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 8) { // version 9
+                if(newVersion > oldVersion && oldVersion < 9) { // version 9
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_area + " TEXT");
                     db.execSQL("ALTER TABLE " + TABLE_PJPCOMP + " ADD COLUMN " + COLUMN_PJPCOMP_posted + " TEXT DEFAULT 0");
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 9) { // version 10
+                if(newVersion > oldVersion && oldVersion < 10) { // version 10
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_templatetype + " NUMERIC");
                 }
 
-                if(newVersion > oldVersion && oldVersion <= 10) { // version 11
+                if(newVersion > oldVersion && oldVersion < 11) { // version 11
                     db.execSQL("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_remarks + " TEXT DEFAULT ''");
+                }
+
+                if(newVersion > oldVersion && oldVersion < 12) { // version 12 - 09/13/2016
+                    db.execSQL(DATABASE_CREATE_TABLE_CONDITIONAL_ANSWERS);
+                    AlterTableColumns("ALTER TABLE " + TABLE_STORE + " ADD COLUMN " + COLUMN_STORE_startdate + " TEXT DEFAULT ''", TABLE_STORE, COLUMN_STORE_startdate, db);
                 }
 
                 String strLog = "Upgrading settings database from version " + oldVersion + " to "
@@ -614,5 +622,14 @@ public class SQLiteDB extends SQLiteOpenHelper {
 
         Log.wtf(TAG, strLog);
         new ErrorLog(General.getDeviceID(mContext) + ".txt", mContext).appendLog(strLog, TAG);
+    }
+
+    private void AlterTableColumns(String alterQuery, String tblName, String tblNewColumn, SQLiteDatabase database) {
+        Cursor cursor = database.rawQuery("SELECT * FROM " + tblName, null); // grab cursor for all data
+        int deleteStateColumnIndex = cursor.getColumnIndex(tblNewColumn);  // see if the column is there
+        if (deleteStateColumnIndex < 0) {
+            // missing_column not there - add it
+            database.execSQL(alterQuery);
+        }
     }
 }

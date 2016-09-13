@@ -4,8 +4,11 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageInfo;
+import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -14,6 +17,7 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
@@ -55,6 +59,7 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
+import java.util.jar.Manifest;
 
 /**
  * Created by LLOYD on 10/8/2015.
@@ -343,7 +348,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
                                 captureImgview = imgCapture;
                                 String imageFilename = General.usercode + "_QUESTIONIMG_" + nQuestionid;
-                                imgFilename = imageFilename + ".jpg";
+                                imgFilename = imageFilename + ".png";
 
                                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                                 hmUriImagequestionfile.put(imgFilename, Settings.GetUriQuestionImagePath(imageFilename));
@@ -354,6 +359,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                 imgQuestionid = nQuestionid;
                                 imgFormtypeid = formtypeid;
 
+                                //if(hasPermissionInManifest(QuestionsActivity.this, android.Manifest.permission.CAMERA))
                                 startActivityForResult(cameraIntent, Results.CAMERA_REQUEST);
                             }
                         };
@@ -2777,8 +2783,6 @@ public class QuestionsActivity extends AppCompatActivity {
 
         options.inJustDecodeBounds = true;
 
-        BitmapFactory.decodeFile(imgFile.getAbsolutePath(), options);
-
         options.inSampleSize = calculateInSampleSize(options, 180, 180);
 
         options.inJustDecodeBounds = false;
@@ -2992,11 +2996,15 @@ public class QuestionsActivity extends AppCompatActivity {
         int id = item.getItemId();
 
         if(id == android.R.id.home) {
-            finish();
-            overridePendingTransition(R.anim.hold, R.anim.slide_in_right);
+            onBackPressed();
             return true;
         }
 
         return super.onOptionsItemSelected(item);
+    }
+
+    @Override
+    protected void onStart() {
+        super.onStart();
     }
 }
