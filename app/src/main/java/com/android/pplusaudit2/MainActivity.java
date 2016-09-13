@@ -251,13 +251,25 @@ public class MainActivity extends AppCompatActivity {
         System.setProperty("http.keepAlive", "false");
     }
 
+    private void acquireWake() {
+        if(wlStayAwake != null) {
+            wlStayAwake.acquire();
+        }
+    }
+
+    private void releaseWake() {
+        if(wlStayAwake != null) {
+            wlStayAwake.release();
+        }
+    }
+
     private class CheckInternet extends AsyncTask<Void, Void, Boolean> {
         String errmsg = "";
 
         @Override
         protected void onPreExecute() {
             progressDL = ProgressDialog.show(MainActivity.this, "", "Checking internet connection.");
-            wlStayAwake.acquire();
+            acquireWake();
         }
 
         @Override
@@ -282,7 +294,7 @@ public class MainActivity extends AppCompatActivity {
         protected void onPostExecute(Boolean bResult) {
             progressDL.dismiss();
             if(!bResult) {
-                wlStayAwake.release();
+                releaseWake();
                 Toast.makeText(MainActivity.this, errmsg, Toast.LENGTH_SHORT).show();
                 return;
             }
@@ -783,7 +795,7 @@ public class MainActivity extends AppCompatActivity {
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            wlStayAwake.release();
+                            releaseWake();
                             Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                             startActivity(mainIntent);
                             finish();
@@ -2089,7 +2101,7 @@ public class MainActivity extends AppCompatActivity {
             alertDialog.setButton(AlertDialog.BUTTON_NEUTRAL, "OK",
                     new DialogInterface.OnClickListener() {
                         public void onClick(DialogInterface dialog, int which) {
-                            wlStayAwake.release();
+                            releaseWake();
                             Intent mainIntent = new Intent(MainActivity.this, DashboardActivity.class);
                             startActivity(mainIntent);
                             finish();

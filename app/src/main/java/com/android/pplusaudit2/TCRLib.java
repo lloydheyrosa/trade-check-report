@@ -154,7 +154,9 @@ public class TCRLib {
     public String ValidateNumericValue(String val) {
         String strRet = "0";
 
-        if(!val.trim().equals("")) {
+        String strValue = val.trim();
+
+        if(!strValue.equals("")) {
             strRet = val;
         }
 
