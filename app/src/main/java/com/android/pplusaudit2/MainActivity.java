@@ -12,7 +12,6 @@ import android.database.sqlite.SQLiteStatement;
 import android.net.ConnectivityManager;
 import android.net.NetworkInfo;
 import android.net.Uri;
-import android.net.wifi.WifiManager;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
@@ -34,7 +33,6 @@ import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.Debug.DebugLog;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
-import com.android.pplusaudit2.Json.JSON_pplus;
 
 import java.io.BufferedInputStream;
 import java.io.DataOutputStream;
@@ -64,9 +62,8 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.UnknownHostException;
-import java.sql.SQLException;
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Locale;
 
 public class MainActivity extends AppCompatActivity {
 
@@ -625,7 +622,7 @@ public class MainActivity extends AppCompatActivity {
                                 sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
 
                                 urlDownload = urlDownload + "id=" + General.usercode;
-                                new AsyncDownloadFile().execute();
+                                new DownloadFileTask().execute();
 
                             }
                         })
@@ -648,7 +645,7 @@ public class MainActivity extends AppCompatActivity {
                 sql.AddRecord(SQLiteDB.TABLE_USER, afields, avalues);
 
                 urlDownload = urlDownload + "id=" + General.usercode;
-                new AsyncDownloadFile().execute();
+                new DownloadFileTask().execute();
             }
         }
     }
@@ -816,22 +813,24 @@ public class MainActivity extends AppCompatActivity {
     }
 
     // DOWNLOADING FILE
-    private class AsyncDownloadFile extends AsyncTask<Void, String, Boolean> {
+    private class DownloadFileTask extends AsyncTask<Void, String, Boolean> {
         String errmsg = "";
         @Override
         protected void onPreExecute() {
             progressDL = new ProgressDialog(MainActivity.this);
             progressDL.setMessage("Downloading files.");
-            progressDL.setProgressStyle(ProgressDialog.STYLE_HORIZONTAL);
-            progressDL.setMax(General.ARRAY_FILE_LISTS.length);
+            progressDL.setProgressStyle(ProgressDialog.STYLE_SPINNER);
+            //progressDL.setMax(General.ARRAY_FILE_LISTS.length);
             progressDL.setCancelable(false);
             progressDL.show();
         }
 
         @Override
         protected void onProgressUpdate(String... values) {
-            progressDL.incrementProgressBy(1);
-            progressDL.setMessage("Downloading " + values[0] + ".");
+//            progressDL.incrementProgressBy(1);
+//            progressDL.setMessage("Downloading " + values[0] + ".");
+            progressDL.setMessage("Downloading " + values[1] + ".\n\n" + String.format(Locale.getDefault(), "%.2f", Double.valueOf(values[0])) + "Kb downloaded.");
+
         }
 
         @Override
@@ -850,6 +849,8 @@ public class MainActivity extends AppCompatActivity {
 
                     URL url = new URL(urlDownloadperFile);
                     HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
+                    httpConn.setRequestMethod("GET");
+                    httpConn.setDoInput(true);
                     final int responseCode = httpConn.getResponseCode();
 
                     // always check HTTP response code first
@@ -896,18 +897,20 @@ public class MainActivity extends AppCompatActivity {
                         if(type.equals(General.PERFECT_CATEGORY_LIST)) pcategoryDIR = new File(dlpath, fileName);
                         if(type.equals(General.PERFECT_GROUP_LIST)) pgroupDIR = new File(dlpath, fileName);
 
-                        publishProgress(fileName);
-
                         // opens an output stream to save into file
                         FileOutputStream outputStream = new FileOutputStream(saveFilePath);
 
                         int bytesRead = -1;
                         byte[] buffer = new byte[BUFFER_SIZE];
+                        double totalDownloaded = 0;
 
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
+                            totalDownloaded +=  Double.valueOf(bytesRead) / 1000;
+                            publishProgress(String.valueOf(totalDownloaded), fileName);
                             outputStream.write(buffer, 0, bytesRead);
                         }
 
+                        outputStream.flush();
                         outputStream.close();
                         inputStream.close();
                         errorLog.appendLog("Download success for " + type, TAG);
