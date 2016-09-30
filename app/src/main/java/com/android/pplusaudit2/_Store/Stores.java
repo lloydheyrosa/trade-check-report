@@ -38,6 +38,7 @@ public class Stores {
     public String startDate = "";
     public String endDate = "";
     public String templateCode = "";
+    public String templateDate = "";
 
     public double osa;
     public double npi;

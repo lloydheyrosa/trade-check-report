@@ -319,6 +319,7 @@ public class StoreActivity extends AppCompatActivity {
                     store.perfectStore = perfectStore;
                     store.templateCode = templateCode;
                     store.status = nStatus;
+                    store.templateDate = startDate + " - " + endDate;
 
                     if (isAudited && !isPosted)
                         arrPendings.add(store);

@@ -1,43 +1,61 @@
 <?xml version="1.0" encoding="utf-8"?>
-<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    android:id="@+id/lnrMainStore"
+<android.support.v7.widget.CardView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
     android:layout_margin="10dp"
-    android:padding="10dp"
     android:orientation="vertical"
     android:background="@drawable/style_listview_design">
 
     <LinearLayout
-        android:id="@+id/lnrStore"
+        android:id="@+id/lnrMainStore"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:layout_gravity="center"
-        android:layout_marginBottom="6dp"
+        android:padding="8dp"
         android:orientation="vertical">
 
-        <TextView
-            android:id="@+id/tvwStore"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:textColor="@color/primary_text"
-            android:gravity="center"
-            android:text="STORE 1"
-            style="@style/title_style"
-            android:textSize="20sp" />
-
-        <TextView
-            android:id="@+id/tvwTemplatename"
+        <LinearLayout
+            android:id="@+id/lnrStore"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:paddingStart="20dp"
-            android:paddingLeft="20dp"
-            android:fontFamily="sans-serif-light"
-            android:textColor="@color/primary_text"
-            android:text="PG ANABU"
-            android:textSize="15sp" />
+            android:layout_gravity="center"
+            android:layout_marginBottom="6dp"
+            android:orientation="vertical">
 
-        <!--<TextView-->
+            <TextView
+                android:id="@+id/tvwStore"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:textColor="@color/primary_text"
+                android:gravity="center"
+                android:text="STORE 1"
+                style="@style/title_style"
+                android:textSize="20sp" />
+
+            <TextView
+                android:id="@+id/tvwTemplatename"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingLeft="20dp"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/primary_text"
+                android:text="PG ANABU"
+                android:textSize="15sp" />
+
+            <TextView
+                android:id="@+id/tvwTemplateDate"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:paddingStart="20dp"
+                android:paddingLeft="20dp"
+                android:fontFamily="sans-serif-light"
+                android:textColor="@color/primary_text"
+                android:text="TEMPLATE DATE"
+                android:layout_marginBottom="8dp"
+                android:textSize="15sp" />
+
+
+            <!--<TextView-->
             <!--android:id="@+id/tvwArea"-->
             <!--android:layout_width="match_parent"-->
             <!--android:layout_height="wrap_content"-->
@@ -49,7 +67,7 @@
             <!--android:text="AREA"-->
             <!--android:textSize="15sp" />-->
 
-        <!--<TextView-->
+            <!--<TextView-->
             <!--android:id="@+id/tvwTerritory"-->
             <!--android:layout_width="match_parent"-->
             <!--android:layout_height="wrap_content"-->
@@ -61,46 +79,48 @@
             <!--android:text="TERRIROTRY"-->
             <!--android:textSize="15sp" />-->
 
-        <TextView
-            android:id="@+id/tvwPostingDatetime"
-            android:layout_width="wrap_content"
+            <TextView
+                android:id="@+id/tvwPostingDatetime"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:gravity="center"
+                android:paddingStart="20dp"
+                android:paddingLeft="20dp"
+                android:text="Posted: 01/14/2016 13:34"
+                android:textColor="@color/secondary_text"
+                android:textStyle="italic|bold"
+                android:textSize="15sp" />
+
+        </LinearLayout>
+
+        <LinearLayout
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:gravity="center"
-            android:paddingStart="20dp"
-            android:paddingLeft="20dp"
-            android:text="Posted: 01/14/2016 13:34"
-            android:textColor="@color/secondary_text"
-            android:textStyle="italic|bold"
-            android:textSize="15sp" />
+            android:orientation="horizontal">
+
+            <Button
+                android:id="@+id/btnPreview"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                style="@style/button_design"
+                android:text="PREVIEW"
+                android:fontFamily="Roboto"
+                android:background="@drawable/btn_accent"
+                android:onClick="previewOnClickEvent"/>
+
+            <Button
+                android:id="@+id/btnAudit"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                style="@style/button_design"
+                android:text="AUDIT"
+                android:background="@drawable/btn_primary"
+                android:onClick="auditOnClickEvent"/>
+
+        </LinearLayout>
 
     </LinearLayout>
 
-    <LinearLayout
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:orientation="horizontal">
-
-        <Button
-            android:id="@+id/btnPreview"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            style="@style/button_design"
-            android:text="PREVIEW"
-            android:fontFamily="Roboto"
-            android:background="@drawable/btn_accent"
-            android:onClick="previewOnClickEvent"/>
-
-        <Button
-            android:id="@+id/btnAudit"
-            android:layout_width="0dp"
-            android:layout_height="match_parent"
-            android:layout_weight="1"
-            style="@style/button_design"
-            android:text="AUDIT"
-            android:background="@drawable/btn_primary"
-            android:onClick="auditOnClickEvent"/>
-
-    </LinearLayout>
-
-</LinearLayout>
+</android.support.v7.widget.CardView>

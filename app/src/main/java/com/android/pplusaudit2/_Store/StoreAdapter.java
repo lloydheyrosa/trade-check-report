@@ -42,6 +42,7 @@ public class StoreAdapter extends BaseAdapter {
         TextView tvwStore;
         TextView tvwTemplatename;
         TextView tvwPostingDateTime;
+        TextView tvwTemplateDate;
         Button btnPreview;
         Button btnAudit;
         LinearLayout lnrMain;
@@ -64,6 +65,7 @@ public class StoreAdapter extends BaseAdapter {
             holder.btnPreview = (Button) view.findViewById(R.id.btnPreview);
             holder.btnAudit = (Button) view.findViewById(R.id.btnAudit);
             holder.lnrMain = (LinearLayout) view.findViewById(R.id.lnrMainStore);
+            holder.tvwTemplateDate = (TextView) view.findViewById(R.id.tvwTemplateDate);
 
             view.setTag(holder);
         }
@@ -76,6 +78,7 @@ public class StoreAdapter extends BaseAdapter {
         holder.tvwStore.setText(String.valueOf(storeClassResult.get(position).storeName.toUpperCase()));
         holder.tvwTemplatename.setText(String.valueOf(storeClassResult.get(position).templateName));
         holder.tvwPostingDateTime.setText("");
+        holder.tvwTemplateDate.setText(storeClassResult.get(position).templateDate);
 
         if(storeClassResult.get(position).isAudited) {
             holder.btnPreview.setEnabled(true);

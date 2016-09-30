@@ -33,7 +33,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = false;
+    public static boolean BETA = true;
 
     public static String versionName = "";
     public static int versionCode = 0;
@@ -304,7 +304,7 @@ public class General {
     public static int crc32(String str) {
         byte bytes[] = str.getBytes();
         Checksum checksum = new CRC32();
-        checksum.update(bytes,0,bytes.length);
+        checksum.update(bytes, 0, bytes.length);
         return (int) checksum.getValue();
     }
 
