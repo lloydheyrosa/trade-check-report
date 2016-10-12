@@ -19,6 +19,7 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.AppSettings;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.Debug.DebugLog;
@@ -27,7 +28,6 @@ import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.PJP_Compliance.Compliance;
 import com.android.pplusaudit2.R;
-import com.android.pplusaudit2.Settings;
 import com.android.pplusaudit2.TCRLib;
 import com.android.pplusaudit2._Category.Category;
 
@@ -136,7 +136,7 @@ public class StorePreviewActivity extends AppCompatActivity {
         tvwPerfectStore.setText(strPerfectStore);
 
         strFilenameToSend = General.usercode + "_" + General.selectedStore.storeCode + ".csv";
-        filepathToSend = new File(Settings.postingFolder, strFilenameToSend);
+        filepathToSend = new File(AppSettings.postingFolder, strFilenameToSend);
 
         Button btnBack = (Button) findViewById(R.id.btnBackPreview);
         Button btnPost = (Button) findViewById(R.id.btnPostAudit);
@@ -333,7 +333,7 @@ public class StorePreviewActivity extends AppCompatActivity {
             boolean result = false;
 
             strFileName = General.usercode + "_" + String.valueOf(General.selectedStore.auditID) + "_" + General.getDateToday().trim().replace("/", "") + ".csv";
-            File fileCheckIns = new File(Settings.PjpFolder, strFileName);
+            File fileCheckIns = new File(AppSettings.PjpFolder, strFileName);
 
             try {
 
@@ -1053,8 +1053,7 @@ public class StorePreviewActivity extends AppCompatActivity {
                 httpUrlConnection.setRequestProperty("Cache-Control", "no-cache");
                 httpUrlConnection.setRequestProperty("Content-Type", "multipart/form-data;boundary=" + boundary);
 
-                DataOutputStream request = new DataOutputStream(
-                        httpUrlConnection.getOutputStream());
+                DataOutputStream request = new DataOutputStream(httpUrlConnection.getOutputStream());
 
                 request.writeBytes(twoHyphens + boundary + crlf);
                 request.writeBytes("Content-Disposition: form-data; name=\"" +
@@ -1081,11 +1080,9 @@ public class StorePreviewActivity extends AppCompatActivity {
                 request.flush();
                 request.close();
 
-                InputStream responseStream = new
-                        BufferedInputStream(httpUrlConnection.getInputStream());
+                InputStream responseStream = new BufferedInputStream(httpUrlConnection.getInputStream());
 
-                BufferedReader responseStreamReader =
-                        new BufferedReader(new InputStreamReader(responseStream));
+                BufferedReader responseStreamReader = new BufferedReader(new InputStreamReader(responseStream));
 
                 String line = "";
                 StringBuilder stringBuilder = new StringBuilder();
@@ -1346,7 +1343,7 @@ public class StorePreviewActivity extends AppCompatActivity {
 
                     while (!cursImages.isAfterLast()) {
                         String strFilename = cursImages.getString(cursImages.getColumnIndex(SQLiteDB.COLUMN_STOREQUESTION_answer)).trim();
-                        File file = new File(Settings.captureFolder, strFilename);
+                        File file = new File(AppSettings.captureFolder, strFilename);
                         aStrFilenames.add(strFilename);
                         aFileImages.add(file);
                         cursImages.moveToNext();

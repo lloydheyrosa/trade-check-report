@@ -3,20 +3,18 @@ package com.android.pplusaudit2._Questions;
 import android.app.AlertDialog;
 import android.content.DialogInterface;
 import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
 
+import com.android.pplusaudit2.AppSettings;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.R;
-import com.android.pplusaudit2.Settings;
 import com.simplify.ink.InkView;
 
 import java.io.File;
@@ -77,8 +75,8 @@ public class Pplus_Questions_signaturepad extends AppCompatActivity {
                         String signatureFilename = General.usercode + "_SIGN_" + String.valueOf(qid)  + ".png";
                         
                         Bitmap bmSignature = inkSign.getBitmap(getResources().getColor(R.color.white));
-                        Settings.uriSignatureTempPath = Settings.GetUriQuestionImagePath(signatureFilename);
-                        File signfile = new File(Settings.uriSignatureTempPath.getPath());
+                        AppSettings.uriSignatureTempPath = AppSettings.GetUriQuestionImagePath(signatureFilename);
+                        File signfile = new File(AppSettings.uriSignatureTempPath.getPath());
 
                         FileOutputStream out = null;
                         try {

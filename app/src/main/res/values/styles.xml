@@ -55,6 +55,7 @@
     <style name="TextViewPrimary" parent="@android:style/Widget.TextView">
         <item name="android:textColor">@color/primary_text</item>
         <item name="android:textSize">20sp</item>
+        <item name="android:fontFamily">sans-serif-light</item>
     </style>
 
     <style name="TextViewPrimary_medium" parent="@android:style/Widget.TextView">

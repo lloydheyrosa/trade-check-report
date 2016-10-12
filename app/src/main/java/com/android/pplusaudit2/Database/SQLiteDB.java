@@ -16,10 +16,12 @@ import com.android.pplusaudit2.MyMessageBox;
  * Created by LLOYD on 9/30/2015.
  */
 public class SQLiteDB extends SQLiteOpenHelper {
+    public static int DATABASE_BACKUP_VERSION = -1;
     private MyMessageBox messageBox;
     private Context mContext;
 
-    private static final String DATABASE_NAME = "unileverdb";
+    public static final String DATABASE_NAME = "unileverdb";
+    public static final String PORTABLE_DATABASE_NAME  = "tcrDB";
     private static final String TAG = "SettingsProvider";
     public static final int DATABASE_VERSION = 12;
 

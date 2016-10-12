@@ -15,13 +15,14 @@ import java.io.OutputStream;
 /**
  * Created by ULTRABOOK on 10/9/2015.
  */
-public class Settings {
+public class AppSettings {
 
     public static File captureFolder;
     public static File signatureFolder;
     public static File imgFolder;
     public static File postingFolder;
     public static File PjpFolder;
+    public static File dbFolder;
     private static final File mediaStorageDir = new File(Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_PICTURES), General.QUESTION_IMAGE_CAPTURE);
 
     public static Uri uriSignatureTempPath;
@@ -39,8 +40,8 @@ public class Settings {
 
     public static void InitTransactionFolders(Context mContext) {
         File dlpath =  new File(new File(mContext.getExternalFilesDir(null),""), "Downloads");
-        Settings.captureFolder.delete();
-        Settings.signatureFolder.delete();
+        AppSettings.captureFolder.delete();
+        AppSettings.signatureFolder.delete();
 
         for (String files : General.DOWNLOAD_FILES) {
             File fDelete = new File(dlpath, files);
@@ -60,5 +61,22 @@ public class Settings {
         }
         in.close();
         out.close();
+    }
+
+    public static void CreateDirs(Context mContext) {
+        File appfolder = new File(mContext.getExternalFilesDir(null), "");
+
+        AppSettings.postingFolder = new File(appfolder, "Posted");
+        AppSettings.postingFolder.mkdirs();
+        AppSettings.PjpFolder = new File(appfolder, "PJP");
+        AppSettings.PjpFolder.mkdirs();
+        AppSettings.imgFolder = new File(appfolder, "Images");
+        AppSettings.imgFolder.mkdirs();
+        AppSettings.captureFolder = new File(appfolder, "Captured Image");
+        AppSettings.captureFolder.mkdirs();
+        AppSettings.signatureFolder = new File(appfolder, "Signatures");
+        AppSettings.signatureFolder.mkdirs();
+        AppSettings.dbFolder = new File(appfolder, "Database");
+        AppSettings.dbFolder.mkdirs();
     }
 }

@@ -17,6 +17,7 @@ import com.android.pplusaudit2.Report.AuditSummary.Audit;
 import com.android.pplusaudit2.Report.CustomerSummary.Customer;
 import com.android.pplusaudit2._Store.Stores;
 
+import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Date;
@@ -33,7 +34,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = false;
+    public static boolean BETA = true;
 
     public static String versionName = "";
     public static int versionCode = 0;
@@ -111,6 +112,10 @@ public class General {
     public static String URL_REPORT_SOS = mainURL + "/api/sosreport";
     public static String URL_REPORT_CUSTOMIZED_PLANOGRAM_REPORT = mainURL + "/api/customizedplanoreport";
     public static String URL_REPORT_PJP_FREQUENCY_REPORT = mainURL + "/api/pjpreport";
+
+    public static final String API_UPLOAD_BACKUP = mainURL + "/api/export_db";
+    public static final String API_CHECK_BACKUP_LIST = mainURL + "/api/";
+    public static final String API_DOWNLOAD_BACKUP = mainURL + "/api/";
 
     static String QUESTION_IMAGE_CAPTURE = "Pplus2 Image";
 
@@ -192,21 +197,23 @@ public class General {
     };
 
     public static String[] mainIconsFont = new String[] {
-            "\uf059",
-            "\uf274",
-            "\uf1ea",
-            "\uf011"
+            FontAwesome.AUDIT_ICON,
+            FontAwesome.PJP_ICON,
+            FontAwesome.SETTINGS_ICON,
+            FontAwesome.REPORTS_ICON,
+            FontAwesome.LOGOUT_ICON
     };
 
     public static String[] mainIconsFont_admin = new String[] {
-            "\uf059",
-            "\uf011"
+            FontAwesome.AUDIT_ICON,
+            FontAwesome.LOGOUT_ICON
     };
 
     public static String[] Menu = {
             "Audit:Audit and answer a survey from selected store.",
             "PJP Compliance:Start in checking in stores for auditing.",
             "Reports:Generate a report for references.",
+            "Settings:Application settings such as importing and exporting data backup.",
             "Log out:Log out user."
     };
 
@@ -226,6 +233,13 @@ public class General {
     public static String getDateTimeToday() {
         SimpleDateFormat dateFormat = new SimpleDateFormat(
                 "yyyy-MM-dd HH:mm:ss", Locale.getDefault());
+        Date date = new Date();
+        return dateFormat.format(date);
+    }
+
+    public static String getDbDateTimeToday() {
+        SimpleDateFormat dateFormat = new SimpleDateFormat(
+                "MMddyyyy_HHmmss", Locale.getDefault());
         Date date = new Date();
         return dateFormat.format(date);
     }

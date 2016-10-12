@@ -34,6 +34,7 @@ import com.android.pplusaudit2.MainActivity;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.PJP_Compliance.PjpActivity;
 import com.android.pplusaudit2.Report.ReportDashboard.ReportsActivity;
+import com.android.pplusaudit2.Settings.SettingsActivity;
 import com.android.pplusaudit2._Questions.QuestionsActivity;
 import com.android.pplusaudit2._Store.StoreActivity;
 import com.android.pplusaudit2.R;
@@ -176,7 +177,11 @@ public class DashboardActivity extends AppCompatActivity {
                             Intent intentReport = new Intent(DashboardActivity.this, ReportsActivity.class);
                             startActivity(intentReport);
                             break;
-                        case 3: // LOGOUT
+                        case 3: // SETTINGS
+                            Intent intentSettings = new Intent(DashboardActivity.this, SettingsActivity.class);
+                            startActivity(intentSettings);
+                            break;
+                        case 4: // LOGOUT
                             new LoadStores().execute();
                         default:
                             break;

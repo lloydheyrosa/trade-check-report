@@ -4,7 +4,7 @@
 
     <uses-permission android:name="android.permission.WRITE_EXTERNAL_STORAGE" />
     <uses-permission android:name="com.google.android.providers.gsf.permission.READ_GSERVICES" />
-    <!--<uses-permission android:name="android.permission.CAMERA" />-->
+    <!-- <uses-permission android:name="android.permission.CAMERA" /> -->
     <uses-permission android:name="android.permission.WAKE_LOCK" />
     <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
     <uses-permission android:name="android.permission.CHANGE_WIFI_STATE" />
@@ -195,8 +195,12 @@
             android:name=".Report.CustomizedPlanoReport.CustomizedPlanoReportActivity"
             android:label="Customized Planogram Report"
             android:screenOrientation="landscape" />
-        <activity android:name=".Report.PjpFrequencyReport.PjpFrequencyActivity"
+        <activity
+            android:name=".Report.PjpFrequencyReport.PjpFrequencyActivity"
             android:label="PJP Frequency Report" />
+        <activity
+            android:name=".Settings.SettingsActivity"
+            android:label="@string/title_activity_settings"></activity>
     </application>
 
 </manifest>

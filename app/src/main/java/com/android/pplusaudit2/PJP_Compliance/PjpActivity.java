@@ -26,14 +26,13 @@ import android.widget.Button;
 import android.widget.ListView;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.AppSettings;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
-import com.android.pplusaudit2.MainActivity;
 import com.android.pplusaudit2.R;
-import com.android.pplusaudit2.Settings;
 import com.android.pplusaudit2._Store.Stores;
 
 import org.json.JSONException;
@@ -263,7 +262,7 @@ public class PjpActivity extends AppCompatActivity {
             }
 
             strFileName = General.usercode + "_" + String.valueOf(arrStores.get(0).auditID) + "_" + General.getDateToday().trim().replace("/", "") + ".csv";
-            File fileCheckIns = new File(Settings.PjpFolder, strFileName);
+            File fileCheckIns = new File(AppSettings.PjpFolder, strFileName);
 
             try {
 

@@ -164,16 +164,7 @@ public class MainActivity extends AppCompatActivity {
         dlpath =  new File(appfolder, "Downloads");
         dlpath.mkdirs();
 
-        Settings.postingFolder = new File(appfolder, "Posted");
-        Settings.postingFolder.mkdirs();
-        Settings.PjpFolder = new File(appfolder, "PJP");
-        Settings.PjpFolder.mkdirs();
-        Settings.imgFolder = new File(appfolder, "Images");
-        Settings.imgFolder.mkdirs();
-        Settings.captureFolder = new File(appfolder, "Captured Image");
-        Settings.captureFolder.mkdirs();
-        Settings.signatureFolder = new File(appfolder, "Signatures");
-        Settings.signatureFolder.mkdirs();
+        AppSettings.CreateDirs(this);
 
         Button btnLogin = (Button) findViewById(R.id.btnLogin);
 
@@ -677,7 +668,7 @@ public class MainActivity extends AppCompatActivity {
         @Override
         protected String doInBackground(Void... params) {
 
-            String saveImageDir = Uri.fromFile(Settings.imgFolder).getPath();
+            String saveImageDir = Uri.fromFile(AppSettings.imgFolder).getPath();
 
             Cursor cursAllImage = sql.GetDataCursor(SQLiteDB.TABLE_PICTURES);
             cursAllImage.moveToFirst();
@@ -690,9 +681,9 @@ public class MainActivity extends AppCompatActivity {
                         String productImageName = cursAllImage.getString(cursAllImage.getColumnIndex(SQLiteDB.COLUMN_PICTURES_name)).toLowerCase();
 
                         // CHECK IF EXISTING
-                        File fExisting = new File(Settings.imgFolder, productImageName.toLowerCase().trim().replace("\"",""));
+                        File fExisting = new File(AppSettings.imgFolder, productImageName.toLowerCase().trim().replace("\"",""));
                         if(!fExisting.exists()) {
-                            imageProductDIR = new File(Settings.imgFolder, productImageName);
+                            imageProductDIR = new File(AppSettings.imgFolder, productImageName);
                         }
                         else {
                             cursAllImage.moveToNext();

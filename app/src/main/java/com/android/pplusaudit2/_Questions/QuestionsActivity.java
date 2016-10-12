@@ -4,11 +4,8 @@ import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.ProgressDialog;
 import android.app.TimePickerDialog;
-import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageInfo;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
@@ -17,14 +14,11 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Bundle;
 import android.provider.MediaStore;
-import android.support.annotation.NonNull;
 import android.support.v7.app.AppCompatActivity;
 import android.text.Editable;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.Gravity;
 import android.view.LayoutInflater;
-import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.widget.Button;
@@ -40,6 +34,7 @@ import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 
+import com.android.pplusaudit2.AppSettings;
 import com.android.pplusaudit2.Database.SQLLibrary;
 import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.AutoErrorLog;
@@ -49,7 +44,6 @@ import com.android.pplusaudit2.Math.Expression;
 import com.android.pplusaudit2.MyMessageBox;
 import com.android.pplusaudit2.R;
 import com.android.pplusaudit2.Results;
-import com.android.pplusaudit2.Settings;
 import com.android.pplusaudit2.TCRLib;
 
 import java.io.File;
@@ -59,7 +53,6 @@ import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.jar.Manifest;
 
 /**
  * Created by LLOYD on 10/8/2015.
@@ -351,7 +344,7 @@ public class QuestionsActivity extends AppCompatActivity {
                                 imgFilename = imageFilename + ".png";
 
                                 Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-                                hmUriImagequestionfile.put(imgFilename, Settings.GetUriQuestionImagePath(imageFilename));
+                                hmUriImagequestionfile.put(imgFilename, AppSettings.GetUriQuestionImagePath(imageFilename));
                                 cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, hmUriImagequestionfile.get(imgFilename));
 
                                 CONDITIONAL_MODE = 0;
@@ -490,7 +483,7 @@ public class QuestionsActivity extends AppCompatActivity {
                         General.hmSignature.put(nQuestionid, imgSign);
 
                         String signatureFilename = General.usercode + "_SIGN_" + String.valueOf(nQuestionid)  + ".png";
-                        File fileTempSign = new File(Settings.GetUriQuestionImagePath(signatureFilename).getPath());
+                        File fileTempSign = new File(AppSettings.GetUriQuestionImagePath(signatureFilename).getPath());
                         if(fileTempSign.exists())
                             fileTempSign.delete();
 
@@ -628,9 +621,9 @@ public class QuestionsActivity extends AppCompatActivity {
 
 /*                        ImageView imgBrand = (ImageView) layoutrow.findViewById(R.id.imgBrandPicture);
                         if(!strBrandImage.isEmpty()) {
-                            File imgFileMultiSelect = new File(Settings.imgFolder, strBrandImage + ".png");
+                            File imgFileMultiSelect = new File(AppSettings.imgFolder, strBrandImage + ".png");
                             if(!imgFileMultiSelect.exists()) {
-                                imgFileMultiSelect = new File(Settings.imgFolder, strBrandImage + ".jpg");
+                                imgFileMultiSelect = new File(AppSettings.imgFolder, strBrandImage + ".jpg");
                             }
                             bmBrand = tcrLib.decodeFile(imgFileMultiSelect);
                             imgBrand.setImageBitmap(bmBrand);
@@ -714,9 +707,9 @@ public class QuestionsActivity extends AppCompatActivity {
                         /*ImageView imgBrandPic = (ImageView) layoutrow.findViewById(R.id.imgBrandPictureRadio);
                         Bitmap bmSingleselect = null;
                         if(!strBrandImage.isEmpty()) {
-                            File imgFileSingleselect = new File(Settings.imgFolder, strBrandImage + ".png");
+                            File imgFileSingleselect = new File(AppSettings.imgFolder, strBrandImage + ".png");
                             if(!imgFileSingleselect.exists()) {
-                                imgFileSingleselect = new File(Settings.imgFolder, strBrandImage + ".jpg");
+                                imgFileSingleselect = new File(AppSettings.imgFolder, strBrandImage + ".jpg");
                             }
                             bmBrand = tcrLib.decodeFile(imgFileSingleselect);
                             imgBrandPic.setImageBitmap(bmBrand);
@@ -1111,7 +1104,7 @@ public class QuestionsActivity extends AppCompatActivity {
             int qid = entry.getKey();
 
             String filename = General.usercode + "_COND_SIGN_" + String.valueOf(qid) + ".png";
-            Uri uriSignpath = Settings.GetUriQuestionImagePath(filename);
+            Uri uriSignpath = AppSettings.GetUriQuestionImagePath(filename);
 
             signfile = new File(uriSignpath.getPath());
 
@@ -1615,8 +1608,8 @@ public class QuestionsActivity extends AppCompatActivity {
                         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
                         imgFilename = imageFilename + ".jpg";
 
-                        hmUriCondImagefile.put(imgFilename, Settings.GetUriQuestionImagePath(imageFilename));
-                        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, Settings.GetUriQuestionImagePath(imageFilename));
+                        hmUriCondImagefile.put(imgFilename, AppSettings.GetUriQuestionImagePath(imageFilename));
+                        cameraIntent.putExtra(MediaStore.EXTRA_OUTPUT, AppSettings.GetUriQuestionImagePath(imageFilename));
 
                         CONDITIONAL_MODE = 1;
                         CAMERA_CONDFORM_ID = formid;
@@ -1722,7 +1715,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 General.hmCondSignature.put(condQuestionid, imgSign);
 
                 String signatureFilename = General.usercode + "_SIGN_" + String.valueOf(condQuestionid)  + ".png";
-                File fileTempSign = new File(Settings.GetUriQuestionImagePath(signatureFilename).getPath());
+                File fileTempSign = new File(AppSettings.GetUriQuestionImagePath(signatureFilename).getPath());
                 if(fileTempSign.exists())
                     fileTempSign.delete();
 
@@ -2043,11 +2036,11 @@ public class QuestionsActivity extends AppCompatActivity {
                                     if(imgUriPath != null) {
 
                                         imageFile = new File(imgUriPath.getPath());
-                                        File destFile = new File(Settings.captureFolder, answerValueClass.viewValue);
+                                        File destFile = new File(AppSettings.captureFolder, answerValueClass.viewValue);
 
                                         try {
                                             if (imageFile.exists()) {
-                                                Settings.CopyFile(imageFile, destFile);
+                                                AppSettings.CopyFile(imageFile, destFile);
                                                 imageFile.delete();
                                             }
                                         } catch (IOException ex) {
@@ -2066,12 +2059,12 @@ public class QuestionsActivity extends AppCompatActivity {
                                 case "6": // SIGNATURE CAPTURE
                                     answer = answerValueClass.viewValue;
 
-                                    File imageSignatureFile = new File(Settings.GetUriQuestionImagePath(answerValueClass.viewValue).getPath());
-                                    File destSignatureFile = new File(Settings.signatureFolder, answerValueClass.viewValue);
+                                    File imageSignatureFile = new File(AppSettings.GetUriQuestionImagePath(answerValueClass.viewValue).getPath());
+                                    File destSignatureFile = new File(AppSettings.signatureFolder, answerValueClass.viewValue);
 
                                     try {
                                         if (imageSignatureFile.exists()) {
-                                            Settings.CopyFile(imageSignatureFile, destSignatureFile);
+                                            AppSettings.CopyFile(imageSignatureFile, destSignatureFile);
                                             imageSignatureFile.delete();
                                         }
                                     } catch (final IOException ex) {
@@ -2709,7 +2702,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
                 case "2": // IMAGE CAPTURE
                     ImageView imgvw = (ImageView) viewForm;
-                    File imgFile = new File(Settings.captureFolder, sAnswer);
+                    File imgFile = new File(AppSettings.captureFolder, sAnswer);
 
                     if (imgFile.exists()) {
                         Bitmap bitmapMaster = SetImageOptions(imgFile);
@@ -2723,7 +2716,7 @@ public class QuestionsActivity extends AppCompatActivity {
                     break;
 
                 case "6": // SIGNATURE CAPTURE
-                    File signfile = new File(Settings.signatureFolder, sAnswer);
+                    File signfile = new File(AppSettings.signatureFolder, sAnswer);
                     ImageView imgvwSign = (ImageView) viewForm;
                     if (signfile.exists()) {
                         Bitmap bitmapMaster = SetImageOptions(signfile);
@@ -2835,7 +2828,7 @@ public class QuestionsActivity extends AppCompatActivity {
 
             case "2": // IMAGE CAPTURE
                 ImageView imgvw = (ImageView) viewForm;
-                File imgFile = new  File(Settings.captureFolder, sAnswer);
+                File imgFile = new  File(AppSettings.captureFolder, sAnswer);
 
                 if(imgFile.exists()) {
                     Bitmap bitmapMaster = SetImageOptions(imgFile);
@@ -2844,7 +2837,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 break;
 
             case "6": // SIGNATURE CAPTURE
-                File signfile = new File(Settings.signatureFolder, sAnswer);
+                File signfile = new File(AppSettings.signatureFolder, sAnswer);
                 ImageView imgvwSign = (ImageView) viewForm;
                 if(signfile.exists()) {
                     Bitmap bitmapMaster = SetImageOptions(signfile);
@@ -2919,7 +2912,7 @@ public class QuestionsActivity extends AppCompatActivity {
                 int qid = entry.getKey();
 
                 String filename = General.usercode + "_SIGN_" + String.valueOf(qid) + ".png";
-                Uri uriSignpath = Settings.GetUriQuestionImagePath(filename);
+                Uri uriSignpath = AppSettings.GetUriQuestionImagePath(filename);
 
                 signfile = new File(uriSignpath.getPath());
 
