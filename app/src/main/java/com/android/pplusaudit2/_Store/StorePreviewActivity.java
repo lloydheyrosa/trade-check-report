@@ -1067,8 +1067,7 @@ public class StorePreviewActivity extends AppCompatActivity {
                 // Read file
                 bytesRead = fileInputStream.read(buffer, 0, bufferSize);
 
-                while (bytesRead > 0)
-                {
+                while (bytesRead > 0) {
                     request.write(buffer, 0, bufferSize);
                     bytesAvailable = fileInputStream.available();
                     bufferSize = Math.min(bytesAvailable, maxBufferSize);

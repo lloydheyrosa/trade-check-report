@@ -79,7 +79,6 @@ public class DashboardActivity extends AppCompatActivity {
     }
 
     private MENU_MODE menuMode;
-    private CheckUpdateApk checkUpdateApk;
     static PowerManager.WakeLock wlStayAwake;
     private SharedPreferences sharedPreferences;
 
@@ -96,7 +95,7 @@ public class DashboardActivity extends AppCompatActivity {
         General.errlogFile = General.deviceID + ".txt";
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(this, General.errlogFile));
 
-        General.versionName = "Trade Check Report v." + General.getVersionName(this);
+        General.versionName = General.getVersionName(this);
         General.versionCode = General.getVersionCode(this);
 
         try {
@@ -193,7 +192,8 @@ public class DashboardActivity extends AppCompatActivity {
         //new AutoUpdateApk(this);
         errorLog = new ErrorLog(General.errlogFile, this);
         General.mainAutoUpdate = new AutoUpdate(this);
-        checkUpdateApk = new CheckUpdateApk(this);
+        General.checkUpdateApk = new CheckUpdateApk(this);
+        General.checkUpdateApk.started = true;
 
         errorLog.appendLog("Dashboard run. User: " + General.userFullName, TAG);
     }

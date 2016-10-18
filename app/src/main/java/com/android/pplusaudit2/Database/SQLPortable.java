@@ -107,7 +107,7 @@ public class SQLPortable {
             result = true;
         }
         catch (IOException ex) {
-            String uErr = "Can't copy pcount database. Please try again.";
+            String uErr = "Can't copy tcr database. Please try again.";
             String exError = ex.getMessage() != null ? ex.getMessage() : uErr;
             errorLog.appendLog(exError, TAG);
             Toast.makeText(mContext, uErr, Toast.LENGTH_LONG).show();

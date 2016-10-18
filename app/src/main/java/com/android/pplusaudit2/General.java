@@ -13,6 +13,7 @@ import android.util.Log;
 import android.widget.ImageView;
 
 import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
+import com.android.pplusaudit2.AutoUpdateApk.CheckUpdateApk;
 import com.android.pplusaudit2.Report.AuditSummary.Audit;
 import com.android.pplusaudit2.Report.CustomerSummary.Customer;
 import com.android.pplusaudit2._Store.Stores;
@@ -43,6 +44,7 @@ public class General {
 
     public static boolean hasUpdate = false;
     public static AutoUpdate mainAutoUpdate;
+    public static CheckUpdateApk checkUpdateApk;
 
     public static String dateLog = "";
 
@@ -83,6 +85,12 @@ public class General {
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.CAMERA
     };
+    public static String[] CHANGE_LOGS = {
+            "v 7.6.24\n" +
+            "* Added template date range in store lists.\n" +
+            "* Improved card design of store list items.\n" +
+            "* Added import and export database in settings module."
+    };
 
     public static String GetApiLevelDevice() {
         return android.os.Build.VERSION.RELEASE;
@@ -114,8 +122,8 @@ public class General {
     public static String URL_REPORT_PJP_FREQUENCY_REPORT = mainURL + "/api/pjpreport";
 
     public static final String API_UPLOAD_BACKUP = mainURL + "/api/export_db";
-    public static final String API_CHECK_BACKUP_LIST = mainURL + "/api/";
-    public static final String API_DOWNLOAD_BACKUP = mainURL + "/api/";
+    public static final String API_CHECK_BACKUP_LIST = mainURL + "/api/export_db/user";
+    public static final String API_DOWNLOAD_BACKUP = mainURL + "/api/downloadbackup";
 
     static String QUESTION_IMAGE_CAPTURE = "Pplus2 Image";
 
@@ -193,14 +201,14 @@ public class General {
         "plano_keylist.txt",
         "npi_keylist.txt",
         "perfect_category_lists.txt",
-        "perfect_group_lists.txt",
+        "perfect_group_lists.txt"
     };
 
     public static String[] mainIconsFont = new String[] {
             FontAwesome.AUDIT_ICON,
             FontAwesome.PJP_ICON,
-            FontAwesome.SETTINGS_ICON,
             FontAwesome.REPORTS_ICON,
+            FontAwesome.SETTINGS_ICON,
             FontAwesome.LOGOUT_ICON
     };
 

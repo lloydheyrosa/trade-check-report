@@ -13,7 +13,7 @@
     <Preference
         android:id="@+id/db_import"
         android:key="db_import_key"
-        android:summary="Import database from web server. This process will fix some data errors."
+        android:summary="Import database from web server, to manage and check some data errors."
         android:title="Import database" />
 
     <PreferenceCategory

@@ -45,34 +45,35 @@ public class CheckUpdateApk extends Observable {
     private BroadcastReceiver checkingReceiver;
     private Runnable periodicUpdate;
     private ErrorLog errorLog;
+    public boolean started;
 
     public CheckUpdateApk(Context ctx) {
         this.mContext = ctx;
         General.hasUpdate = false;
+        started = false;
         this.TAG = getClass().getSimpleName();
 
         Thread.setDefaultUncaughtExceptionHandler(new AutoErrorLog(ctx, General.errlogFile));
         errorLog = new ErrorLog(General.errlogFile, ctx);
 
-        checkingReceiver = new BroadcastReceiver() {
-            @Override
-            public void onReceive(Context context, Intent intent) {
-                new CheckUpdates().execute();
-                updateHandler.postDelayed(periodicUpdate, CHECK_INTERVAL);
-            }
-        };
+            checkingReceiver = new BroadcastReceiver() {
+                @Override
+                public void onReceive(Context context, Intent intent) {
+                    new CheckUpdates().execute();
+                    updateHandler.postDelayed(periodicUpdate, CHECK_INTERVAL);
+                }
+            };
 
-        periodicUpdate = new Runnable() {
-            @Override
-            public void run() {
-                new CheckUpdates().execute();
-                updateHandler.removeCallbacks(periodicUpdate);	// remove whatever others may have posted
-                updateHandler.postDelayed(this, WAKEUP_INTERVAL);
-            }
-        };
+            periodicUpdate = new Runnable() {
+                @Override
+                public void run() {
+                    new CheckUpdates().execute();
+                    updateHandler.removeCallbacks(periodicUpdate);    // remove whatever others may have posted
+                    updateHandler.postDelayed(this, WAKEUP_INTERVAL);
+                }
+            };
 
-        ctx.registerReceiver( checkingReceiver,
-                new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
+            ctx.registerReceiver( checkingReceiver, new IntentFilter(ConnectivityManager.CONNECTIVITY_ACTION));
     }
 
     private class CheckUpdates extends AsyncTask<Void, Void, Boolean> {
@@ -96,6 +97,11 @@ public class CheckUpdateApk extends Observable {
             if(General.hasUpdate) {
                 Log.e(TAG, "Has update!");
                 hasUpdate = true;
+                return true;
+            }
+
+            if(!started) {
+                Log.e(TAG, "Auto update not enabled.");
                 return true;
             }
 

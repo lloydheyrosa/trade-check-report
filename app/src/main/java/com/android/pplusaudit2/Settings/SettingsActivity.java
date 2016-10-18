@@ -18,6 +18,8 @@ import android.net.Uri;
 import android.os.AsyncTask;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
+import android.os.PowerManager;
 import android.preference.ListPreference;
 import android.preference.Preference;
 import android.preference.PreferenceActivity;
@@ -27,6 +29,7 @@ import android.preference.PreferenceManager;
 import android.preference.RingtonePreference;
 import android.support.v7.app.AlertDialog;
 import android.text.TextUtils;
+import android.util.Log;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.Window;
@@ -36,7 +39,9 @@ import android.widget.ListView;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import com.android.internal.http.multipart.MultipartEntity;
 import com.android.pplusaudit2.AppSettings;
+import com.android.pplusaudit2.AutoUpdateApk.CheckUpdateApk;
 import com.android.pplusaudit2.Database.DatabaseFile;
 import com.android.pplusaudit2.Database.DatabaseFileAdapter;
 import com.android.pplusaudit2.Database.SQLLibrary;
@@ -45,6 +50,17 @@ import com.android.pplusaudit2.Database.SQLiteDB;
 import com.android.pplusaudit2.ErrorLogs.ErrorLog;
 import com.android.pplusaudit2.General;
 import com.android.pplusaudit2.R;
+import com.android.volley.AuthFailureError;
+import com.android.volley.NetworkResponse;
+import com.android.volley.Request;
+import com.android.volley.Response;
+import com.android.volley.ResponseDelivery;
+import com.android.volley.VolleyLog;
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.appindexing.Thing;
+import com.google.android.gms.common.api.GoogleApiClient;
+import org.apache.http.HttpStatus;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -52,6 +68,7 @@ import org.json.JSONObject;
 
 import java.io.BufferedInputStream;
 import java.io.BufferedReader;
+import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -60,6 +77,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.io.UnsupportedEncodingException;
 import java.net.HttpURLConnection;
 import java.net.URL;
 import java.util.ArrayList;
@@ -94,10 +112,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 int index = listPreference.findIndexOfValue(stringValue);
 
                 // Set the summary to reflect the new value.
-                preference.setSummary(
-                        index >= 0
-                                ? listPreference.getEntries()[index]
-                                : null);
+                preference.setSummary(index >= 0 ? listPreference.getEntries()[index] : null);
 
             } else if (preference instanceof RingtonePreference) {
                 // For ringtone preferences, look up the correct display value
@@ -129,6 +144,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             return true;
         }
     };
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     /**
      * Helper method to determine if the device has an extra-large screen. For
@@ -161,9 +181,22 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     }
 
     @Override
+    public boolean onOptionsItemSelected(MenuItem item) {
+        int id = item.getItemId();
+        if (id == android.R.id.home) {
+            SettingsActivity.this.finish();
+            return true;
+        }
+        return super.onOptionsItemSelected(item);
+    }
+
+    @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setupActionBar();
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client = new GoogleApiClient.Builder(this).addApi(AppIndex.API).build();
     }
 
     /**
@@ -201,8 +234,43 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
     protected boolean isValidFragment(String fragmentName) {
         return PreferenceFragment.class.getName().equals(fragmentName)
                 || DatabasePreferenceFragment.class.getName().equals(fragmentName)
-                || DataSyncPreferenceFragment.class.getName().equals(fragmentName)
-                || NotificationPreferenceFragment.class.getName().equals(fragmentName);
+                || AboutsPreferenceFragment.class.getName().equals(fragmentName);
+    }
+
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    public Action getIndexApiAction() {
+        Thing object = new Thing.Builder()
+                .setName("Settings Page") // TODO: Define a title for the content shown.
+                // TODO: Make sure this auto-generated URL is correct.
+                .setUrl(Uri.parse("http://[ENTER-YOUR-URL-HERE]"))
+                .build();
+        return new Action.Builder(Action.TYPE_VIEW)
+                .setObject(object)
+                .setActionStatus(Action.STATUS_TYPE_COMPLETED)
+                .build();
+    }
+
+    @Override
+    public void onStart() {
+        super.onStart();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        client.connect();
+        AppIndex.AppIndexApi.start(client, getIndexApiAction());
+    }
+
+    @Override
+    public void onStop() {
+        super.onStop();
+
+        // ATTENTION: This was auto-generated to implement the App Indexing API.
+        // See https://g.co/AppIndexing/AndroidStudio for more information.
+        AppIndex.AppIndexApi.end(client, getIndexApiAction());
+        client.disconnect();
     }
 
     /**
@@ -222,11 +290,13 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         private DatabaseFileAdapter adapterDatabase;
         private String importedDBVersion;
         private ErrorLog errorLog;
+        private PowerManager.WakeLock wlStayAwake;
 
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
             addPreferencesFromResource(R.xml.pref_database);
+            General.checkUpdateApk.started = false;
 
             TAG = DatabasePreferenceFragment.this.getClass().getSimpleName();
             sqlPortable = new SQLPortable(getActivity());
@@ -234,13 +304,15 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             arrDbFile = new ArrayList<>();
             errorLog = new ErrorLog(General.errlogFile, getActivity());
 
-            Preference prefExport = (Preference) findPreference("db_export_key");
-            Preference prefDeviceId = (Preference) findPreference("pref_device_id_key");
-            Preference prefDBVersion = (Preference) findPreference("pref_db_version");
+            PowerManager powerman = (PowerManager) getActivity().getSystemService(POWER_SERVICE);
+            wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
+
+            Preference prefExport = findPreference("db_export_key");
+            Preference prefDeviceId = findPreference("pref_device_id_key");
+            Preference prefDBVersion = findPreference("pref_db_version");
 
             prefDeviceId.setSummary(General.deviceID);
             prefDBVersion.setSummary(String.valueOf(SQLiteDB.DATABASE_VERSION));
-
 
             prefExport.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
@@ -267,7 +339,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             });
 
 
-            Preference prefImport = (Preference) findPreference("db_import_key");
+            Preference prefImport = findPreference("db_import_key");
             prefImport.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 public boolean onPreferenceClick(Preference preference) {
 
@@ -295,6 +367,24 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             });
         }
 
+        @Override
+        public void onDestroy() {
+            super.onDestroy();
+            General.checkUpdateApk.started = true;
+        }
+
+        private void acquireWake() {
+            if (wlStayAwake != null) {
+                wlStayAwake.acquire();
+            }
+        }
+
+        private void releaseWake() {
+            if (wlStayAwake != null) {
+                wlStayAwake.release();
+            }
+        }
+
         class ExportDatabase extends AsyncTask<Void, String, Boolean> {
             String errMsg = "";
             private String strResponse;
@@ -306,7 +396,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
             @Override
             protected void onProgressUpdate(String... values) {
-                progressDialog.setMessage("Exporting database. Please wait.\n" + String.format(Locale.getDefault(), "%.2f", Double.valueOf(values[0])) + "Kb uploaded.");
+                progressDialog.setMessage("Exporting database. Please wait.\n" + String.format(Locale.getDefault(), "%.2f", Double.valueOf(values[0])) + " Mb uploaded.");
             }
 
 
@@ -317,28 +407,34 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 String attachmentName = "data";
                 String crlf = "\r\n";
                 String twoHyphens = "--";
-                String boundary =  "*****";
+                String boundary = "*****";
 
                 int bytesRead, bytesAvailable, bufferSize;
                 byte[] buffer;
-                int maxBufferSize = 1024 * 1024;
+                int maxBufferSize = 1 * 1024;
 
                 String attachmentFileName = sqlPortable.getExportedDBName();
 
                 try {
                     String strUrl = General.API_UPLOAD_BACKUP;
 
-                    URL url = new URL(strUrl + "?device_id=" + General.deviceID + "&user_id=" + General.usercode + "&db_version=" + String.valueOf(SQLiteDB.DATABASE_VERSION) + "&file_name=" + attachmentFileName);
+                    URL url = new URL(strUrl + "?device_id=" + General.deviceID + "&user_id=" + General.usercode + "&db_version=" + String.valueOf(SQLiteDB.DATABASE_VERSION));
 
                     File dbFileBackup = new File(AppSettings.dbFolder, attachmentFileName);
 
-                    FileInputStream fileInputStream = new FileInputStream(dbFileBackup); // text file to upload
+                    if(!dbFileBackup.exists()){
+                        errMsg = dbFileBackup.getAbsolutePath() + " is not existing";
+                        return false;
+                    }
 
-                    HttpURLConnection httpUrlConnection = null;
-                    httpUrlConnection = (HttpURLConnection) url.openConnection();
+                    FileInputStream fileInputStream = new FileInputStream(dbFileBackup); // database to export
+
+                    HttpURLConnection httpUrlConnection = (HttpURLConnection) url.openConnection();
 
                     httpUrlConnection.setUseCaches(false);
                     httpUrlConnection.setDoOutput(true);
+                    httpUrlConnection.setDoInput(true);
+                    httpUrlConnection.setChunkedStreamingMode(1024);
 
                     httpUrlConnection.setRequestMethod("POST");
                     httpUrlConnection.setRequestProperty("Connection", "Keep-Alive");
@@ -348,8 +444,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     DataOutputStream request = new DataOutputStream(httpUrlConnection.getOutputStream());
 
                     request.writeBytes(twoHyphens + boundary + crlf);
-                    request.writeBytes("Content-Disposition: form-data; name=\"" +
-                            attachmentName + "\";filename=\"" + attachmentFileName + "\"" + crlf);
+                    request.writeBytes("Content-Disposition: form-data; name=\"" + attachmentName + "\";filename=\"" + attachmentFileName + "\"" + crlf);
                     request.writeBytes(crlf);
 
                     bytesAvailable = fileInputStream.available();
@@ -358,15 +453,19 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
                     // Read file
                     bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-                    double totalUploaded = 0;
+                    Log.e("File length", String.valueOf(bytesAvailable));
 
                     while (bytesRead > 0) {
-                        request.write(buffer, 0, bufferSize);
+                        try {
+                            request.write(buffer, 0, bufferSize);
+                        } catch (OutOfMemoryError e) {
+                            e.printStackTrace();
+                            errMsg = "out of memory error";
+                            return false;
+                        }
                         bytesAvailable = fileInputStream.available();
                         bufferSize = Math.min(bytesAvailable, maxBufferSize);
                         bytesRead = fileInputStream.read(buffer, 0, bufferSize);
-                        totalUploaded++;
-                        publishProgress(String.valueOf(totalUploaded));
                     }
 
                     request.writeBytes(crlf);
@@ -374,10 +473,22 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     request.flush();
                     request.close();
 
-                    InputStream responseStream = new BufferedInputStream(httpUrlConnection.getInputStream());
+                    int status = httpUrlConnection.getResponseCode();
+                    String serverResponseMessage = httpUrlConnection.getResponseMessage();
+                    Log.i("Server Response Code ", "" + status);
+                    Log.i("Server Response Message", serverResponseMessage);
 
-                    BufferedReader responseStreamReader =
-                            new BufferedReader(new InputStreamReader(responseStream));
+                    InputStream inputStream;
+
+                    if(status >= HttpStatus.SC_BAD_REQUEST) {
+                        //inputStream = httpUrlConnection.getErrorStream();
+                        errMsg = "ERROR " + String.valueOf(status) + "\nPlease try again.";
+                        return false;
+                    }
+
+                    inputStream = httpUrlConnection.getInputStream();
+                    InputStream responseStream = new BufferedInputStream(inputStream);
+                    BufferedReader responseStreamReader = new BufferedReader(new InputStreamReader(responseStream));
 
                     String line = "";
                     StringBuilder stringBuilder = new StringBuilder();
@@ -393,27 +504,24 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     strResponse = stringBuilder.toString().trim();
 
                     JSONObject jsonResponse = new JSONObject(strResponse);
-                    if(jsonResponse.getInt("status") == 0) {
+                    if (jsonResponse.getInt("status") == 0) {
                         strResponse = jsonResponse.getString("msg");
                         dbFileBackup.delete();
                         result = true;
-                    }
-                    else
+                    } else
                         errMsg = jsonResponse.getString("msg");
-                }
-                catch (FileNotFoundException ex) {
+
+                } catch (FileNotFoundException ex) {
                     errMsg = "File not found error exception. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
                     errorLog.appendLog(exErr, TAG);
                     ex.printStackTrace();
-                }
-                catch (IOException ex) {
+                } catch (IOException ex) {
                     errMsg = "Slow or unstable internet connection. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
                     errorLog.appendLog(exErr, TAG);
                     ex.printStackTrace();
-                }
-                catch (JSONException ex) {
+                } catch (JSONException ex) {
                     errMsg = "Data response error. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
                     errorLog.appendLog(exErr, TAG);
@@ -426,11 +534,11 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             @Override
             protected void onPostExecute(Boolean res) {
                 progressDialog.dismiss();
-                if(!res) {
-                    General.messageBox(getActivity(), "Export error", errMsg + "\n\nResponse: " + strResponse);
+                releaseWake();
+                if (!res) {
+                    General.messageBox(getActivity(), "Export error", errMsg);
                     return;
                 }
-
 
                 General.messageBox(getActivity(), strResponse, "Database exported successfully.");
             }
@@ -456,11 +564,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 ConnectivityManager cm = (ConnectivityManager) getActivity().getSystemService(Context.CONNECTIVITY_SERVICE);
 
                 NetworkInfo activeNetwork = cm.getActiveNetworkInfo();
-                if(activeNetwork != null) {
-                    if(activeNetwork.isFailover()) errmsg = "Internet connection fail over.";
+                if (activeNetwork != null) {
+                    if (activeNetwork.isFailover()) errmsg = "Internet connection fail over.";
                     result = activeNetwork.isAvailable() || activeNetwork.isConnectedOrConnecting();
-                }
-                else errmsg = "No internet connection.";
+                } else errmsg = "No internet connection.";
 
                 return result;
             }
@@ -468,17 +575,17 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             @Override
             protected void onPostExecute(Boolean bResult) {
                 progressDialog.dismiss();
-                if(!bResult) {
+                if (!bResult) {
                     Toast.makeText(getActivity(), errmsg, Toast.LENGTH_SHORT).show();
                     return;
                 }
 
                 switch (nMode) {
                     case 1: // export database
-                        if(sqlPortable.copyMainDatabaseFileToSd()) {
+                        if (sqlPortable.copyMainDatabaseFileToSd()) {
+                            acquireWake();
                             new ExportDatabase().execute();
-                        }
-                        else
+                        } else
                             Toast.makeText(getActivity(), "Can't backup main database. Please try again.", Toast.LENGTH_SHORT).show();
                         break;
                     case 2: // check backup lists
@@ -506,12 +613,10 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 boolean result = false;
 
                 try {
-
                     arrDbFile.clear();
 
                     String urlBackupList = General.API_CHECK_BACKUP_LIST;
-
-                    String urlCheckList = urlBackupList + "/" + General.usercode;
+                    String urlCheckList = urlBackupList + "/" + General.usercode + "/list";
 
                     URL url = new URL(urlCheckList);
                     HttpURLConnection urlConnection = (HttpURLConnection) url.openConnection();
@@ -525,25 +630,28 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     }
                     bufferedReader.close();
 
-                    String response = stringBuilder.toString().replace("\n"," ").trim();
+                    String response = stringBuilder.toString().replace("\n", " ").trim();
                     urlConnection.disconnect();
-                    if(response.trim().toLowerCase().contains("be right back")) {
+                    if (response.trim().toLowerCase().contains("be right back")) {
                         strResponse = "Web server is down. Try again later.";
                         return false;
                     }
 
                     JSONObject jsonObject = new JSONObject(response);
-                    if(!jsonObject.isNull("msg")) {
+                    if (!jsonObject.isNull("status")) {
                         String msg = jsonObject.getString("msg");
+                        int nStatus = jsonObject.getInt("status");
                         strResponse = msg.trim();
 
-                        JSONArray jFileList = jsonObject.getJSONArray("files");
-                        if(jFileList.length() > 0) {
+                        if(nStatus == 1) return false;
 
-                            for(int i = 0; i < jFileList.length(); i++) {
+                        JSONArray jFileList = jsonObject.getJSONArray("files");
+                        if (jFileList.length() > 0) {
+
+                            for (int i = 0; i < jFileList.length(); i++) {
                                 JSONObject jFileObject = jFileList.getJSONObject(i);
 
-                                if(jFileObject != null) {
+                                if (jFileObject != null) {
                                     int dbID = jFileObject.getInt("id");
                                     int dbBackupID = jFileObject.getInt("device_backup_id");
                                     String strFileName = jFileObject.getString("filename");
@@ -553,29 +661,23 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                                     arrDbFile.add(new DatabaseFile(dbID, dbBackupID, strFileName, strCreatedAt, strUpdatedAt, strDBVersion));
 
                                     result = true;
-                                }
-                                else {
+                                } else {
                                     result = false;
                                     strResponse = "Can't load all database backups.";
                                     break;
                                 }
                             }
-                        }
-                        else strResponse = "No backup database file found.";
-                    }
-                    else strResponse = "Web server is down. Try again later.";
-                }
-                catch (FileNotFoundException ex) {
+                        } else strResponse = "No backup database file found.";
+                    } else strResponse = "Web server is down. Try again later.";
+                } catch (FileNotFoundException ex) {
                     strResponse = "Database backup not found for this device. ";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : strResponse;
                     errorLog.appendLog(exErr, TAG);
-                }
-                catch (IOException ex) {
+                } catch (IOException ex) {
                     strResponse = "Slow or unstable internet connection. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : strResponse;
                     errorLog.appendLog(exErr, TAG);
-                }
-                catch (JSONException ex) {
+                } catch (JSONException ex) {
                     strResponse = "Data response error. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : strResponse;
                     errorLog.appendLog(exErr, TAG);
@@ -587,7 +689,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             @Override
             protected void onPostExecute(Boolean bResult) {
                 progressDialog.dismiss();
-                if(!bResult) {
+                if (!bResult) {
                     General.messageBox(getActivity(), "Import Database", strResponse);
                     return;
                 }
@@ -677,7 +779,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
                     String urlDownloadBackup = General.API_DOWNLOAD_BACKUP;
 
-                    urlDownloadBackup = urlDownloadBackup + "/" + importedBackupFileID;
+                    urlDownloadBackup = urlDownloadBackup + "/" + importedBackupFileID + "/user/" + General.usercode;
 
                     URL url = new URL(urlDownloadBackup);
                     HttpURLConnection httpConn = (HttpURLConnection) url.openConnection();
@@ -710,7 +812,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                         inputStream = httpConn.getInputStream();
 
                         File fSavePath = new File(AppSettings.dbFolder, fileName);
-                        if(fSavePath.exists()) fSavePath.delete();
+                        if (fSavePath.exists()) fSavePath.delete();
                         String saveFilePath = fSavePath.getPath();
 
                         // opens an output stream to save into file
@@ -721,7 +823,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                         double totalDownloaded = 0;
 
                         while ((bytesRead = inputStream.read(buffer)) != -1) {
-                            totalDownloaded +=  Double.valueOf(bytesRead) / 1000;
+                            totalDownloaded += Double.valueOf(bytesRead) / 1000;
                             publishProgress(String.valueOf(totalDownloaded), fileName);
                             outputStream.write(buffer, 0, bytesRead);
                         }
@@ -738,14 +840,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     } else {
                         errMsg = "Error " + String.valueOf(responseCode) + ". Please check web server.";
                     }
-                }
-                catch (FileNotFoundException ex) {
+                } catch (FileNotFoundException ex) {
                     errMsg = "File not found error exception. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
                     errorLog.appendLog(exErr, TAG);
                     ex.printStackTrace();
-                }
-                catch (IOException ex) {
+                } catch (IOException ex) {
                     errMsg = "Slow or unstable internet connection. Please try again.";
                     String exErr = ex.getMessage() != null ? ex.getMessage() : errMsg;
                     errorLog.appendLog(exErr, TAG);
@@ -758,12 +858,12 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             @Override
             protected void onPostExecute(Boolean bResult) {
                 progressDialog.dismiss();
-                if(!bResult) {
+                if (!bResult) {
                     General.messageBox(getActivity(), "Error importing", errMsg);
                     return;
                 }
 
-                if(sqlPortable.copyImportedDBToMain(importedBackupFileName)) {
+                if (sqlPortable.copyImportedDBToMain(importedBackupFileName)) {
 
                     new File(AppSettings.dbFolder, importedBackupFileName).delete();
 
@@ -805,8 +905,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                                 }
                             })
                             .create().show();
-                }
-                else {
+                } else {
                     errMsg = "Database file not found or corrupted. Please try again.";
                 }
             }
@@ -816,7 +915,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
             if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                getActivity().onBackPressed();
                 return true;
             }
             return super.onOptionsItemSelected(item);
@@ -828,55 +927,44 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
      * activity is showing a two-pane settings UI.
      */
     @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class NotificationPreferenceFragment extends PreferenceFragment {
+    public static class AboutsPreferenceFragment extends PreferenceFragment {
         @Override
         public void onCreate(Bundle savedInstanceState) {
             super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_notification);
-            setHasOptionsMenu(true);
+            addPreferencesFromResource(R.xml.pref_about_tcr);
 
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-            bindPreferenceSummaryToValue(findPreference("notifications_new_message_ringtone"));
+            Preference prefVersionName = (Preference) findPreference("version_name_key");
+            Preference prefVersionCode = (Preference) findPreference("version_code_key");
+            Preference prefChangelog = (Preference) findPreference("changelog_key");
+
+            prefVersionName.setSummary(General.versionName);
+            prefVersionCode.setSummary(String.valueOf(General.versionCode));
+
+            prefChangelog.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
+                @Override
+                public boolean onPreferenceClick(Preference preference) {
+
+                    new AlertDialog.Builder(getActivity())
+                            .setTitle("What's new?")
+                            .setMessage(General.CHANGE_LOGS[General.CHANGE_LOGS.length - 1])
+                            .setCancelable(false)
+                            .setNeutralButton("OK", new DialogInterface.OnClickListener() {
+                                @Override
+                                public void onClick(DialogInterface dialog, int which) {
+                                    dialog.dismiss();
+                                }
+                            }).create().show();
+
+                    return false;
+                }
+            });
         }
 
         @Override
         public boolean onOptionsItemSelected(MenuItem item) {
             int id = item.getItemId();
             if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
-                return true;
-            }
-            return super.onOptionsItemSelected(item);
-        }
-    }
-
-    /**
-     * This fragment shows data and sync preferences only. It is used when the
-     * activity is showing a two-pane settings UI.
-     */
-    @TargetApi(Build.VERSION_CODES.HONEYCOMB)
-    public static class DataSyncPreferenceFragment extends PreferenceFragment {
-        @Override
-        public void onCreate(Bundle savedInstanceState) {
-            super.onCreate(savedInstanceState);
-            addPreferencesFromResource(R.xml.pref_data_sync);
-            setHasOptionsMenu(true);
-
-            // Bind the summaries of EditText/List/Dialog/Ringtone preferences
-            // to their values. When their values change, their summaries are
-            // updated to reflect the new value, per the Android Design
-            // guidelines.
-            bindPreferenceSummaryToValue(findPreference("sync_frequency"));
-        }
-
-        @Override
-        public boolean onOptionsItemSelected(MenuItem item) {
-            int id = item.getItemId();
-            if (id == android.R.id.home) {
-                startActivity(new Intent(getActivity(), SettingsActivity.class));
+                getActivity().onBackPressed();
                 return true;
             }
             return super.onOptionsItemSelected(item);
