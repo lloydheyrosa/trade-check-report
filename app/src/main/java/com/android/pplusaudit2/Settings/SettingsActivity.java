@@ -416,6 +416,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 String attachmentFileName = sqlPortable.getExportedDBName();
 
                 try {
+
                     String strUrl = General.API_UPLOAD_BACKUP;
 
                     URL url = new URL(strUrl + "?device_id=" + General.deviceID + "&user_id=" + General.usercode + "&db_version=" + String.valueOf(SQLiteDB.DATABASE_VERSION));
@@ -456,6 +457,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     Log.e("File length", String.valueOf(bytesAvailable));
 
                     while (bytesRead > 0) {
+
                         try {
                             request.write(buffer, 0, bufferSize);
                         } catch (OutOfMemoryError e) {
@@ -463,6 +465,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                             errMsg = "out of memory error";
                             return false;
                         }
+
                         bytesAvailable = fileInputStream.available();
                         bufferSize = Math.min(bytesAvailable, maxBufferSize);
                         bytesRead = fileInputStream.read(buffer, 0, bufferSize);
@@ -567,7 +570,9 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                 if (activeNetwork != null) {
                     if (activeNetwork.isFailover()) errmsg = "Internet connection fail over.";
                     result = activeNetwork.isAvailable() || activeNetwork.isConnectedOrConnecting();
-                } else errmsg = "No internet connection.";
+                }
+                else
+                    errmsg = "No internet connection.";
 
                 return result;
             }
@@ -596,7 +601,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
                     default:
                         break;
                 }
-
             }
         }
 
