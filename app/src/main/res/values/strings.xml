@@ -120,4 +120,6 @@
     <string name="prompt_username">Username</string>
     <string name="string_log_in">LOG IN</string>
     <string name="string_copyright">Copyright \u00a9 Chase Technologies Corp.</string>
+    <string name="send_bug_report">Can\'t log in? Send report <u>here</u>.</string>
+    <string name="search_title">Search</string>
 </resources>

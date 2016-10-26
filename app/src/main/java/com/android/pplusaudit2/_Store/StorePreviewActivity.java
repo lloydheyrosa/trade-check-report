@@ -1111,7 +1111,7 @@ public class StorePreviewActivity extends AppCompatActivity {
             }
             catch (JSONException ex) {
                 ex.printStackTrace();
-                errorMsg = "Error in web response of server. Please try again";
+                errorMsg = "Error in web response of server. Please try again\n\nResponse: " + response;
                 String errmsg = ex.getMessage() != null ? ex.getMessage() : errorMsg;
                 errorLog.appendLog(errmsg, TAG);
             }

@@ -16,6 +16,7 @@ import android.os.AsyncTask;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AppCompatActivity;
+import android.text.method.LinkMovementMethod;
 import android.util.Log;
 import android.view.View;
 import android.view.Menu;
@@ -127,11 +128,12 @@ public class MainActivity extends AppCompatActivity {
     private int selectedTemplateID = -1;
     private ErrorLog errorLog;
     private SharedPreferences sharedPreferences;
+    private TextView tvwSendError;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        setContentView(R.layout.activity_main);
+        setContentView(R.layout.activity_main2);
 
         PowerManager powerman = (PowerManager) getSystemService(POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
@@ -170,6 +172,16 @@ public class MainActivity extends AppCompatActivity {
 
         txtUsername = (EditText) findViewById(R.id.txtUsername);
         txtPassword = (EditText) findViewById(R.id.txtPassword);
+        tvwSendError = (TextView) findViewById(R.id.tvwSendError);
+        tvwSendError.setMovementMethod(LinkMovementMethod.getInstance());
+
+        tvwSendError.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                isSendError = true;
+                new CheckInternet().execute();
+            }
+        });
 
         btnLogin.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -199,6 +211,7 @@ public class MainActivity extends AppCompatActivity {
                 }
 
                 isSendError = false;
+                General.HideKeyboard(MainActivity.this);
                 new CheckInternet().execute();
             }
         });
@@ -257,7 +270,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking internet connection.");
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking internet connection.", true);
             acquireWake();
         }
 
@@ -308,7 +321,7 @@ public class MainActivity extends AppCompatActivity {
 
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking for new updates.");
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking for new updates.", true);
         }
 
         @Override
@@ -401,7 +414,7 @@ public class MainActivity extends AppCompatActivity {
         String errmsg = "";
         @Override
         protected void onPreExecute() {
-            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking web server availability.");
+            progressDL = ProgressDialog.show(MainActivity.this, "", "Checking web server availability.", true);
         }
 
         @Override
@@ -482,8 +495,6 @@ public class MainActivity extends AppCompatActivity {
 
         protected void onPreExecute() {
             progressDL = ProgressDialog.show(MainActivity.this, "", "Verifying user account.", true);
-            InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
-            imm.hideSoftInputFromWindow(mainLayout.getWindowToken(), 0);
         }
 
         protected Boolean doInBackground(Void... urls) {

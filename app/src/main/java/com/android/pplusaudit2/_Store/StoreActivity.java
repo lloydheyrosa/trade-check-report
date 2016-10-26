@@ -2,12 +2,14 @@ package com.android.pplusaudit2._Store;
 
 import android.app.Dialog;
 import android.app.ProgressDialog;
+import android.app.SearchManager;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.database.sqlite.SQLiteDatabase;
 import android.database.sqlite.SQLiteStatement;
 import android.os.AsyncTask;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.PowerManager;
 import android.support.v7.app.AlertDialog;
@@ -53,7 +55,6 @@ public class StoreActivity extends AppCompatActivity {
     private PowerManager.WakeLock wlStayAwake;
 
     private ProgressDialog progressDL;
-    private SearchView searchView;
     private ListView lvwStore;
     private StoreAdapter adapter;
     private String TAG;
@@ -78,8 +79,6 @@ public class StoreActivity extends AppCompatActivity {
         getSupportActionBar().setTitle("STORES");
         getSupportActionBar().setDisplayHomeAsUpEnabled(true);
         getSupportActionBar().setHomeButtonEnabled(true);
-
-        searchView = (SearchView) findViewById(R.id.svStore);
 
         PowerManager powerman = (PowerManager) getSystemService(POWER_SERVICE);
         wlStayAwake = powerman.newWakeLock(PowerManager.SCREEN_DIM_WAKE_LOCK, "wakelocktag");
@@ -360,28 +359,6 @@ public class StoreActivity extends AppCompatActivity {
             lvwStore.setSmoothScrollbarEnabled(true);
             adapter.notifyDataSetChanged();
 
-            searchView.setOnClickListener(new View.OnClickListener() {
-                @Override
-                public void onClick(View v) {
-                    searchView.onActionViewExpanded();
-                }
-            });
-
-            searchView.setOnQueryTextListener(new SearchView.OnQueryTextListener() {
-                @Override
-                public boolean onQueryTextSubmit(String query) {
-                    adapter.filter(query.trim().toLowerCase(Locale.getDefault()));
-                    return false;
-                }
-
-                @Override
-                public boolean onQueryTextChange(String newText) {
-                    adapter.filter(newText.trim().toLowerCase(Locale.getDefault()));
-                    return false;
-                }
-            });
-
-            searchView.setQuery(searchView.getQuery(), true);
             progressDL.dismiss();
 
             if(filterItem != null) {
@@ -710,6 +687,28 @@ public class StoreActivity extends AppCompatActivity {
     public boolean onCreateOptionsMenu(Menu menu) {
         // Inflate the menu; this adds items to the action bar if it is present.
         getMenuInflater().inflate(R.menu.stores_menu, menu);
+
+        if(Build.VERSION.SDK_INT >= Build.VERSION_CODES.HONEYCOMB) {
+
+            // Associate searchable configuration with the SearchView
+            SearchManager searchManager = (SearchManager) getSystemService(SEARCH_SERVICE);
+            android.support.v7.widget.SearchView searchView = (android.support.v7.widget.SearchView) menu.findItem(R.id.searchStore).getActionView();
+            searchView.setSearchableInfo(searchManager.getSearchableInfo(getComponentName()));
+
+            searchView.setOnQueryTextListener(new android.support.v7.widget.SearchView.OnQueryTextListener() {
+                @Override
+                public boolean onQueryTextSubmit(String query) {
+                    return false;
+                }
+
+                @Override
+                public boolean onQueryTextChange(String newText) {
+                    adapter.filter(newText.trim().toLowerCase(Locale.getDefault()));
+                    return true;
+                }
+            });
+        }
+
         return true;
     }
 

@@ -10,6 +10,8 @@ import android.content.pm.PackageManager;
 import android.os.Build;
 import android.support.v4.app.ActivityCompat;
 import android.util.Log;
+import android.view.View;
+import android.view.inputmethod.InputMethodManager;
 import android.widget.ImageView;
 
 import com.android.pplusaudit2.AutoUpdateApk.AutoUpdate;
@@ -394,5 +396,13 @@ public class General {
 
         }
         return false;
+    }
+
+    public static void HideKeyboard(Activity mContext) {
+        View viewFocused = mContext.getCurrentFocus();
+        if (viewFocused != null) {
+            InputMethodManager imm = (InputMethodManager) mContext.getSystemService(Context.INPUT_METHOD_SERVICE);
+            imm.hideSoftInputFromWindow(viewFocused.getWindowToken(), 0);
+        }
     }
 }

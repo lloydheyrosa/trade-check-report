@@ -53,8 +53,7 @@ class StoreCompAdapter extends BaseAdapter {
         TextView tvwSubDetails;
         Button btnPreview;
         Button btnCheckin;
-        RelativeLayout relMain;
-        LinearLayout lnrButtons;
+        RelativeLayout relMainPjp;
     }
 
         @Override
@@ -72,8 +71,7 @@ class StoreCompAdapter extends BaseAdapter {
                 holder.tvwDetails = (TextView) convertView.findViewById(R.id.tvwPjpDetails);
                 holder.btnPreview = (Button) convertView.findViewById(R.id.btnPreviewPjp);
                 holder.btnCheckin = (Button) convertView.findViewById(R.id.btnCheckInPjp);
-                holder.relMain = (RelativeLayout) convertView.findViewById(R.id.relMainPjp);
-                holder.lnrButtons = (LinearLayout) convertView.findViewById(R.id.lnrPjpButtons);
+                holder.relMainPjp = (RelativeLayout) convertView.findViewById(R.id.relMainPjp);
                 holder.tvwSubDetails = (TextView) convertView.findViewById(R.id.tvwPjpSubDetails);
 
                 convertView.setTag(holder);
@@ -92,12 +90,10 @@ class StoreCompAdapter extends BaseAdapter {
             if(storesArrayList.get(position).isChecked) {
                 checkMsg = "\uf00c" + " Checked in: " + storesArrayList.get(position).dateCheckedIn + " " + storesArrayList.get(position).timeChecked;
                 strAddress = "\uf041" + "   Location: " + storesArrayList.get(position).addressChecked;
-                holder.relMain.setBackgroundColor(mContext.getResources().getColor(R.color.color_highlight));
-                holder.lnrButtons.setBackgroundColor(mContext.getResources().getColor(R.color.color_highlight));
+                holder.relMainPjp.setBackgroundColor(mContext.getResources().getColor(R.color.color_highlight));
             }
             else {
-                holder.relMain.setBackgroundColor(mContext.getResources().getColor(R.color.white));
-                holder.lnrButtons.setBackgroundColor(mContext.getResources().getColor(R.color.white));
+                holder.relMainPjp.setBackgroundColor(mContext.getResources().getColor(R.color.white));
             }
 
             holder.tvwDetails.setText(checkMsg);
