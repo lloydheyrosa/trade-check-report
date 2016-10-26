@@ -32,7 +32,7 @@
     <color name="secondary_text">#8C000000</color>
     <color name="disabled_hint_text">#59000000</color>
     <color name="dividers">#1A000000</color>
-    <color name="layout_background">#FAFAFA</color>
+    <color name="layout_background">#EEEEEE</color>
 
     <color name="bg_osa">#9c27b0</color>
     <color name="bg_npi">#e91e63</color>

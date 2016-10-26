@@ -411,11 +411,8 @@ public class StoreActivity extends AppCompatActivity {
 
     // AUDIT BUTTON CLICK
     public void auditOnClickEvent(View v) {
-
         Stores stores = (Stores) v.getTag();
-
         General.selectedStore = stores;
-
         new AsyncGetStoreTemplate().execute();
     }
 
