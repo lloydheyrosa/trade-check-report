@@ -411,7 +411,7 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
 
                 int bytesRead, bytesAvailable, bufferSize;
                 byte[] buffer;
-                int maxBufferSize = 1 * 1024;
+                int maxBufferSize = 1024;
 
                 String attachmentFileName = sqlPortable.getExportedDBName();
 
@@ -947,7 +947,6 @@ public class SettingsActivity extends AppCompatPreferenceActivity {
             prefChangelog.setOnPreferenceClickListener(new Preference.OnPreferenceClickListener() {
                 @Override
                 public boolean onPreferenceClick(Preference preference) {
-
                     new AlertDialog.Builder(getActivity())
                             .setTitle("What's new?")
                             .setMessage(General.CHANGE_LOGS[General.CHANGE_LOGS.length - 1])

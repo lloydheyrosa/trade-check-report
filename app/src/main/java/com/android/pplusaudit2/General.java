@@ -37,7 +37,7 @@ public class General {
     public static String TAG = "Debug";
     public static String errlogFile = "errorlogs.txt";
 
-    public static boolean BETA = true;
+    public static boolean BETA = false;
 
     public static String versionName = "";
     public static int versionCode = 0;
@@ -81,17 +81,19 @@ public class General {
     public static Stores selectedStore;
     public static boolean isAdminMode = false;
 
-    public static final int REQUEST_EXTERNAL_STORAGE = 1999;
-    public static String[] PERMISSIONS_STORAGE = {
+    private static final int REQUEST_EXTERNAL_STORAGE = 1999;
+    private static String[] PERMISSIONS_STORAGE = {
             Manifest.permission.READ_EXTERNAL_STORAGE,
             Manifest.permission.WRITE_EXTERNAL_STORAGE,
             Manifest.permission.CAMERA
     };
+
     public static String[] CHANGE_LOGS = {
             "v 7.6.24\n" +
             "* Added template date range in store lists.\n" +
             "* Improved card design of store list items.\n" +
-            "* Added import and export database in settings module."
+            "* Added import and export database in settings module.\n" +
+                    "* Improved log-in design."
     };
 
     public static String GetApiLevelDevice() {
