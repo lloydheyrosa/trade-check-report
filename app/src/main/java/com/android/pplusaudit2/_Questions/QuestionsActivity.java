@@ -394,10 +394,13 @@ public class QuestionsActivity extends AppCompatActivity {
 
                         if(GetSOSListLookup()) {
                             if(tcrLib.TrimAllWhiteSpaces(strPrompt).equals(TCRLib.SOS_PERFECT_STORE)) {
+
                                 String sostargetperc = GetSOSTarget();
+
                                 if(sostargetperc.isEmpty()) {
                                     sostargetperc = "0 %";
                                 }
+
                                 txtNumeric.setTag(formtypeid + "," + nQuestionid + "," + formid + "," + strPrompt.trim().toUpperCase() + "," + sostargetperc.replace("%", "").trim());
                             }
                         }
@@ -2659,7 +2662,7 @@ public class QuestionsActivity extends AppCompatActivity {
     private boolean GetSOSListLookup() {
         boolean res = false;
 
-        Cursor cursGetSOSList = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SOSLIST, SQLiteDB.COLUMN_SOSLIST_soskeygroupid + " = " + formgroupID);
+        Cursor cursGetSOSList = sqlLibrary.GetDataCursor(SQLiteDB.TABLE_SOSLIST, SQLiteDB.COLUMN_SOSLIST_soskeygroupid + " = " + formgroupID); // 562
         cursGetSOSList.moveToFirst();
         if(cursGetSOSList.getCount() > 0) {
             res = true;
